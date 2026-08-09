@@ -363,7 +363,7 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 
 .scroll-hint { display: none; }
 
-.invoice-items-wrap { position: relative; margin-bottom: 8px; }
+.invoice-items-wrap { position: relative; margin-bottom: 8px; min-height: 150px; }
 .invoice-watermark {
   position: absolute;
   top: 50%;
@@ -372,7 +372,9 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   width: 70%;
   max-width: 340px;
   object-fit: contain;
-  opacity: 0.14;
+  /* Faintness is baked into the PNG's alpha channel (not CSS opacity) —
+     translucent <img> + opacity is known to rasterize as a solid black
+     block in Chromium's print-to-PDF pipeline. */
   pointer-events: none;
   z-index: 0;
 }
