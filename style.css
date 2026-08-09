@@ -476,9 +476,15 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     margin: 6px 0 0;
     padding: 0 24px;
   }
-  .invoice-items-scroll {
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 22px), transparent 100%);
-    mask-image: linear-gradient(to right, black calc(100% - 22px), transparent 100%);
+  .invoice-items-wrap::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95));
+    pointer-events: none;
   }
 
   /* Charges table becomes a stack of cards — far easier to fill in on a phone
