@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#4a0e1c" />
+<title>Leopard Inn — Invoice Generator</title>
+<link rel="icon" href="assets/logo-wilpattu.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SCREEN 1: Branch selection -->
+  <section id="screen-branch" class="screen active">
+    <div class="brand">
+      <h1>Leopard Inn</h1>
+      <p class="subtitle">Select your branch to continue</p>
+    </div>
+    <div class="branch-grid">
+      <button class="branch-btn" data-branch="Wilpattu" data-label="Wilpattu Forest Retreat" data-logo="assets/logo-wilpattu.png">
+        <span>Wilpattu Forest Retreat</span>
+      </button>
+      <button class="branch-btn" data-branch="Arugam Bay" data-label="Arugam Bay Beachfront Hotel" data-logo="assets/logo-arugambay.png">
+        <span>Arugam Bay Beachfront Hotel</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: Branch home / launch invoice generator -->
+  <section id="screen-home" class="screen">
+    <button class="back-btn" data-back="screen-branch">&larr; Change branch</button>
+    <div class="brand">
+      <img id="home-logo" src="" alt="Leopard Inn" class="logo" onerror="this.style.display='none'" />
+      <h1>Leopard Inn</h1>
+      <p class="subtitle" id="home-branch-label">Branch</p>
+    </div>
+    <div class="home-actions">
+      <button class="primary-btn big" id="open-invoice-btn">
+        🧾 Invoice Generator
+      </button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: Invoice form -->
+  <section id="screen-form" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="form-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>New Invoice — <span id="form-branch-label"></span></h2>
+    </div>
+
+    <form id="invoice-form">
+      <div class="form-grid">
+        <div class="field">
+          <label>Reservation No.</label>
+          <input type="text" id="inv-number" placeholder="e.g. 162" />
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="inv-date" />
+        </div>
+        <div class="field">
+          <label>Currency</label>
+          <input type="text" id="currency" value="LKR" />
+        </div>
+      </div>
+
+      <h3 class="section-title">Guest Details</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Guest Name</label>
+          <input type="text" id="guest-name" placeholder="e.g. Mrs. Bwanthi" required />
+        </div>
+        <div class="field">
+          <label>No. of Guests</label>
+          <input type="number" id="guest-count" min="0" inputmode="numeric" placeholder="e.g. 10" />
+        </div>
+        <div class="field">
+          <label>Contact No.</label>
+          <input type="tel" id="guest-phone" placeholder="e.g. (+)94772218511" />
+        </div>
+        <div class="field">
+          <label>Reg. Card No.</label>
+          <input type="text" id="reg-card-no" placeholder="e.g. N/A" />
+        </div>
+        <div class="field">
+          <label>Voucher No.</label>
+          <input type="text" id="voucher-no" placeholder="e.g. N/A" />
+        </div>
+        <div class="field">
+          <label>Check-in Date</label>
+          <input type="date" id="checkin-date" />
+        </div>
+        <div class="field">
+          <label>Check-out Date</label>
+          <input type="date" id="checkout-date" />
+        </div>
+      </div>
+
+      <h3 class="section-title">List of Information</h3>
+      <div id="items-table-wrap">
+        <table id="items-table">
+          <thead>
+            <tr>
+              <th class="col-no">#</th>
+              <th class="col-desc">Description</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-price">Rate (LKR)</th>
+              <th class="col-total">Value</th>
+              <th class="col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="items-body">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+      <button type="button" id="add-item-btn" class="secondary-btn">+ Add Item</button>
+      <p class="hint">Value auto-fills from Qty × Rate when Qty is a plain number — edit it directly for package rates (e.g. "2 nights").</p>
+
+      <h3 class="section-title">Totals</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Service Charge (LKR)</label>
+          <input type="number" id="service-charge" min="0" step="0.01" inputmode="decimal" value="0" />
+        </div>
+        <div class="field">
+          <label>Advance Paid (LKR)</label>
+          <input type="number" id="advance" min="0" step="0.01" inputmode="decimal" value="0" />
+        </div>
+      </div>
+
+      <div class="live-summary" aria-live="polite">
+        <div class="live-summary-row"><span>Bill Total</span><span id="live-bill-total">LKR 0.00</span></div>
+        <div class="live-summary-row"><span>Service Charge</span><span id="live-service-charge">LKR 0.00</span></div>
+        <div class="live-summary-row"><span>Gross Amount</span><span id="live-gross">LKR 0.00</span></div>
+        <div class="live-summary-row"><span>Advance</span><span id="live-advance">LKR 0.00</span></div>
+        <div class="live-summary-row grand"><span>Grand Total</span><span id="live-grand">LKR 0.00</span></div>
+      </div>
+
+      <div class="field">
+        <label>Remark</label>
+        <textarea id="notes" rows="2" placeholder="e.g. Kayak ride - Free&#10;Children under 12 years - Free"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Checked By (staff name)</label>
+        <input type="text" id="staff-name" placeholder="Your name" />
+      </div>
+
+      <button type="submit" class="primary-btn big" id="generate-btn">Generate Invoice ✅</button>
+    </form>
+  </section>
+
+  <!-- SCREEN 4: Invoice preview / export -->
+  <section id="screen-preview" class="screen">
+    <button class="back-btn no-print" data-back="screen-form">&larr; Edit Invoice</button>
+
+    <div id="invoice-preview" class="invoice-paper">
+      <div class="invoice-bar top"></div>
+
+      <div class="invoice-body">
+        <div class="invoice-topline">
+          <div class="invoice-topline-brand">
+            <span id="prev-branch"></span>
+          </div>
+          <div class="invoice-meta">
+            <p><span>Reservation No:</span> <strong id="prev-number"></strong></p>
+            <p><span>Date:</span> <strong id="prev-date"></strong></p>
+          </div>
+        </div>
+
+        <div class="invoice-guest">
+          <p><span>Guest Name</span> <strong id="prev-guest-name"></strong></p>
+          <p><span>No of Guest</span> <strong id="prev-guest-count"></strong></p>
+          <p><span>Contact No</span> <strong id="prev-guest-phone"></strong></p>
+          <p><span>Reg.Card No</span> <strong id="prev-reg-card"></strong></p>
+          <p><span>Voucher No</span> <strong id="prev-voucher"></strong></p>
+          <p><span>Check in Date</span> <strong id="prev-checkin"></strong></p>
+          <p><span>Check out Date</span> <strong id="prev-checkout"></strong></p>
+        </div>
+
+        <h3 class="invoice-list-title">List of Information</h3>
+
+        <div class="invoice-items-wrap">
+          <img src="assets/watermark.png" alt="" class="invoice-watermark" onerror="this.style.display='none'" />
+          <div class="invoice-items-scroll">
+            <table class="invoice-items-table">
+              <thead>
+                <tr>
+                  <th>Item No</th>
+                  <th>Description</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Value (LKR)</th>
+                </tr>
+              </thead>
+              <tbody id="prev-items-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="scroll-hint no-print">&#8596; swipe the table to see Rate &amp; Value</p>
+
+        <div class="invoice-bottom">
+          <div class="invoice-remark">
+            <p class="remark-label">Currency: <strong id="prev-currency"></strong></p>
+            <p class="remark-label">Remark:</p>
+            <p id="prev-notes"></p>
+          </div>
+          <div class="invoice-totals">
+            <div class="totals-row"><span>Bill Total</span><span id="prev-bill-total"></span></div>
+            <div class="totals-row"><span>Service Charge</span><span id="prev-service-charge"></span></div>
+            <div class="totals-row"><span>Gross Amount</span><span id="prev-gross"></span></div>
+            <div class="totals-row"><span>Advance</span><span id="prev-advance"></span></div>
+            <div class="totals-row grand"><span>Grand Total</span><span id="prev-total"></span></div>
+          </div>
+        </div>
+
+        <div class="invoice-signatures">
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <p>Checked By<br /><span id="prev-staff"></span></p>
+          </div>
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <p>Guest Signature</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="invoice-bar bottom"></div>
+    </div>
+
+    <div class="export-bar no-print">
+      <button class="action-btn" id="print-btn">🖨️ Print / Save PDF</button>
+      <button class="action-btn" id="image-btn">🖼️ Save as Image</button>
+      <button class="action-btn secondary" id="new-invoice-btn">➕ New Invoice</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
