@@ -74,6 +74,24 @@
     return document.getElementById(id).value.trim();
   }
 
+  // Strip anything that isn't a digit (and, for money fields, a single
+  // decimal point) as the user types — blocks letters/words on fields
+  // that must stay numeric, without relying on type="number" alone
+  // (mobile keyboards can still let stray letters through via paste etc.)
+  function sanitizeInteger(e) {
+    const input = e.target;
+    const cleaned = input.value.replace(/[^0-9]/g, "");
+    if (cleaned !== input.value) input.value = cleaned;
+  }
+
+  function sanitizeDecimal(e) {
+    const input = e.target;
+    let cleaned = input.value.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    if (parts.length > 2) cleaned = parts[0] + "." + parts.slice(1).join("");
+    if (cleaned !== input.value) input.value = cleaned;
+  }
+
   // Items table
   const itemsBody = document.getElementById("items-body");
 
@@ -128,6 +146,9 @@
     const rateInput = row.querySelector(".item-rate");
     const valueInput = row.querySelector(".item-value");
 
+    rateInput.addEventListener("input", sanitizeDecimal);
+    valueInput.addEventListener("input", sanitizeDecimal);
+
     function autoFillValue() {
       const qtyNum = parseFloat(qtyInput.value);
       const rateNum = parseFloat(rateInput.value) || 0;
@@ -153,6 +174,10 @@
 
   document.getElementById("add-item-btn").addEventListener("click", () => addItemRow());
 
+  document.getElementById("guest-count").addEventListener("input", sanitizeInteger);
+  ["service-charge", "advance"].forEach(id => {
+    document.getElementById(id).addEventListener("input", sanitizeDecimal);
+  });
   ["service-charge", "advance", "currency"].forEach(id => {
     document.getElementById(id).addEventListener("input", updateLiveTotals);
   });
