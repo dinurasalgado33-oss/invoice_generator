@@ -1,13 +1,19 @@
-# Leopard Inn — Invoice Generator
+# Leopard Inn — Staff Portal
 
-A simple, mobile-friendly web app for staff to generate guest invoices for each branch, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Net/Advance/Grand Total, remarks, and signature lines).
+A mobile-friendly web app for Leopard Inn staff. Currently ships with an invoice generator; Room Bookings & Info and Inventory Management are on the home screen as "Coming Soon" placeholders for future additions.
 
 ## How it works
-1. Staff pick a branch (Wilpattu Forest Retreat / Arugam Bay Beachfront Hotel).
-2. Tap **Invoice Generator**.
-3. Fill in guest details and itemized charges.
-4. Tap **Generate Invoice** to see a clean preview styled like the printed invoice, with the branch logo watermarked behind the item list.
-5. Export via **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
+1. Staff log in (see **Login** below).
+2. Pick a branch (Wilpattu Forest Retreat / Arugam Bay Beachfront Hotel).
+3. Tap **New Invoice**.
+4. Fill in guest details and itemized charges, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Advance/Grand Total, remarks, and signature lines).
+5. Tap **Generate Invoice** to see a clean preview styled like the printed invoice, with the branch logo watermarked behind the item list.
+6. Export via **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
+
+## Login
+Username/password is a **client-side gate only** — there's no backend, so the credentials live in plain text in `script.js` (`STAFF_USERNAME` / `STAFF_PASSWORD`). It keeps casual visitors out but is not real security: anyone with browser dev tools can read or bypass it. Don't reuse a password that matters elsewhere. Once logged in, a device stays signed in (via `localStorage`) until that flag is cleared.
+
+To change the credentials or add real security (a proper backend), edit the constants near the top of the login logic in `script.js`.
 
 ## Logo files
 Three files live in `assets/`:

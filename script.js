@@ -5,6 +5,7 @@
   let invoiceCounter = Number(localStorage.getItem("leopardinn-invoice-counter") || "1");
 
   const screens = {
+    login: document.getElementById("screen-login"),
     branch: document.getElementById("screen-branch"),
     home: document.getElementById("screen-home"),
     form: document.getElementById("screen-form"),
@@ -17,7 +18,7 @@
     img.src = src;
   }
 
-  const screenOrder = ["screen-branch", "screen-home", "screen-form", "screen-preview"];
+  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-form", "screen-preview"];
 
   function showScreen(id) {
     const currentEl = document.querySelector(".screen.active");
@@ -34,6 +35,39 @@
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  // Staff login — client-side gate only (no backend), just keeps casual
+  // visitors out. Credentials live in this file, in plain view, so treat
+  // it as a light deterrent, not real security.
+  const LOGIN_KEY = "leopardinn-logged-in";
+  const STAFF_USERNAME = "ashen";
+  const STAFF_PASSWORD = "1234";
+
+  if (localStorage.getItem(LOGIN_KEY) === "true") {
+    document.getElementById("screen-login").classList.remove("active");
+    document.getElementById("screen-branch").classList.add("active");
+  }
+
+  document.getElementById("login-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const username = document.getElementById("login-username").value.trim().toLowerCase();
+    const password = document.getElementById("login-password").value;
+    const errorEl = document.getElementById("login-error");
+    const formEl = document.getElementById("login-form");
+
+    if (username === STAFF_USERNAME && password === STAFF_PASSWORD) {
+      localStorage.setItem(LOGIN_KEY, "true");
+      errorEl.classList.remove("show");
+      showScreen("screen-branch");
+    } else {
+      errorEl.classList.add("show");
+      formEl.classList.remove("shake");
+      void formEl.offsetWidth; // restart animation
+      formEl.classList.add("shake");
+      document.getElementById("login-password").value = "";
+      document.getElementById("login-password").focus();
+    }
+  });
 
   // Branch selection
   document.querySelectorAll(".branch-btn").forEach(btn => {
