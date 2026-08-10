@@ -203,6 +203,136 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
   padding-bottom: 6px;
   margin-top: 28px;
 }
+.section-title.first { margin-top: 4px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Multi-step form wizard — circular stepper with connecting progress line */
+.stepper {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 26px;
+}
+.stepper-item {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.stepper-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  z-index: 0;
+  transition: background .35s ease;
+}
+.stepper-item.line-filled:not(:last-child)::after {
+  background: var(--maroon);
+}
+
+.stepper-circle {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  border: 2.5px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: background .25s ease, border-color .25s ease, color .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+}
+.stepper-check {
+  display: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stepper-item[data-state="active"] .stepper-circle {
+  border-color: var(--maroon);
+  background: var(--maroon);
+  color: var(--gold-light);
+  box-shadow: 0 0 0 5px rgba(74, 14, 28, 0.13);
+  transform: scale(1.1);
+}
+.stepper-item[data-state="done"] .stepper-circle {
+  border-color: var(--maroon);
+  background: var(--maroon);
+  color: var(--white);
+}
+.stepper-item[data-state="done"] .stepper-num { display: none; }
+.stepper-item[data-state="done"] .stepper-check { display: block; animation: checkPop .3s cubic-bezier(.34,1.56,.64,1); }
+@keyframes checkPop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.stepper-label {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  max-width: 76px;
+  line-height: 1.25;
+  transition: color .25s ease;
+}
+.stepper-item[data-state="active"] .stepper-label { color: var(--maroon); }
+.stepper-item[data-state="done"] .stepper-label { color: var(--maroon); opacity: 0.7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stepper-circle, .stepper-check { transition: none; animation: none; }
+}
+
+.form-step { display: none; }
+.form-step.active { display: block; animation: stepIn .28s cubic-bezier(.19,.85,.35,1); }
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form-step.active { animation: none; }
+}
+
+.field-error {
+  display: none;
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.field-error.show { display: block; }
+input.invalid { border-color: var(--danger); }
+
+.form-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+  margin-bottom: 20px;
+}
+.nav-btn { flex: 1; margin: 0; max-width: none; }
 
 .form-grid {
   display: grid;
@@ -298,7 +428,6 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 }
 .live-summary-row.grand span:last-child { color: var(--maroon); }
 
-#generate-btn { margin-top: 28px; margin-bottom: 20px; }
 
 /* Invoice preview / paper — mirrors the printed hotel invoice format */
 .invoice-paper {
@@ -543,21 +672,24 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     text-align: left;
   }
 
-  /* Sticky bottom action bar so the primary action is always reachable
-     without hunting for it at the end of a long form. */
+  /* Sticky bottom nav bar so Previous/Next/Generate are always reachable
+     without hunting for them at the end of a long step. */
   #screen-form { padding-bottom: 96px; }
-  #generate-btn {
+  .form-nav {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 20;
-    max-width: none;
     margin: 0;
-    border-radius: 0;
-    padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+    gap: 8px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(248, 243, 234, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 -6px 18px rgba(74, 14, 28, 0.18);
   }
+  .nav-btn { padding: 14px 12px; font-size: 1rem; }
 
   #screen-preview { padding-bottom: 100px; }
   .export-bar {

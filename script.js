@@ -66,6 +66,74 @@
     showScreen("screen-form");
   });
 
+  // Multi-step form wizard
+  const TOTAL_STEPS = 4;
+  const STEP_TITLES = { 1: "Reservation & Guest", 2: "Charges", 3: "Totals", 4: "Final Details" };
+  let currentStep = 1;
+
+  const formSteps = [...document.querySelectorAll(".form-step")];
+  const stepperItems = [...document.querySelectorAll(".stepper-item")];
+  const stepPrevBtn = document.getElementById("step-prev-btn");
+  const stepNextBtn = document.getElementById("step-next-btn");
+  const generateBtn = document.getElementById("generate-btn");
+
+  function validateStep(step) {
+    if (step === 1) {
+      const guestName = document.getElementById("guest-name");
+      const error = document.getElementById("guest-name-error");
+      if (!guestName.value.trim()) {
+        error.classList.add("show");
+        guestName.classList.add("invalid");
+        guestName.focus();
+        return false;
+      }
+      error.classList.remove("show");
+      guestName.classList.remove("invalid");
+    }
+    return true;
+  }
+
+  function goToStep(step) {
+    if (step > currentStep && !validateStep(currentStep)) return;
+
+    currentStep = Math.min(Math.max(step, 1), TOTAL_STEPS);
+
+    formSteps.forEach(s => s.classList.toggle("active", Number(s.dataset.step) === currentStep));
+
+    stepperItems.forEach(item => {
+      const n = Number(item.dataset.step);
+      const state = n < currentStep ? "done" : n === currentStep ? "active" : "upcoming";
+      item.dataset.state = state;
+      item.classList.toggle("line-filled", currentStep > n);
+    });
+    document.getElementById("step-announce").textContent = `Step ${currentStep} of ${TOTAL_STEPS}: ${STEP_TITLES[currentStep]}`;
+
+    stepPrevBtn.style.display = currentStep === 1 ? "none" : "";
+    stepNextBtn.style.display = currentStep === TOTAL_STEPS ? "none" : "";
+    generateBtn.style.display = currentStep === TOTAL_STEPS ? "" : "none";
+
+    document.getElementById("screen-form").scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  stepNextBtn.addEventListener("click", () => goToStep(currentStep + 1));
+  stepPrevBtn.addEventListener("click", () => goToStep(currentStep - 1));
+
+  document.getElementById("guest-name").addEventListener("input", () => {
+    document.getElementById("guest-name-error").classList.remove("show");
+    document.getElementById("guest-name").classList.remove("invalid");
+  });
+
+  // Enter key on steps 1-3 advances to the next step instead of doing
+  // nothing (the real submit button is hidden until the last step)
+  document.getElementById("invoice-form").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.target.tagName === "TEXTAREA") return;
+    if (currentStep < TOTAL_STEPS) {
+      e.preventDefault();
+      goToStep(currentStep + 1);
+    }
+  });
+
   function num(id) {
     return parseFloat(document.getElementById(id).value) || 0;
   }
@@ -189,7 +257,11 @@
     document.getElementById("inv-number").value = String(invoiceCounter);
     document.getElementById("inv-date").value = new Date().toISOString().slice(0, 10);
     document.getElementById("currency").value = "LKR";
+    document.getElementById("guest-name-error").classList.remove("show");
+    document.getElementById("guest-name").classList.remove("invalid");
     updateLiveTotals();
+    currentStep = 1;
+    goToStep(1);
   }
 
   // Form submit -> build preview

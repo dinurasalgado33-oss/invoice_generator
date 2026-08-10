@@ -52,105 +52,151 @@
     </div>
 
     <form id="invoice-form">
-      <div class="form-grid">
-        <div class="field">
-          <label>Reservation No.</label>
-          <input type="text" id="inv-number" placeholder="e.g. 162" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+      <ol class="stepper" id="stepper">
+        <li class="stepper-item" data-step="1">
+          <span class="stepper-circle">
+            <span class="stepper-num">1</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Guest</span>
+        </li>
+        <li class="stepper-item" data-step="2">
+          <span class="stepper-circle">
+            <span class="stepper-num">2</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Charges</span>
+        </li>
+        <li class="stepper-item" data-step="3">
+          <span class="stepper-circle">
+            <span class="stepper-num">3</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Totals</span>
+        </li>
+        <li class="stepper-item" data-step="4">
+          <span class="stepper-circle">
+            <span class="stepper-num">4</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Details</span>
+        </li>
+      </ol>
+      <p class="sr-only" id="step-announce" aria-live="polite">Step 1 of 4: Reservation &amp; Guest</p>
+
+      <div class="form-step active" data-step="1">
+        <div class="form-grid">
+          <div class="field">
+            <label>Reservation No.</label>
+            <input type="text" id="inv-number" placeholder="e.g. 162" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="inv-date" />
+          </div>
+          <div class="field">
+            <label>Currency</label>
+            <input type="text" id="currency" value="LKR" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+          </div>
         </div>
-        <div class="field">
-          <label>Date</label>
-          <input type="date" id="inv-date" />
-        </div>
-        <div class="field">
-          <label>Currency</label>
-          <input type="text" id="currency" value="LKR" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+
+        <h3 class="section-title">Guest Details</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Guest Name</label>
+            <input type="text" id="guest-name" placeholder="e.g. Mrs. Bwanthi" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
+            <p class="field-error" id="guest-name-error">Please enter the guest's name</p>
+          </div>
+          <div class="field">
+            <label>No. of Guests</label>
+            <input type="number" id="guest-count" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 10" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Contact No.</label>
+            <input type="tel" id="guest-phone" placeholder="e.g. (+)94772218511" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Reg. Card No.</label>
+            <input type="text" id="reg-card-no" placeholder="e.g. N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Voucher No.</label>
+            <input type="text" id="voucher-no" placeholder="e.g. N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Check-in Date</label>
+            <input type="date" id="checkin-date" />
+          </div>
+          <div class="field">
+            <label>Check-out Date</label>
+            <input type="date" id="checkout-date" />
+          </div>
         </div>
       </div>
 
-      <h3 class="section-title">Guest Details</h3>
-      <div class="form-grid">
-        <div class="field">
-          <label>Guest Name</label>
-          <input type="text" id="guest-name" placeholder="e.g. Mrs. Bwanthi" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
+      <div class="form-step" data-step="2">
+        <h3 class="section-title first">List of Information</h3>
+        <div id="items-table-wrap">
+          <table id="items-table">
+            <thead>
+              <tr>
+                <th class="col-no">#</th>
+                <th class="col-desc">Description</th>
+                <th class="col-qty">Qty</th>
+                <th class="col-price">Rate (LKR)</th>
+                <th class="col-total">Value</th>
+                <th class="col-del"></th>
+              </tr>
+            </thead>
+            <tbody id="items-body">
+              <!-- rows injected by JS -->
+            </tbody>
+          </table>
         </div>
-        <div class="field">
-          <label>No. of Guests</label>
-          <input type="number" id="guest-count" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 10" enterkeyhint="next" />
+        <button type="button" id="add-item-btn" class="secondary-btn">+ Add Item</button>
+        <p class="hint">Value auto-fills from Qty × Rate when Qty is a plain number — edit it directly for package rates (e.g. "2 nights").</p>
+      </div>
+
+      <div class="form-step" data-step="3">
+        <h3 class="section-title first">Totals</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Service Charge (LKR)</label>
+            <input type="number" id="service-charge" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Advance Paid (LKR)</label>
+            <input type="number" id="advance" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+          </div>
         </div>
-        <div class="field">
-          <label>Contact No.</label>
-          <input type="tel" id="guest-phone" placeholder="e.g. (+)94772218511" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
-        </div>
-        <div class="field">
-          <label>Reg. Card No.</label>
-          <input type="text" id="reg-card-no" placeholder="e.g. N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
-        </div>
-        <div class="field">
-          <label>Voucher No.</label>
-          <input type="text" id="voucher-no" placeholder="e.g. N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
-        </div>
-        <div class="field">
-          <label>Check-in Date</label>
-          <input type="date" id="checkin-date" />
-        </div>
-        <div class="field">
-          <label>Check-out Date</label>
-          <input type="date" id="checkout-date" />
+
+        <div class="live-summary" aria-live="polite">
+          <div class="live-summary-row"><span>Bill Total</span><span id="live-bill-total">LKR 0.00</span></div>
+          <div class="live-summary-row"><span>Service Charge</span><span id="live-service-charge">LKR 0.00</span></div>
+          <div class="live-summary-row"><span>Gross Amount</span><span id="live-gross">LKR 0.00</span></div>
+          <div class="live-summary-row"><span>Advance</span><span id="live-advance">LKR 0.00</span></div>
+          <div class="live-summary-row grand"><span>Grand Total</span><span id="live-grand">LKR 0.00</span></div>
         </div>
       </div>
 
-      <h3 class="section-title">List of Information</h3>
-      <div id="items-table-wrap">
-        <table id="items-table">
-          <thead>
-            <tr>
-              <th class="col-no">#</th>
-              <th class="col-desc">Description</th>
-              <th class="col-qty">Qty</th>
-              <th class="col-price">Rate (LKR)</th>
-              <th class="col-total">Value</th>
-              <th class="col-del"></th>
-            </tr>
-          </thead>
-          <tbody id="items-body">
-            <!-- rows injected by JS -->
-          </tbody>
-        </table>
-      </div>
-      <button type="button" id="add-item-btn" class="secondary-btn">+ Add Item</button>
-      <p class="hint">Value auto-fills from Qty × Rate when Qty is a plain number — edit it directly for package rates (e.g. "2 nights").</p>
-
-      <h3 class="section-title">Totals</h3>
-      <div class="form-grid">
+      <div class="form-step" data-step="4">
+        <h3 class="section-title first">Final Details</h3>
         <div class="field">
-          <label>Service Charge (LKR)</label>
-          <input type="number" id="service-charge" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+          <label>Remark</label>
+          <textarea id="notes" rows="2" placeholder="e.g. Kayak ride - Free&#10;Children under 12 years - Free" autocapitalize="sentences" enterkeyhint="done"></textarea>
         </div>
+
         <div class="field">
-          <label>Advance Paid (LKR)</label>
-          <input type="number" id="advance" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+          <label>Checked By (staff name)</label>
+          <input type="text" id="staff-name" placeholder="Your name" autocomplete="name" autocapitalize="words" enterkeyhint="done" />
         </div>
       </div>
 
-      <div class="live-summary" aria-live="polite">
-        <div class="live-summary-row"><span>Bill Total</span><span id="live-bill-total">LKR 0.00</span></div>
-        <div class="live-summary-row"><span>Service Charge</span><span id="live-service-charge">LKR 0.00</span></div>
-        <div class="live-summary-row"><span>Gross Amount</span><span id="live-gross">LKR 0.00</span></div>
-        <div class="live-summary-row"><span>Advance</span><span id="live-advance">LKR 0.00</span></div>
-        <div class="live-summary-row grand"><span>Grand Total</span><span id="live-grand">LKR 0.00</span></div>
+      <div class="form-nav">
+        <button type="button" id="step-prev-btn" class="secondary-btn nav-btn">&larr; Previous</button>
+        <button type="button" id="step-next-btn" class="primary-btn big nav-btn">Next &rarr;</button>
+        <button type="submit" id="generate-btn" class="primary-btn big nav-btn">Generate Invoice ✅</button>
       </div>
-
-      <div class="field">
-        <label>Remark</label>
-        <textarea id="notes" rows="2" placeholder="e.g. Kayak ride - Free&#10;Children under 12 years - Free" autocapitalize="sentences" enterkeyhint="done"></textarea>
-      </div>
-
-      <div class="field">
-        <label>Checked By (staff name)</label>
-        <input type="text" id="staff-name" placeholder="Your name" autocomplete="name" autocapitalize="words" enterkeyhint="done" />
-      </div>
-
-      <button type="submit" class="primary-btn big" id="generate-btn">Generate Invoice ✅</button>
     </form>
   </section>
 
