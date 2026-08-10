@@ -1,14 +1,21 @@
 # Leopard Inn — Staff Portal
 
-A mobile-friendly web app for Leopard Inn staff. Currently ships with an invoice generator; Room Bookings & Info and Inventory Management are on the home screen as "Coming Soon" placeholders for future additions.
+A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a finance dashboard, and a room booking map (Arugam Bay only so far); Inventory Management is a "Coming Soon" placeholder on the home screen.
 
 ## How it works
 1. Staff log in (see **Login** below).
 2. Pick a branch (Wilpattu Forest Retreat / Arugam Bay Beachfront Hotel).
-3. Tap **New Invoice**.
-4. Fill in guest details and itemized charges, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Advance/Grand Total, remarks, and signature lines).
-5. Tap **Generate Invoice** to see a clean preview styled like the printed invoice, with the branch logo watermarked behind the item list.
-6. Export via **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
+3. From the branch home screen:
+   - **New Invoice** — fill in guest details and itemized charges, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Advance/Grand Total, remarks, signature lines). Generate a preview styled like the printed invoice, then **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
+   - **Finance Dashboard** — KPI tiles, a revenue-by-category chart, and a monthly revenue trend, with an **Export PDF Report** button. Currently mock data (see below).
+   - **Room Bookings & Info** — a theater-style map of villas (3 per row), booked ones show a date-range ribbon and open a detail sheet on tap. Currently mock data, Arugam Bay only.
+
+## Mock data
+The Finance Dashboard and Room Bookings screens are front-end only right now — no backend. Their data lives in `script.js`:
+- `DASHBOARD_DATA` — revenue, invoice counts, occupancy, and monthly trend per branch.
+- `ROOMS_BY_BRANCH` — villa list and booking status per branch. A branch's Room Bookings card only enables once it has an entry here.
+
+Swap these for a real data source later without touching the rendering/chart code.
 
 ## Login
 Username/password is a **client-side gate only** — there's no backend, so the credentials live in plain text in `script.js` (`STAFF_USERNAME` / `STAFF_PASSWORD`). It keeps casual visitors out but is not real security: anyone with browser dev tools can read or bypass it. Don't reuse a password that matters elsewhere. Once logged in, a device stays signed in (via `localStorage`) until that flag is cleared.

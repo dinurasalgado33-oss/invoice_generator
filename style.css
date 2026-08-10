@@ -1075,9 +1075,78 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   .export-bar .action-btn { min-width: 0; padding: 12px 8px; font-size: 0.88rem; }
 }
 
+/* Finance dashboard */
+.dashboard-report { padding: 0 16px 24px; }
+.dashboard-report-date { color: var(--text-muted); font-size: 0.82rem; margin: 0 0 20px; }
+
+.dashboard-wrap { display: flex; flex-direction: column; gap: 18px; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.kpi-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow);
+}
+.kpi-label { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.kpi-value { font-size: 1.35rem; font-weight: 700; color: var(--maroon); font-family: Georgia, 'Times New Roman', serif; }
+
+.chart-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 16px;
+  box-shadow: var(--shadow);
+}
+.chart-card h3 { margin: 0 0 14px; color: var(--maroon); font-size: 1rem; }
+
+.chart-canvas-wrap { position: relative; width: 100%; }
+.chart-canvas-wrap.pie-wrap { height: 220px; }
+.chart-canvas-wrap.line-wrap { height: 240px; }
+
+.chart-legend {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  justify-content: center;
+}
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.chart-legend .legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.dashboard-note { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; }
+
+@media (min-width: 640px) {
+  .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
 @media print {
   body { background: var(--white); }
   .no-print { display: none !important; }
   .app { max-width: 100%; padding: 0; }
   .invoice-paper { box-shadow: none; border-radius: 0; }
+  .kpi-card, .chart-card { box-shadow: none; break-inside: avoid; }
+  .chart-canvas-wrap.pie-wrap, .chart-canvas-wrap.line-wrap { height: 280px; }
 }

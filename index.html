@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="style.css?v=5" />
+<link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -81,6 +81,17 @@
         <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
 
+      <button class="launch-card" id="open-dashboard-btn">
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9M13 17V5M8 17v-4" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>Finance Dashboard</strong>
+          <small>Revenue, invoices, and trends at a glance</small>
+        </span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+      </button>
+
       <button class="launch-card" id="open-rooms-btn" disabled>
         <span class="launch-card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>
@@ -143,6 +154,64 @@
       <button type="button" class="secondary-btn" id="room-detail-close">Close</button>
     </div>
   </div>
+
+  <!-- SCREEN: Finance dashboard -->
+  <section id="screen-dashboard" class="screen">
+    <button class="back-btn no-print" data-back="screen-home">&larr; Back</button>
+
+    <div class="dashboard-report" id="dashboard-report">
+      <div class="brand small">
+        <img id="dashboard-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+        <h2>Finance Dashboard — <span id="dashboard-branch-label"></span></h2>
+      </div>
+      <p class="dashboard-report-date" id="dashboard-report-date"></p>
+
+      <div class="dashboard-wrap">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Total Revenue</span>
+            <span class="kpi-value" id="kpi-revenue">LKR 0</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Invoices Generated</span>
+            <span class="kpi-value" id="kpi-invoices">0</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Avg. Invoice Value</span>
+            <span class="kpi-value" id="kpi-avg">LKR 0</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Occupancy Rate</span>
+            <span class="kpi-value" id="kpi-occupancy">0%</span>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Revenue by Category</h3>
+          <div class="chart-canvas-wrap pie-wrap">
+            <canvas id="revenue-pie-chart"></canvas>
+          </div>
+          <ul class="chart-legend" id="pie-legend"></ul>
+        </div>
+
+        <div class="chart-card">
+          <h3>Monthly Revenue Trend</h3>
+          <div class="chart-canvas-wrap line-wrap">
+            <canvas id="revenue-line-chart"></canvas>
+          </div>
+        </div>
+
+        <p class="dashboard-note no-print">Sample data shown for preview — will connect to real figures later.</p>
+      </div>
+    </div>
+
+    <div class="export-bar no-print">
+      <button class="action-btn" id="dashboard-export-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+        Export PDF Report
+      </button>
+    </div>
+  </section>
 
   <!-- SCREEN 3: Invoice form -->
   <section id="screen-form" class="screen">
@@ -436,6 +505,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="script.js?v=5"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="script.js?v=6"></script>
 </body>
 </html>

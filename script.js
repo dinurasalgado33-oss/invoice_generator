@@ -9,6 +9,7 @@
     branch: document.getElementById("screen-branch"),
     home: document.getElementById("screen-home"),
     rooms: document.getElementById("screen-rooms"),
+    dashboard: document.getElementById("screen-dashboard"),
     form: document.getElementById("screen-form"),
     preview: document.getElementById("screen-preview"),
   };
@@ -19,7 +20,7 @@
     img.src = src;
   }
 
-  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-form", "screen-preview"];
+  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-dashboard", "screen-form", "screen-preview"];
 
   function showScreen(id) {
     const currentEl = document.querySelector(".screen.active");
@@ -80,9 +81,11 @@
       document.getElementById("home-branch-label").textContent = selectedBranchLabel;
       document.getElementById("form-branch-label").textContent = selectedBranchLabel;
       document.getElementById("rooms-branch-label").textContent = selectedBranchLabel;
+      document.getElementById("dashboard-branch-label").textContent = selectedBranchLabel;
       setLogoSrc("home-logo", selectedBranchLogo);
       setLogoSrc("form-logo", selectedBranchLogo);
       setLogoSrc("rooms-logo", selectedBranchLogo);
+      setLogoSrc("dashboard-logo", selectedBranchLogo);
 
       updateRoomsCardAvailability();
 
@@ -194,6 +197,117 @@
     renderRooms();
     showScreen("screen-rooms");
   });
+
+  // Finance dashboard — mock data for now; swap DASHBOARD_DATA for a real
+  // source later, the chart-rendering code below doesn't need to change.
+  const CHART_COLORS = {
+    maroon: "#4a0e1c",
+    gold: "#d4af37",
+    teal: "#5c8a86",
+    tan: "#c99a5b",
+    grid: "#e6dcc8",
+    text: "#7d6a5c",
+  };
+
+  const DASHBOARD_DATA = {
+    "Wilpattu": {
+      kpis: { revenue: 4820000, invoices: 132, avgInvoice: 36515, occupancy: 78 },
+      revenueByCategory: { "Accommodation": 3100000, "Food & Beverage": 980000, "Safari & Activities": 540000, "Other": 200000 },
+      monthlyRevenue: { labels: ["Mar", "Apr", "May", "Jun", "Jul", "Aug"], values: [520000, 610000, 700000, 780000, 850000, 890000] },
+    },
+    "Arugam Bay": {
+      kpis: { revenue: 6120000, invoices: 178, avgInvoice: 34382, occupancy: 85 },
+      revenueByCategory: { "Accommodation": 3900000, "Food & Beverage": 1250000, "Water Sports & Activities": 720000, "Other": 250000 },
+      monthlyRevenue: { labels: ["Mar", "Apr", "May", "Jun", "Jul", "Aug"], values: [700000, 820000, 900000, 980000, 1050000, 1120000] },
+    },
+  };
+
+  let pieChart = null;
+  let lineChart = null;
+
+  function fmtLKR(n) {
+    return "LKR " + Math.round(n).toLocaleString("en-US");
+  }
+
+  function renderDashboard(branch) {
+    const data = DASHBOARD_DATA[branch];
+    if (!data) return;
+
+    document.getElementById("kpi-revenue").textContent = fmtLKR(data.kpis.revenue);
+    document.getElementById("kpi-invoices").textContent = data.kpis.invoices.toLocaleString("en-US");
+    document.getElementById("kpi-avg").textContent = fmtLKR(data.kpis.avgInvoice);
+    document.getElementById("kpi-occupancy").textContent = data.kpis.occupancy + "%";
+    document.getElementById("dashboard-report-date").textContent = "Generated " + new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+    const categoryLabels = Object.keys(data.revenueByCategory);
+    const categoryValues = Object.values(data.revenueByCategory);
+    const palette = [CHART_COLORS.maroon, CHART_COLORS.gold, CHART_COLORS.teal, CHART_COLORS.tan];
+
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(document.getElementById("revenue-pie-chart"), {
+      type: "doughnut",
+      data: {
+        labels: categoryLabels,
+        datasets: [{ data: categoryValues, backgroundColor: palette, borderColor: "#fff", borderWidth: 2 }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        devicePixelRatio: 2,
+        plugins: { legend: { display: false } },
+      },
+    });
+
+    const legendEl = document.getElementById("pie-legend");
+    legendEl.innerHTML = categoryLabels.map((label, i) => `
+      <li><span class="legend-swatch" style="background:${palette[i]}"></span>${escapeHtml(label)}</li>
+    `).join("");
+
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById("revenue-line-chart"), {
+      type: "line",
+      data: {
+        labels: data.monthlyRevenue.labels,
+        datasets: [{
+          label: "Revenue",
+          data: data.monthlyRevenue.values,
+          borderColor: CHART_COLORS.maroon,
+          backgroundColor: "rgba(74, 14, 28, 0.1)",
+          borderWidth: 2.5,
+          pointBackgroundColor: CHART_COLORS.gold,
+          pointRadius: 4,
+          tension: 0.35,
+          fill: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        devicePixelRatio: 2,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: CHART_COLORS.text } },
+          y: {
+            grid: { color: CHART_COLORS.grid },
+            ticks: {
+              color: CHART_COLORS.text,
+              callback: (v) => (v >= 1000000 ? (v / 1000000) + "M" : (v / 1000) + "K"),
+            },
+          },
+        },
+      },
+    });
+  }
+
+  document.getElementById("open-dashboard-btn").addEventListener("click", () => {
+    showScreen("screen-dashboard");
+    // Chart.js measures its container's size at construction time, so the
+    // screen must already be visible (not display:none) before charts are
+    // built, or they get stuck at 0x0.
+    requestAnimationFrame(() => renderDashboard(selectedBranch));
+  });
+
+  document.getElementById("dashboard-export-btn").addEventListener("click", () => window.print());
 
   document.getElementById("open-invoice-btn").addEventListener("click", () => {
     resetForm();
