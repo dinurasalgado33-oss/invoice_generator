@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Invoice Generator</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="style.css?v=2" />
+<link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
 
@@ -20,10 +20,14 @@
     </div>
     <div class="branch-grid">
       <button class="branch-btn" data-branch="Wilpattu" data-label="Wilpattu Forest Retreat" data-logo="assets/logo-wilpattu.png">
+        <svg class="branch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12" /><path d="M12 12 3 13a9 9 0 0 0 9-9 9 9 0 0 0 9 9z" /></svg>
         <span>Wilpattu Forest Retreat</span>
+        <small>Forest &amp; safari lodge</small>
       </button>
       <button class="branch-btn" data-branch="Arugam Bay" data-label="Arugam Bay Beachfront Hotel" data-logo="assets/logo-arugambay.png">
+        <svg class="branch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /><path d="M2 12c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /><path d="M12 2v8" /><path d="M12 2 8 6M12 5l3 3" /></svg>
         <span>Arugam Bay Beachfront Hotel</span>
+        <small>Beachfront stay</small>
       </button>
     </div>
   </section>
@@ -37,8 +41,15 @@
       <p class="subtitle" id="home-branch-label">Branch</p>
     </div>
     <div class="home-actions">
-      <button class="primary-btn big" id="open-invoice-btn">
-        🧾 Invoice Generator
+      <button class="launch-card" id="open-invoice-btn">
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8M10 9H8" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>New Invoice</strong>
+          <small>Create a guest invoice in a few quick steps</small>
+        </span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
     </div>
   </section>
@@ -87,8 +98,11 @@
       <div class="form-step active" data-step="1">
         <div class="form-grid">
           <div class="field">
-            <label>Reservation No.</label>
-            <input type="text" id="inv-number" placeholder="e.g. 162" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+            <label>Reservation #</label>
+            <div class="input-icon">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18" /></svg>
+              <input type="text" id="inv-number" placeholder="162" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+            </div>
           </div>
           <div class="field">
             <label>Date</label>
@@ -100,42 +114,53 @@
           </div>
         </div>
 
-        <h3 class="section-title">Guest Details</h3>
+        <h3 class="section-title">Who's staying?</h3>
         <div class="form-grid">
           <div class="field">
             <label>Guest Name</label>
-            <input type="text" id="guest-name" placeholder="e.g. Mrs. Bwanthi" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
+            <div class="input-icon">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" /></svg>
+              <input type="text" id="guest-name" placeholder="Mrs. Bwanthi" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
+            </div>
             <p class="field-error" id="guest-name-error">Please enter the guest's name</p>
           </div>
           <div class="field">
-            <label>No. of Guests</label>
-            <input type="number" id="guest-count" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 10" enterkeyhint="next" />
+            <label>Guests</label>
+            <div class="stepper-input">
+              <button type="button" class="stepper-input-btn" id="guest-count-minus" aria-label="Decrease guests">&minus;</button>
+              <input type="number" id="guest-count" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="0" enterkeyhint="next" />
+              <button type="button" class="stepper-input-btn" id="guest-count-plus" aria-label="Increase guests">+</button>
+            </div>
           </div>
           <div class="field">
-            <label>Contact No.</label>
-            <input type="tel" id="guest-phone" placeholder="e.g. (+)94772218511" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
+            <label>Phone Number</label>
+            <div class="input-icon">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
+              <input type="tel" id="guest-phone" placeholder="077 221 8511" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
+            </div>
           </div>
           <div class="field">
-            <label>Reg. Card No.</label>
-            <input type="text" id="reg-card-no" placeholder="e.g. N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+            <label>ID / Reg. Card</label>
+            <input type="text" id="reg-card-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
           </div>
           <div class="field">
-            <label>Voucher No.</label>
-            <input type="text" id="voucher-no" placeholder="e.g. N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+            <label>Voucher Code</label>
+            <input type="text" id="voucher-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
           </div>
           <div class="field">
-            <label>Check-in Date</label>
+            <label>Check-in</label>
             <input type="date" id="checkin-date" />
           </div>
           <div class="field">
-            <label>Check-out Date</label>
+            <label>Check-out</label>
             <input type="date" id="checkout-date" />
           </div>
         </div>
       </div>
 
       <div class="form-step" data-step="2">
-        <h3 class="section-title first">List of Information</h3>
+        <h3 class="section-title first">What are they paying for?</h3>
+        <p class="step-subtext">Add a line for each charge — room, meals, activities, anything billable.</p>
         <div id="items-table-wrap">
           <table id="items-table">
             <thead>
@@ -153,20 +178,30 @@
             </tbody>
           </table>
         </div>
-        <button type="button" id="add-item-btn" class="secondary-btn">+ Add Item</button>
-        <p class="hint">Value auto-fills from Qty × Rate when Qty is a plain number — edit it directly for package rates (e.g. "2 nights").</p>
+        <button type="button" id="add-item-btn" class="secondary-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+          Add a charge
+        </button>
+        <p class="hint">Tip: Value fills in automatically from Qty × Rate when Qty is a plain number — type it directly for package deals like "2 nights".</p>
       </div>
 
       <div class="form-step" data-step="3">
         <h3 class="section-title first">Totals</h3>
+        <p class="step-subtext">Any service charge or advance already paid?</p>
         <div class="form-grid">
           <div class="field">
-            <label>Service Charge (LKR)</label>
-            <input type="number" id="service-charge" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+            <label>Service Charge</label>
+            <div class="input-icon">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" /><path d="M1 10h22" /></svg>
+              <input type="number" id="service-charge" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+            </div>
           </div>
           <div class="field">
-            <label>Advance Paid (LKR)</label>
-            <input type="number" id="advance" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+            <label>Advance Paid</label>
+            <div class="input-icon">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" /><path d="M1 10h22" /></svg>
+              <input type="number" id="advance" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+            </div>
           </div>
         </div>
 
@@ -180,22 +215,35 @@
       </div>
 
       <div class="form-step" data-step="4">
-        <h3 class="section-title first">Final Details</h3>
+        <h3 class="section-title first">Almost done</h3>
+        <p class="step-subtext">Anything else worth noting on the invoice?</p>
         <div class="field">
-          <label>Remark</label>
+          <label>Remark <span class="label-optional">(optional)</span></label>
           <textarea id="notes" rows="2" placeholder="e.g. Kayak ride - Free&#10;Children under 12 years - Free" autocapitalize="sentences" enterkeyhint="done"></textarea>
         </div>
 
         <div class="field">
-          <label>Checked By (staff name)</label>
-          <input type="text" id="staff-name" placeholder="Your name" autocomplete="name" autocapitalize="words" enterkeyhint="done" />
+          <label>Your Name</label>
+          <div class="input-icon">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+            <input type="text" id="staff-name" placeholder="Who's checking this invoice?" autocomplete="name" autocapitalize="words" enterkeyhint="done" />
+          </div>
         </div>
       </div>
 
       <div class="form-nav">
-        <button type="button" id="step-prev-btn" class="secondary-btn nav-btn">&larr; Previous</button>
-        <button type="button" id="step-next-btn" class="primary-btn big nav-btn">Next &rarr;</button>
-        <button type="submit" id="generate-btn" class="primary-btn big nav-btn">Generate Invoice ✅</button>
+        <button type="button" id="step-prev-btn" class="secondary-btn nav-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          Previous
+        </button>
+        <button type="button" id="step-next-btn" class="primary-btn big nav-btn">
+          Next
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </button>
+        <button type="submit" id="generate-btn" class="primary-btn big nav-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+          Generate Invoice
+        </button>
       </div>
     </form>
   </section>
@@ -280,15 +328,24 @@
     </div>
 
     <div class="export-bar no-print">
-      <button class="action-btn" id="print-btn">🖨️ Print / Save PDF</button>
-      <button class="action-btn" id="image-btn">🖼️ Save as Image</button>
-      <button class="action-btn secondary" id="new-invoice-btn">➕ New Invoice</button>
+      <button class="action-btn" id="print-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+        Print / PDF
+      </button>
+      <button class="action-btn" id="image-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+        Save Image
+      </button>
+      <button class="action-btn secondary" id="new-invoice-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+        New Invoice
+      </button>
     </div>
   </section>
 
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="script.js?v=2"></script>
+<script src="script.js?v=3"></script>
 </body>
 </html>

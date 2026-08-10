@@ -250,6 +250,15 @@
     document.getElementById(id).addEventListener("input", updateLiveTotals);
   });
 
+  // Guest count +/- stepper
+  const guestCountInput = document.getElementById("guest-count");
+  document.getElementById("guest-count-minus").addEventListener("click", () => {
+    guestCountInput.value = Math.max(0, (parseInt(guestCountInput.value, 10) || 0) - 1);
+  });
+  document.getElementById("guest-count-plus").addEventListener("click", () => {
+    guestCountInput.value = (parseInt(guestCountInput.value, 10) || 0) + 1;
+  });
+
   function resetForm() {
     document.getElementById("invoice-form").reset();
     itemsBody.innerHTML = "";
