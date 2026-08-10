@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="style.css?v=4" />
+<link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
 
@@ -81,15 +81,16 @@
         <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
 
-      <button class="launch-card" disabled>
+      <button class="launch-card" id="open-rooms-btn" disabled>
         <span class="launch-card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>
         </span>
         <span class="launch-card-text">
           <strong>Room Bookings &amp; Info</strong>
-          <small>Check room availability and booking details</small>
+          <small id="rooms-card-subtext">Check room availability and booking details</small>
         </span>
-        <span class="coming-soon-badge">Coming Soon</span>
+        <span class="coming-soon-badge" id="rooms-card-badge">Coming Soon</span>
+        <svg class="launch-card-arrow" id="rooms-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
 
       <button class="launch-card" disabled>
@@ -104,6 +105,44 @@
       </button>
     </div>
   </section>
+
+  <!-- SCREEN: Room bookings & info (theater-style room map) -->
+  <section id="screen-rooms" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="rooms-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Room Map — <span id="rooms-branch-label"></span></h2>
+    </div>
+
+    <div class="rooms-wrap">
+      <div class="rooms-legend">
+        <span class="legend-item"><span class="legend-dot available"></span>Available</span>
+        <span class="legend-item"><span class="legend-dot booked"></span>Booked</span>
+      </div>
+
+      <div class="rooms-stage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /><path d="M2 12c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /></svg>
+        <span>Ocean &amp; Beachfront</span>
+      </div>
+
+      <div class="rooms-grid" id="rooms-grid">
+        <!-- villa cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Room detail slide-up panel -->
+  <div class="room-detail-overlay" id="room-detail-overlay">
+    <div class="room-detail-sheet" id="room-detail-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="room-detail-name">Villa</h3>
+        <span class="room-detail-status" id="room-detail-status">Available</span>
+      </div>
+      <div class="room-detail-body" id="room-detail-body"></div>
+      <button type="button" class="secondary-btn" id="room-detail-close">Close</button>
+    </div>
+  </div>
 
   <!-- SCREEN 3: Invoice form -->
   <section id="screen-form" class="screen">
@@ -397,6 +436,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="script.js?v=4"></script>
+<script src="script.js?v=5"></script>
 </body>
 </html>

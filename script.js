@@ -8,6 +8,7 @@
     login: document.getElementById("screen-login"),
     branch: document.getElementById("screen-branch"),
     home: document.getElementById("screen-home"),
+    rooms: document.getElementById("screen-rooms"),
     form: document.getElementById("screen-form"),
     preview: document.getElementById("screen-preview"),
   };
@@ -18,7 +19,7 @@
     img.src = src;
   }
 
-  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-form", "screen-preview"];
+  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-form", "screen-preview"];
 
   function showScreen(id) {
     const currentEl = document.querySelector(".screen.active");
@@ -78,8 +79,12 @@
 
       document.getElementById("home-branch-label").textContent = selectedBranchLabel;
       document.getElementById("form-branch-label").textContent = selectedBranchLabel;
+      document.getElementById("rooms-branch-label").textContent = selectedBranchLabel;
       setLogoSrc("home-logo", selectedBranchLogo);
       setLogoSrc("form-logo", selectedBranchLogo);
+      setLogoSrc("rooms-logo", selectedBranchLogo);
+
+      updateRoomsCardAvailability();
 
       showScreen("screen-home");
     });
@@ -88,6 +93,106 @@
   // Back buttons
   document.querySelectorAll(".back-btn").forEach(btn => {
     btn.addEventListener("click", () => showScreen(btn.dataset.back));
+  });
+
+  // Room map — mock data for now; the launch card only lights up for
+  // branches with data wired in (currently Arugam Bay). Swap ROOMS_BY_BRANCH
+  // for a real data source later without touching the rendering/UI code.
+  const ROOMS_BY_BRANCH = {
+    "Arugam Bay": [
+      { name: "Ocean Pool Villa 01", type: "Pool Villa", status: "booked", guest: "Kasun Perera", phone: "077 221 8511", checkin: "2026-08-10", checkout: "2026-08-13" },
+      { name: "Ocean Pool Villa 02", type: "Pool Villa", status: "available" },
+      { name: "Ocean Pool Villa 03", type: "Pool Villa", status: "booked", guest: "Amanda Lee", phone: "071 456 7890", checkin: "2026-08-09", checkout: "2026-08-12" },
+      { name: "Garden Villa 04", type: "Garden Villa", status: "available" },
+      { name: "Garden Villa 05", type: "Garden Villa", status: "booked", guest: "Mr. & Mrs. Silva", phone: "070 333 2211", checkin: "2026-08-11", checkout: "2026-08-14" },
+      { name: "Garden Villa 06", type: "Garden Villa", status: "available" },
+      { name: "Beachfront Villa 07", type: "Beachfront Villa", status: "booked", guest: "Nadeesha Fernando", phone: "076 812 4499", checkin: "2026-08-10", checkout: "2026-08-15" },
+      { name: "Beachfront Villa 08", type: "Beachfront Villa", status: "available" },
+      { name: "Beachfront Villa 09", type: "Beachfront Villa", status: "booked", guest: "John Smith", phone: "+44 7911 123456", checkin: "2026-08-12", checkout: "2026-08-13" },
+    ],
+  };
+
+  function updateRoomsCardAvailability() {
+    const btn = document.getElementById("open-rooms-btn");
+    const badge = document.getElementById("rooms-card-badge");
+    const arrow = document.getElementById("rooms-card-arrow");
+    const subtext = document.getElementById("rooms-card-subtext");
+    const hasData = Boolean(ROOMS_BY_BRANCH[selectedBranch]);
+
+    btn.disabled = !hasData;
+    badge.style.display = hasData ? "none" : "";
+    arrow.style.display = hasData ? "" : "none";
+    subtext.textContent = hasData
+      ? "See which villas are booked and which are free"
+      : "Check room availability and booking details";
+  }
+
+  function renderRooms() {
+    const grid = document.getElementById("rooms-grid");
+    const rooms = ROOMS_BY_BRANCH[selectedBranch] || [];
+    grid.innerHTML = "";
+
+    rooms.forEach(room => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "room-card " + room.status;
+
+      const ribbon = room.status === "booked"
+        ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
+        : "";
+      const guestLine = room.status === "booked" ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
+
+      card.innerHTML = `
+        ${ribbon}
+        <svg class="room-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
+        <span class="room-card-name">${escapeHtml(room.name)}</span>
+        ${guestLine}
+        <span class="room-card-status">${room.status === "booked" ? "Booked" : "Available"}</span>
+      `;
+
+      card.addEventListener("click", () => openRoomDetail(room));
+      grid.appendChild(card);
+    });
+  }
+
+  function openRoomDetail(room) {
+    document.getElementById("room-detail-name").textContent = room.name;
+
+    const statusEl = document.getElementById("room-detail-status");
+    statusEl.textContent = room.status === "booked" ? "Booked" : "Available";
+    statusEl.className = "room-detail-status " + room.status;
+
+    const body = document.getElementById("room-detail-body");
+    if (room.status === "booked") {
+      body.innerHTML = `
+        <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
+        <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
+        <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
+        <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
+        <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
+      `;
+    } else {
+      body.innerHTML = `
+        <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
+        <p class="room-detail-empty">No booking on this villa right now.</p>
+      `;
+    }
+
+    document.getElementById("room-detail-overlay").classList.add("open");
+  }
+
+  function closeRoomDetail() {
+    document.getElementById("room-detail-overlay").classList.remove("open");
+  }
+
+  document.getElementById("room-detail-close").addEventListener("click", closeRoomDetail);
+  document.getElementById("room-detail-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "room-detail-overlay") closeRoomDetail();
+  });
+
+  document.getElementById("open-rooms-btn").addEventListener("click", () => {
+    renderRooms();
+    showScreen("screen-rooms");
   });
 
   document.getElementById("open-invoice-btn").addEventListener("click", () => {
