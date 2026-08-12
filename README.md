@@ -1,6 +1,27 @@
 # Leopard Inn — Staff Portal
 
-A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a finance dashboard, a room booking map with a full guest lifecycle, food ordering, and inventory management (all branches now).
+A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a finance dashboard, a reports/export screen, a room booking map with a full guest lifecycle, food ordering, and inventory management (all branches now).
+
+## Project structure
+No build step — plain ES modules and multiple stylesheets, loaded directly by the browser.
+
+```
+index.html          single HTML file, every screen, clearly commented per section
+css/                 one file per feature area (base, brand-home, rooms, menu-inventory, invoice, dashboard, reports)
+js/
+  main.js            entry point — imports every feature module, then calls restoreSession() last
+  state.js           shared mutable app state (selectedBranch, currentRole, etc.)
+  utils.js           formatting/DOM helpers used across modules
+  navigation.js       screens map + showScreen()
+  auth.js, branch.js, home.js, invoice.js, rooms.js, menu.js, inventory.js, dashboard.js, reports.js
+  data/               pure mock data per feature (no logic) — swap these for real API calls later
+```
+
+Each feature module wires its own DOM listeners as a side effect of being imported — importing a module *is* initializing it (same pattern the old single-file script used, just split up). The one exception is `restoreSession()` in `auth.js`, which is called explicitly last from `main.js` since it depends on every other screen already being wired.
+
+Cache-busting: every `<link>`/`<script>` tag in `index.html` carries a `?v=N` query string, and so does every inter-module `import` statement inside `js/`. When you edit **any** file under `css/` or `js/`, bump the version number everywhere (a find-replace for the old `?v=N` is easiest) — GitHub Pages doesn't support custom cache headers, so this is the only lever against browsers serving a stale mix of old and new files.
+
+HTML was deliberately **not** split into fetched partials — that would need async loading before any script could safely query the DOM, adding real race-condition risk for a static site with no build tooling. Splitting the ~800-line JS file (which mixed auth, rooms, menu, inventory, dashboard, invoice, and now reports in one IIFE) was the actual maintainability problem; the HTML/CSS split is straightforward file-per-concern with no runtime risk.
 
 ## How it works
 1. Staff log in (see **Login & roles** below).

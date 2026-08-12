@@ -1,0 +1,219 @@
+/* Room map — theater-style seating chart of villas */
+.rooms-wrap { padding: 0 16px 24px; }
+
+.rooms-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.legend-dot.available { background: #3f9142; }
+.legend-dot.booked { background: #d4af37; }
+.legend-dot.occupied { background: var(--maroon); }
+
+.rooms-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+  color: var(--gold-light);
+  border-radius: 999px;
+  padding: 11px 22px;
+  margin: 0 auto 28px;
+  max-width: 320px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: var(--shadow);
+}
+.rooms-stage svg { width: 19px; height: 19px; flex-shrink: 0; color: var(--gold); }
+
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.room-card {
+  position: relative;
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease;
+}
+.room-card:active { transform: scale(0.95); }
+@media (hover: hover) and (pointer: fine) {
+  .room-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(74, 14, 28, 0.16); }
+}
+
+.room-card.available { border-color: #bfe2c1; background: #f5fbf6; }
+.room-card.booked { border-color: #e8c766; background: #fdf8ea; padding-top: 28px; }
+.room-card.occupied { border-color: var(--maroon); background: #fdf6f2; padding-top: 28px; }
+
+.room-card-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  color: var(--gold-light);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 3px 4px;
+  line-height: 1.3;
+}
+.room-card.booked .room-card-ribbon { background: #d4af37; color: #4a3a08; }
+.room-card.occupied .room-card-ribbon { background: var(--maroon); color: var(--gold-light); }
+
+.room-card-icon { width: 26px; height: 26px; color: var(--text-muted); }
+.room-card.available .room-card-icon { color: #3f9142; }
+.room-card.booked .room-card-icon { color: #a37f14; }
+.room-card.occupied .room-card-icon { color: var(--maroon); }
+
+.room-card-name { font-weight: 700; color: var(--text); font-size: 0.78rem; line-height: 1.25; }
+.room-card-guest { font-size: 0.7rem; color: var(--text-muted); line-height: 1.2; }
+
+.room-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 2px;
+}
+.room-card-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+.room-card.available .room-card-status { background: #dff3e0; color: #2c6b2f; }
+.room-card.booked .room-card-status { background: #faedc0; color: #8a6d1f; }
+.room-card.occupied .room-card-status { background: var(--maroon); color: var(--gold-light); }
+
+@media (max-width: 380px) {
+  .rooms-grid { gap: 8px; }
+  .room-card { padding: 14px 4px 10px; }
+  .room-card.booked, .room-card.occupied { padding-top: 26px; }
+  .room-card-name { font-size: 0.72rem; }
+}
+
+/* Room detail bottom sheet — also reused as-is for the dish editor sheet */
+.room-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 24, 16, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.room-detail-overlay.open { opacity: 1; pointer-events: auto; }
+
+.room-detail-sheet {
+  background: var(--white);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 22px 22px 0 0;
+  padding: 8px 22px calc(22px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.19,.85,.35,1);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+}
+.room-detail-overlay.open .room-detail-sheet { transform: translateY(0); }
+
+.room-detail-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 8px auto 16px; }
+
+.room-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.room-detail-header h3 { margin: 0; color: var(--maroon); font-family: Georgia, 'Times New Roman', serif; font-size: 1.2rem; }
+.room-detail-status {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.room-detail-status.available { background: #dff3e0; color: #2c6b2f; }
+.room-detail-status.booked { background: #faedc0; color: #8a6d1f; }
+.room-detail-status.occupied { background: var(--maroon); color: var(--gold-light); }
+
+.room-detail-body { margin-bottom: 18px; }
+.room-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dotted var(--border);
+  font-size: 0.92rem;
+}
+.room-detail-row span:first-child { color: var(--text-muted); }
+.room-detail-row span:last-child { font-weight: 600; text-align: right; }
+.room-detail-empty { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 10px 0 4px; }
+
+.room-detail-body .primary-btn.big { width: 100%; margin-top: 16px; }
+.room-detail-body form .field { margin-bottom: 10px; }
+.room-detail-body form .primary-btn.big { margin-top: 10px; }
+
+/* Food ordering panel (inside an occupied villa's detail sheet) */
+.food-orders-panel { margin: 16px 0 4px; }
+.food-orders-panel h4 { margin: 0 0 10px; color: var(--maroon); font-size: 0.88rem; }
+.food-order-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.food-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.food-order-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.food-order-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+.food-order-price { font-size: 0.76rem; color: var(--text-muted); }
+.food-order-qty-stepper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--white);
+}
+.food-order-qty-stepper .stepper-input-btn { width: 34px; height: 34px; font-size: 1.05rem; }
+.food-order-qty-value { min-width: 26px; text-align: center; font-weight: 700; font-size: 0.9rem; }
+.food-order-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 2px solid var(--gold);
+  font-weight: 700;
+  color: var(--maroon);
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+}
+#place-order-btn:disabled { opacity: 0.5; cursor: not-allowed; }

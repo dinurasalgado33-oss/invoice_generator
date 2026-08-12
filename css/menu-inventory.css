@@ -1,0 +1,116 @@
+/* Menu Config & Inventory shared list layout */
+.list-wrap { padding: 0 16px 24px; }
+
+.field-label-standalone {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 14px 0 8px;
+}
+
+.dish-list, .inventory-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+.dish-row, .inventory-row {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.dish-row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.dish-row-name { font-weight: 700; color: var(--maroon); font-family: Georgia, 'Times New Roman', serif; font-size: 1.02rem; }
+.dish-row-price { color: var(--text-muted); font-size: 0.85rem; margin-top: 2px; }
+.dish-row-ingredients { margin: 8px 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+.dish-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.dish-row-actions button {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.dish-row-actions button svg { width: 16px; height: 16px; }
+.dish-row-actions .edit-dish-btn:hover { border-color: var(--maroon); color: var(--maroon); }
+.dish-row-actions .delete-dish-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+.ingredient-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.ingredient-row { display: flex; align-items: center; gap: 8px; }
+.ingredient-row select { flex: 2; }
+.ingredient-row input { flex: 1; }
+.ingredient-row .remove-ingredient-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.inventory-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.legend-dot.ok { background: #3f9142; }
+.legend-dot.low { background: var(--danger); }
+
+.inventory-row.low-stock { border-color: var(--danger); background: #fdf2f1; }
+.inventory-row-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.inventory-row-name { font-weight: 700; color: var(--text); font-size: 0.95rem; }
+.inventory-row-category { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
+.stock-badge {
+  flex-shrink: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #dff3e0;
+  color: #2c6b2f;
+}
+.stock-badge.low { background: var(--danger); color: var(--white); }
+
+.inventory-row-stock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+.inventory-row-stock strong { color: var(--text); font-weight: 700; }
+
+.stock-adjust {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stock-adjust-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--maroon);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stock-adjust-btn:active { transform: scale(0.9); }
