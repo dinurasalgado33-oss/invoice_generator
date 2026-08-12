@@ -8,12 +8,20 @@ A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator
 3. From the branch home screen:
    - **New Invoice** — fill in guest details and itemized charges, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Advance/Grand Total, remarks, signature lines). Generate a preview styled like the printed invoice, then **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
    - **Finance Dashboard** (manager only) — KPI tiles, a revenue-by-category chart, and a monthly revenue trend, with an **Export PDF Report** button. Currently mock data (see below).
-   - **Room Bookings & Info** — a theater-style map of villas (3 per row), booked ones show a date-range ribbon and open a detail sheet on tap. Currently mock data, both branches.
+   - **Room Bookings & Info** — a theater-style map of villas (3 per row), a full guest lifecycle, both branches. See **Room lifecycle** below.
+
+## Room lifecycle
+Each villa is in one of three states, each with its own color and action on the detail sheet (tap any villa card to open it):
+- **Available** (green) — "New Booking" button opens a short form (guest name, phone, check-in/out); saving moves the villa to Booked.
+- **Booked** (gold/amber) — an upcoming reservation, guest not on-site yet. Shows guest details + a "Check In" button, which moves the villa to Occupied.
+- **Occupied** (maroon) — guest is checked in. Shows guest details, a "Food Orders" placeholder ("Coming Soon"), and a "Check Out" button.
+
+**Check Out** jumps straight to the invoice generator (screen-form) with the guest name, phone, and check-in/out dates pre-filled, plus one charge line already added: `<Villa Name> — Room Charge`, quantity = nights stayed, rate = that villa's nightly rate (from `ROOMS_BY_BRANCH`), value calculated automatically. Generating the invoice from there resets the villa back to Available.
 
 ## Mock data
 The Finance Dashboard and Room Bookings screens are front-end only right now — no backend. Their data lives in `script.js`:
 - `DASHBOARD_DATA` — revenue, invoice counts, occupancy, and monthly trend per branch.
-- `ROOMS_BY_BRANCH` — villa list and booking status per branch. A branch's Room Bookings card only enables once it has an entry here.
+- `ROOMS_BY_BRANCH` — villa list, status (`available`/`booked`/`occupied`), guest details, and nightly `rate` per branch. A branch's Room Bookings card only enables once it has an entry here. New bookings/check-ins/check-outs made in the UI mutate this array in memory — they reset on page reload since nothing persists to a backend yet.
 
 Swap these for a real data source later without touching the rendering/chart code.
 

@@ -260,7 +260,8 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
 .legend-item { display: flex; align-items: center; gap: 6px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .legend-dot.available { background: #3f9142; }
-.legend-dot.booked { background: var(--maroon); }
+.legend-dot.booked { background: #d4af37; }
+.legend-dot.occupied { background: var(--maroon); }
 
 .rooms-stage {
   display: flex;
@@ -308,14 +309,14 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
 }
 
 .room-card.available { border-color: #bfe2c1; background: #f5fbf6; }
-.room-card.booked { border-color: var(--maroon); background: #fdf6f2; padding-top: 28px; }
+.room-card.booked { border-color: #e8c766; background: #fdf8ea; padding-top: 28px; }
+.room-card.occupied { border-color: var(--maroon); background: #fdf6f2; padding-top: 28px; }
 
 .room-card-ribbon {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  background: var(--maroon);
   color: var(--gold-light);
   font-size: 0.6rem;
   font-weight: 700;
@@ -323,15 +324,21 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
   padding: 3px 4px;
   line-height: 1.3;
 }
+.room-card.booked .room-card-ribbon { background: #d4af37; color: #4a3a08; }
+.room-card.occupied .room-card-ribbon { background: var(--maroon); color: var(--gold-light); }
 
 .room-card-icon { width: 26px; height: 26px; color: var(--text-muted); }
 .room-card.available .room-card-icon { color: #3f9142; }
-.room-card.booked .room-card-icon { color: var(--maroon); }
+.room-card.booked .room-card-icon { color: #a37f14; }
+.room-card.occupied .room-card-icon { color: var(--maroon); }
 
 .room-card-name { font-weight: 700; color: var(--text); font-size: 0.78rem; line-height: 1.25; }
 .room-card-guest { font-size: 0.7rem; color: var(--text-muted); line-height: 1.2; }
 
 .room-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -340,13 +347,15 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
   border-radius: 20px;
   margin-top: 2px;
 }
+.room-card-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
 .room-card.available .room-card-status { background: #dff3e0; color: #2c6b2f; }
-.room-card.booked .room-card-status { background: var(--maroon); color: var(--gold-light); }
+.room-card.booked .room-card-status { background: #faedc0; color: #8a6d1f; }
+.room-card.occupied .room-card-status { background: var(--maroon); color: var(--gold-light); }
 
 @media (max-width: 380px) {
   .rooms-grid { gap: 8px; }
   .room-card { padding: 14px 4px 10px; }
-  .room-card.booked { padding-top: 26px; }
+  .room-card.booked, .room-card.occupied { padding-top: 26px; }
   .room-card-name { font-size: 0.72rem; }
 }
 
@@ -396,7 +405,8 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
   border-radius: 20px;
 }
 .room-detail-status.available { background: #dff3e0; color: #2c6b2f; }
-.room-detail-status.booked { background: var(--maroon); color: var(--gold-light); }
+.room-detail-status.booked { background: #faedc0; color: #8a6d1f; }
+.room-detail-status.occupied { background: var(--maroon); color: var(--gold-light); }
 
 .room-detail-body { margin-bottom: 18px; }
 .room-detail-row {
@@ -410,6 +420,21 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
 .room-detail-row span:first-child { color: var(--text-muted); }
 .room-detail-row span:last-child { font-weight: 600; text-align: right; }
 .room-detail-empty { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 10px 0 4px; }
+
+.room-detail-body .primary-btn.big { width: 100%; margin-top: 16px; }
+.room-detail-body form .field { margin-bottom: 10px; }
+.room-detail-body form .primary-btn.big { margin-top: 10px; }
+
+.room-detail-foodorders {
+  margin: 16px 0 4px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+}
+.room-detail-foodorders h4 { margin: 0 0 10px; color: var(--maroon); font-size: 0.88rem; }
+.room-detail-foodorders .secondary-btn { width: 100%; margin: 0; }
+.room-detail-foodorders .secondary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .primary-btn {
   display: flex;

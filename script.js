@@ -138,32 +138,47 @@
   });
 
   // Room map — mock data for now; the launch card only lights up for
-  // branches with data wired in (currently Arugam Bay). Swap ROOMS_BY_BRANCH
-  // for a real data source later without touching the rendering/UI code.
+  // branches with data wired in. Swap ROOMS_BY_BRANCH for a real data
+  // source later without touching the rendering/UI code.
+  //
+  // status: "available" (free) | "booked" (upcoming reservation, guest not
+  // yet on-site) | "occupied" (guest checked in). rate = LKR per night,
+  // used to auto-calculate the room charge at checkout.
   const ROOMS_BY_BRANCH = {
     "Arugam Bay": [
-      { name: "Ocean Pool Villa 01", type: "Pool Villa", status: "booked", guest: "Kasun Perera", phone: "077 221 8511", checkin: "2026-08-10", checkout: "2026-08-13" },
-      { name: "Ocean Pool Villa 02", type: "Pool Villa", status: "available" },
-      { name: "Ocean Pool Villa 03", type: "Pool Villa", status: "booked", guest: "Amanda Lee", phone: "071 456 7890", checkin: "2026-08-09", checkout: "2026-08-12" },
-      { name: "Garden Villa 04", type: "Garden Villa", status: "available" },
-      { name: "Garden Villa 05", type: "Garden Villa", status: "booked", guest: "Mr. & Mrs. Silva", phone: "070 333 2211", checkin: "2026-08-11", checkout: "2026-08-14" },
-      { name: "Garden Villa 06", type: "Garden Villa", status: "available" },
-      { name: "Beachfront Villa 07", type: "Beachfront Villa", status: "booked", guest: "Nadeesha Fernando", phone: "076 812 4499", checkin: "2026-08-10", checkout: "2026-08-15" },
-      { name: "Beachfront Villa 08", type: "Beachfront Villa", status: "available" },
-      { name: "Beachfront Villa 09", type: "Beachfront Villa", status: "booked", guest: "John Smith", phone: "+44 7911 123456", checkin: "2026-08-12", checkout: "2026-08-13" },
+      { name: "Ocean Pool Villa 01", type: "Pool Villa", rate: 11500, status: "occupied", guest: "Kasun Perera", phone: "077 221 8511", checkin: "2026-08-10", checkout: "2026-08-13" },
+      { name: "Ocean Pool Villa 02", type: "Pool Villa", rate: 11500, status: "available" },
+      { name: "Ocean Pool Villa 03", type: "Pool Villa", rate: 11500, status: "booked", guest: "Amanda Lee", phone: "071 456 7890", checkin: "2026-08-14", checkout: "2026-08-17" },
+      { name: "Garden Villa 04", type: "Garden Villa", rate: 8500, status: "available" },
+      { name: "Garden Villa 05", type: "Garden Villa", rate: 8500, status: "occupied", guest: "Mr. & Mrs. Silva", phone: "070 333 2211", checkin: "2026-08-09", checkout: "2026-08-12" },
+      { name: "Garden Villa 06", type: "Garden Villa", rate: 8500, status: "booked", guest: "Priya Nair", phone: "072 555 1234", checkin: "2026-08-15", checkout: "2026-08-18" },
+      { name: "Beachfront Villa 07", type: "Beachfront Villa", rate: 15000, status: "occupied", guest: "Nadeesha Fernando", phone: "076 812 4499", checkin: "2026-08-10", checkout: "2026-08-15" },
+      { name: "Beachfront Villa 08", type: "Beachfront Villa", rate: 15000, status: "available" },
+      { name: "Beachfront Villa 09", type: "Beachfront Villa", rate: 15000, status: "booked", guest: "John Smith", phone: "+44 7911 123456", checkin: "2026-08-12", checkout: "2026-08-13" },
     ],
     "Wilpattu": [
-      { name: "Forest Villa 1", type: "Forest Chalet", status: "booked", guest: "Ruwan Jayasuriya", phone: "077 654 3210", checkin: "2026-08-10", checkout: "2026-08-12" },
-      { name: "Forest Villa 2", type: "Forest Chalet", status: "available" },
-      { name: "Forest Villa 3", type: "Forest Chalet", status: "booked", guest: "Chathurika Fernando", phone: "071 987 6543", checkin: "2026-08-09", checkout: "2026-08-14" },
-      { name: "Forest Villa 4", type: "Safari Chalet", status: "available" },
-      { name: "Forest Villa 5", type: "Safari Chalet", status: "booked", guest: "Mr. & Mrs. Bandara", phone: "070 222 4455", checkin: "2026-08-11", checkout: "2026-08-13" },
-      { name: "Forest Villa 6", type: "Safari Chalet", status: "available" },
-      { name: "Forest Villa 7", type: "Riverside Chalet", status: "booked", guest: "Ishara Wickramasinghe", phone: "076 345 6789", checkin: "2026-08-10", checkout: "2026-08-15" },
-      { name: "Forest Villa 8", type: "Riverside Chalet", status: "available" },
-      { name: "Forest Villa 9", type: "Riverside Chalet", status: "booked", guest: "David Miller", phone: "+1 415 555 0182", checkin: "2026-08-12", checkout: "2026-08-14" },
+      { name: "Forest Villa 1", type: "Forest Chalet", rate: 9500, status: "occupied", guest: "Ruwan Jayasuriya", phone: "077 654 3210", checkin: "2026-08-10", checkout: "2026-08-12" },
+      { name: "Forest Villa 2", type: "Forest Chalet", rate: 9500, status: "available" },
+      { name: "Forest Villa 3", type: "Forest Chalet", rate: 9500, status: "booked", guest: "Chathurika Fernando", phone: "071 987 6543", checkin: "2026-08-14", checkout: "2026-08-19" },
+      { name: "Forest Villa 4", type: "Safari Chalet", rate: 10500, status: "available" },
+      { name: "Forest Villa 5", type: "Safari Chalet", rate: 10500, status: "occupied", guest: "Mr. & Mrs. Bandara", phone: "070 222 4455", checkin: "2026-08-11", checkout: "2026-08-13" },
+      { name: "Forest Villa 6", type: "Safari Chalet", rate: 10500, status: "booked", guest: "Tharindu Perera", phone: "076 999 8877", checkin: "2026-08-16", checkout: "2026-08-18" },
+      { name: "Forest Villa 7", type: "Riverside Chalet", rate: 12000, status: "occupied", guest: "Ishara Wickramasinghe", phone: "076 345 6789", checkin: "2026-08-10", checkout: "2026-08-15" },
+      { name: "Forest Villa 8", type: "Riverside Chalet", rate: 12000, status: "available" },
+      { name: "Forest Villa 9", type: "Riverside Chalet", rate: 12000, status: "booked", guest: "David Miller", phone: "+1 415 555 0182", checkin: "2026-08-12", checkout: "2026-08-14" },
     ],
   };
+
+  const ROOM_STATUS_LABELS = { available: "Available", booked: "Booked", occupied: "Occupied" };
+  let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
+  let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
+
+  function nightsBetween(checkin, checkout) {
+    const a = new Date(checkin + "T00:00:00");
+    const b = new Date(checkout + "T00:00:00");
+    const diff = Math.round((b - a) / 86400000);
+    return diff > 0 ? diff : 1;
+  }
 
   function updateRoomsCardAvailability() {
     const btn = document.getElementById("open-rooms-btn");
@@ -185,57 +200,169 @@
     const rooms = ROOMS_BY_BRANCH[selectedBranch] || [];
     grid.innerHTML = "";
 
-    rooms.forEach(room => {
+    rooms.forEach((room, index) => {
       const card = document.createElement("button");
       card.type = "button";
       card.className = "room-card " + room.status;
 
-      const ribbon = room.status === "booked"
+      const hasStay = room.status === "booked" || room.status === "occupied";
+      const ribbon = hasStay
         ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
         : "";
-      const guestLine = room.status === "booked" ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
+      const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
 
       card.innerHTML = `
         ${ribbon}
         <svg class="room-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
         <span class="room-card-name">${escapeHtml(room.name)}</span>
         ${guestLine}
-        <span class="room-card-status">${room.status === "booked" ? "Booked" : "Available"}</span>
+        <span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>
       `;
 
-      card.addEventListener("click", () => openRoomDetail(room));
+      card.addEventListener("click", () => openRoomDetail(selectedBranch, index));
       grid.appendChild(card);
     });
   }
 
-  function openRoomDetail(room) {
-    document.getElementById("room-detail-name").textContent = room.name;
+  function openRoomDetail(branch, index) {
+    activeRoomRef = { branch, index };
+    renderRoomDetailBody();
+    document.getElementById("room-detail-overlay").classList.add("open");
+  }
 
+  function closeRoomDetail() {
+    document.getElementById("room-detail-overlay").classList.remove("open");
+  }
+
+  function getActiveRoom() {
+    return ROOMS_BY_BRANCH[activeRoomRef.branch][activeRoomRef.index];
+  }
+
+  function renderRoomDetailBody() {
+    const room = getActiveRoom();
+
+    document.getElementById("room-detail-name").textContent = room.name;
     const statusEl = document.getElementById("room-detail-status");
-    statusEl.textContent = room.status === "booked" ? "Booked" : "Available";
+    statusEl.textContent = ROOM_STATUS_LABELS[room.status];
     statusEl.className = "room-detail-status " + room.status;
 
     const body = document.getElementById("room-detail-body");
-    if (room.status === "booked") {
+
+    if (room.status === "available") {
+      body.innerHTML = `
+        <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
+        <div class="room-detail-row"><span>Rate</span><span>LKR ${room.rate.toLocaleString("en-US")} / night</span></div>
+        <p class="room-detail-empty">This villa is free right now.</p>
+        <button type="button" class="primary-btn big" id="new-booking-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+          New Booking
+        </button>
+      `;
+      document.getElementById("new-booking-btn").addEventListener("click", showNewBookingForm);
+    } else if (room.status === "booked") {
       body.innerHTML = `
         <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
         <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
         <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
         <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
         <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
+        <button type="button" class="primary-btn big" id="check-in-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+          Check In
+        </button>
       `;
+      document.getElementById("check-in-btn").addEventListener("click", () => {
+        room.status = "occupied";
+        renderRoomDetailBody();
+        renderRooms();
+      });
     } else {
       body.innerHTML = `
         <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
-        <p class="room-detail-empty">No booking on this villa right now.</p>
+        <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
+        <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
+        <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
+        <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
+        <div class="room-detail-foodorders">
+          <h4>Food Orders</h4>
+          <button type="button" class="secondary-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg>
+            Coming Soon
+          </button>
+        </div>
+        <button type="button" class="primary-btn big" id="check-out-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+          Check Out
+        </button>
       `;
+      document.getElementById("check-out-btn").addEventListener("click", startCheckout);
     }
-
-    document.getElementById("room-detail-overlay").classList.add("open");
   }
 
-  function closeRoomDetail() {
-    document.getElementById("room-detail-overlay").classList.remove("open");
+  function showNewBookingForm() {
+    const room = getActiveRoom();
+    const body = document.getElementById("room-detail-body");
+    const today = new Date().toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+    body.innerHTML = `
+      <form id="new-booking-form">
+        <div class="field">
+          <label>Guest Name</label>
+          <input type="text" id="nb-guest" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" id="nb-phone" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Check-in</label>
+            <input type="date" id="nb-checkin" required value="${today}" />
+          </div>
+          <div class="field">
+            <label>Check-out</label>
+            <input type="date" id="nb-checkout" required value="${tomorrow}" />
+          </div>
+        </div>
+        <button type="submit" class="primary-btn big">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+          Save Booking
+        </button>
+      </form>
+    `;
+
+    document.getElementById("new-booking-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      room.guest = document.getElementById("nb-guest").value.trim();
+      room.phone = document.getElementById("nb-phone").value.trim();
+      room.checkin = document.getElementById("nb-checkin").value;
+      room.checkout = document.getElementById("nb-checkout").value;
+      room.status = "booked";
+      renderRoomDetailBody();
+      renderRooms();
+    });
+  }
+
+  function startCheckout() {
+    const room = getActiveRoom();
+    checkoutRoomRef = { branch: activeRoomRef.branch, index: activeRoomRef.index };
+    closeRoomDetail();
+    prefillInvoiceForCheckout(room);
+    showScreen("screen-form");
+  }
+
+  function prefillInvoiceForCheckout(room) {
+    resetForm();
+    document.getElementById("guest-name").value = room.guest || "";
+    document.getElementById("guest-phone").value = room.phone || "";
+    document.getElementById("checkin-date").value = room.checkin || "";
+    document.getElementById("checkout-date").value = room.checkout || "";
+
+    const nights = nightsBetween(room.checkin, room.checkout);
+    const rate = room.rate || 0;
+    itemsBody.innerHTML = "";
+    addItemRow(room.name + " — Room Charge", String(nights), String(rate), String(nights * rate));
   }
 
   document.getElementById("room-detail-close").addEventListener("click", closeRoomDetail);
@@ -625,6 +752,17 @@
 
     invoiceCounter++;
     localStorage.setItem("leopardinn-invoice-counter", String(invoiceCounter));
+
+    // If this invoice came from a Room Map checkout, the villa is free again.
+    if (checkoutRoomRef) {
+      const room = ROOMS_BY_BRANCH[checkoutRoomRef.branch][checkoutRoomRef.index];
+      room.status = "available";
+      delete room.guest;
+      delete room.phone;
+      delete room.checkin;
+      delete room.checkout;
+      checkoutRoomRef = null;
+    }
 
     showScreen("screen-preview");
   });
