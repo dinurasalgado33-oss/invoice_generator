@@ -42,12 +42,60 @@
   // visitors out. Credentials live in this file, in plain view, so treat
   // it as a light deterrent, not real security.
   const LOGIN_KEY = "leopardinn-logged-in";
-  const STAFF_USERNAME = "ashen";
-  const STAFF_PASSWORD = "1234";
+  const ROLE_KEY = "leopardinn-role";
+  const LOCKED_BRANCH_KEY = "leopardinn-locked-branch";
 
-  if (localStorage.getItem(LOGIN_KEY) === "true") {
-    document.getElementById("screen-login").classList.remove("active");
-    document.getElementById("screen-branch").classList.add("active");
+  const ACCOUNTS = [
+    { username: "ashen", password: "1234", role: "manager", branch: null },
+    { username: "staff", password: "1234", role: "staff", branch: "Wilpattu" },
+  ];
+
+  let currentRole = localStorage.getItem(ROLE_KEY) || "manager";
+
+  function selectBranch(branchKey) {
+    const btn = document.querySelector('.branch-btn[data-branch="' + branchKey + '"]');
+    if (!btn) return;
+
+    selectedBranch = btn.dataset.branch;
+    selectedBranchLabel = btn.dataset.label;
+    selectedBranchLogo = btn.dataset.logo;
+
+    document.getElementById("home-branch-label").textContent = selectedBranchLabel;
+    document.getElementById("form-branch-label").textContent = selectedBranchLabel;
+    document.getElementById("rooms-branch-label").textContent = selectedBranchLabel;
+    document.getElementById("dashboard-branch-label").textContent = selectedBranchLabel;
+    setLogoSrc("home-logo", selectedBranchLogo);
+    setLogoSrc("form-logo", selectedBranchLogo);
+    setLogoSrc("rooms-logo", selectedBranchLogo);
+    setLogoSrc("dashboard-logo", selectedBranchLogo);
+
+    updateRoomsCardAvailability();
+  }
+
+  function applyRoleGates() {
+    const isStaff = currentRole === "staff";
+
+    document.querySelectorAll('.launch-card[data-role="manager"]').forEach(card => {
+      card.style.display = isStaff ? "none" : "";
+    });
+
+    // Staff are locked to one branch — the "Change branch" entry point
+    // is the only way back to screen-branch, so hide it for them.
+    const changeBranchBtn = document.querySelector("#screen-home .back-btn");
+    if (changeBranchBtn) changeBranchBtn.style.display = isStaff ? "none" : "";
+
+    document.getElementById("role-indicator").textContent = "Role: " + (isStaff ? "Staff" : "Manager");
+  }
+
+  function routeAfterLogin() {
+    applyRoleGates();
+    const lockedBranch = localStorage.getItem(LOCKED_BRANCH_KEY);
+    if (lockedBranch) {
+      selectBranch(lockedBranch);
+      showScreen("screen-home");
+    } else {
+      showScreen("screen-branch");
+    }
   }
 
   document.getElementById("login-form").addEventListener("submit", (e) => {
@@ -57,10 +105,15 @@
     const errorEl = document.getElementById("login-error");
     const formEl = document.getElementById("login-form");
 
-    if (username === STAFF_USERNAME && password === STAFF_PASSWORD) {
+    const account = ACCOUNTS.find(a => a.username === username && a.password === password);
+
+    if (account) {
       localStorage.setItem(LOGIN_KEY, "true");
+      localStorage.setItem(ROLE_KEY, account.role);
+      localStorage.setItem(LOCKED_BRANCH_KEY, account.branch || "");
+      currentRole = account.role;
       errorEl.classList.remove("show");
-      showScreen("screen-branch");
+      routeAfterLogin();
     } else {
       errorEl.classList.add("show");
       formEl.classList.remove("shake");
@@ -74,21 +127,7 @@
   // Branch selection
   document.querySelectorAll(".branch-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      selectedBranch = btn.dataset.branch;
-      selectedBranchLabel = btn.dataset.label;
-      selectedBranchLogo = btn.dataset.logo;
-
-      document.getElementById("home-branch-label").textContent = selectedBranchLabel;
-      document.getElementById("form-branch-label").textContent = selectedBranchLabel;
-      document.getElementById("rooms-branch-label").textContent = selectedBranchLabel;
-      document.getElementById("dashboard-branch-label").textContent = selectedBranchLabel;
-      setLogoSrc("home-logo", selectedBranchLogo);
-      setLogoSrc("form-logo", selectedBranchLogo);
-      setLogoSrc("rooms-logo", selectedBranchLogo);
-      setLogoSrc("dashboard-logo", selectedBranchLogo);
-
-      updateRoomsCardAvailability();
-
+      selectBranch(btn.dataset.branch);
       showScreen("screen-home");
     });
   });
@@ -112,6 +151,17 @@
       { name: "Beachfront Villa 07", type: "Beachfront Villa", status: "booked", guest: "Nadeesha Fernando", phone: "076 812 4499", checkin: "2026-08-10", checkout: "2026-08-15" },
       { name: "Beachfront Villa 08", type: "Beachfront Villa", status: "available" },
       { name: "Beachfront Villa 09", type: "Beachfront Villa", status: "booked", guest: "John Smith", phone: "+44 7911 123456", checkin: "2026-08-12", checkout: "2026-08-13" },
+    ],
+    "Wilpattu": [
+      { name: "Forest Villa 1", type: "Forest Chalet", status: "booked", guest: "Ruwan Jayasuriya", phone: "077 654 3210", checkin: "2026-08-10", checkout: "2026-08-12" },
+      { name: "Forest Villa 2", type: "Forest Chalet", status: "available" },
+      { name: "Forest Villa 3", type: "Forest Chalet", status: "booked", guest: "Chathurika Fernando", phone: "071 987 6543", checkin: "2026-08-09", checkout: "2026-08-14" },
+      { name: "Forest Villa 4", type: "Safari Chalet", status: "available" },
+      { name: "Forest Villa 5", type: "Safari Chalet", status: "booked", guest: "Mr. & Mrs. Bandara", phone: "070 222 4455", checkin: "2026-08-11", checkout: "2026-08-13" },
+      { name: "Forest Villa 6", type: "Safari Chalet", status: "available" },
+      { name: "Forest Villa 7", type: "Riverside Chalet", status: "booked", guest: "Ishara Wickramasinghe", phone: "076 345 6789", checkin: "2026-08-10", checkout: "2026-08-15" },
+      { name: "Forest Villa 8", type: "Riverside Chalet", status: "available" },
+      { name: "Forest Villa 9", type: "Riverside Chalet", status: "booked", guest: "David Miller", phone: "+1 415 555 0182", checkin: "2026-08-12", checkout: "2026-08-14" },
     ],
   };
 
@@ -616,4 +666,21 @@
 
   // init
   resetForm();
+
+  // Restore a logged-in session (skip login, and skip the branch picker
+  // too if the account is locked to one branch). Runs last so every
+  // const/function above it (ROOMS_BY_BRANCH, selectBranch, etc.) is
+  // already initialized — calling this earlier throws a temporal-dead-
+  // zone error on the later const declarations.
+  if (localStorage.getItem(LOGIN_KEY) === "true") {
+    applyRoleGates();
+    const lockedBranch = localStorage.getItem(LOCKED_BRANCH_KEY);
+    document.getElementById("screen-login").classList.remove("active");
+    if (lockedBranch) {
+      selectBranch(lockedBranch);
+      document.getElementById("screen-home").classList.add("active");
+    } else {
+      document.getElementById("screen-branch").classList.add("active");
+    }
+  }
 })();

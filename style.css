@@ -111,6 +111,16 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
   opacity: 0.9;
 }
 
+.role-indicator {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin: 14px 0 0;
+}
+
 .branch-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

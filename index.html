@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="style.css?v=6" />
+<link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
 
@@ -69,6 +69,7 @@
       <h1>Leopard Inn</h1>
       <p class="subtitle" id="home-branch-label">Branch</p>
     </div>
+    <p class="role-indicator" id="role-indicator">Role: Manager</p>
     <div class="home-actions">
       <button class="launch-card" id="open-invoice-btn">
         <span class="launch-card-icon">
@@ -81,7 +82,7 @@
         <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
 
-      <button class="launch-card" id="open-dashboard-btn">
+      <button class="launch-card" id="open-dashboard-btn" data-role="manager">
         <span class="launch-card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9M13 17V5M8 17v-4" /></svg>
         </span>
@@ -111,6 +112,17 @@
         <span class="launch-card-text">
           <strong>Inventory Management</strong>
           <small>Track stock and supplies across branches</small>
+        </span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
+
+      <button class="launch-card" disabled>
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>Food Orders</strong>
+          <small>Take and track kitchen &amp; restaurant orders</small>
         </span>
         <span class="coming-soon-badge">Coming Soon</span>
       </button>
@@ -506,6 +518,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="script.js?v=6"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>
