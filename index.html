@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="style.css?v=9" />
+<link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
 
@@ -105,15 +105,27 @@
         <svg class="launch-card-arrow" id="rooms-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
 
-      <button class="launch-card" disabled>
+      <button class="launch-card" id="open-menu-btn" data-role="manager">
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /><path d="M9 7h7M9 11h5" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>Menu Config</strong>
+          <small>Manage dishes and their ingredients</small>
+        </span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+      </button>
+
+      <button class="launch-card" id="open-inventory-btn">
         <span class="launch-card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg>
         </span>
         <span class="launch-card-text">
           <strong>Inventory Management</strong>
-          <small>Track stock and supplies across branches</small>
+          <small id="inventory-card-subtext">Track stock and supplies</small>
         </span>
-        <span class="coming-soon-badge">Coming Soon</span>
+        <span class="badge-dot" id="inventory-low-badge" style="display:none">0</span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
       </button>
 
       <button class="launch-card" disabled>
@@ -167,6 +179,76 @@
       <button type="button" class="secondary-btn" id="room-detail-close">Close</button>
     </div>
   </div>
+
+  <!-- SCREEN: Menu config (manager only) -->
+  <section id="screen-menu" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="menu-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Menu Config — <span id="menu-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="dish-list" id="dish-list"><!-- dish rows injected by JS --></div>
+      <button type="button" class="secondary-btn" id="add-dish-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+        Add Dish
+      </button>
+    </div>
+  </section>
+
+  <!-- Dish add/edit sheet -->
+  <div class="room-detail-overlay" id="dish-sheet-overlay">
+    <div class="room-detail-sheet" id="dish-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="dish-sheet-title">Add Dish</h3>
+      </div>
+      <div class="room-detail-body">
+        <form id="dish-form">
+          <div class="field">
+            <label>Dish Name</label>
+            <input type="text" id="dish-name" required autocapitalize="words" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Price (LKR)</label>
+            <input type="number" id="dish-price" min="0" step="1" inputmode="decimal" required enterkeyhint="next" />
+          </div>
+          <label class="field-label-standalone">Ingredients</label>
+          <div class="ingredient-list" id="ingredient-list"><!-- ingredient rows injected by JS --></div>
+          <button type="button" class="secondary-btn" id="add-ingredient-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+            Add Ingredient
+          </button>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+            Save Dish
+          </button>
+        </form>
+      </div>
+      <button type="button" class="secondary-btn" id="dish-sheet-close">Close</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Inventory management -->
+  <section id="screen-inventory" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="inventory-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Inventory — <span id="inventory-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="inventory-legend">
+        <span class="legend-item"><span class="legend-dot ok"></span>OK</span>
+        <span class="legend-item"><span class="legend-dot low"></span>Low Stock</span>
+      </div>
+      <div class="inventory-list" id="inventory-list"><!-- item rows injected by JS --></div>
+    </div>
+  </section>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <!-- SCREEN: Finance dashboard -->
   <section id="screen-dashboard" class="screen">
@@ -519,6 +601,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="script.js?v=9"></script>
+<script src="script.js?v=10"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Leopard Inn — Staff Portal
 
-A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a finance dashboard, and a room booking map (both branches now); Inventory Management and Food Orders are "Coming Soon" placeholders on the home screen.
+A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a finance dashboard, a room booking map with a full guest lifecycle, food ordering, and inventory management (all branches now).
 
 ## How it works
 1. Staff log in (see **Login & roles** below).
@@ -8,20 +8,26 @@ A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator
 3. From the branch home screen:
    - **New Invoice** — fill in guest details and itemized charges, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Advance/Grand Total, remarks, signature lines). Generate a preview styled like the printed invoice, then **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
    - **Finance Dashboard** (manager only) — KPI tiles, a revenue-by-category chart, and a monthly revenue trend, with an **Export PDF Report** button. Currently mock data (see below).
-   - **Room Bookings & Info** — a theater-style map of villas (3 per row), a full guest lifecycle, both branches. See **Room lifecycle** below.
+   - **Room Bookings & Info** — a theater-style map of villas (3 per row), a full guest lifecycle including food ordering, both branches. See **Room lifecycle** below.
+   - **Menu Config** (manager only) — add, edit, or delete dishes and their ingredient lists.
+   - **Inventory Management** — stock levels per branch; manager can adjust, staff get a read-only view. A red badge on the home card shows how many items are currently low.
 
 ## Room lifecycle
 Each villa is in one of three states, each with its own color and action on the detail sheet (tap any villa card to open it):
 - **Available** (green) — "New Booking" button opens a short form (guest name, phone, check-in/out); saving moves the villa to Booked.
 - **Booked** (gold/amber) — an upcoming reservation, guest not on-site yet. Shows guest details + a "Check In" button, which moves the villa to Occupied.
-- **Occupied** (maroon) — guest is checked in. Shows guest details, a "Food Orders" placeholder ("Coming Soon"), and a "Check Out" button.
+- **Occupied** (maroon) — guest is checked in. Shows guest details, a live **Food Orders** panel, and a "Check Out" button.
+
+**Food Orders** (occupied villas only): lists every dish from Menu Config with a +/- stepper and a running total. "Place Order" deducts each dish's ingredients from that branch's inventory (e.g. 2× Fish Curry pulls 0.8kg Fish, 0.3kg Coconut, 0.4kg Rice), shows a brief confirmation toast, and updates the Inventory low-stock badge immediately if anything crosses its minimum.
 
 **Check Out** jumps straight to the invoice generator (screen-form) with the guest name, phone, and check-in/out dates pre-filled, plus one charge line already added: `<Villa Name> — Room Charge`, quantity = nights stayed, rate = that villa's nightly rate (from `ROOMS_BY_BRANCH`), value calculated automatically. Generating the invoice from there resets the villa back to Available.
 
 ## Mock data
-The Finance Dashboard and Room Bookings screens are front-end only right now — no backend. Their data lives in `script.js`:
+None of this is wired to a backend yet — everything lives in-memory in `script.js` and resets on page reload:
 - `DASHBOARD_DATA` — revenue, invoice counts, occupancy, and monthly trend per branch.
-- `ROOMS_BY_BRANCH` — villa list, status (`available`/`booked`/`occupied`), guest details, and nightly `rate` per branch. A branch's Room Bookings card only enables once it has an entry here. New bookings/check-ins/check-outs made in the UI mutate this array in memory — they reset on page reload since nothing persists to a backend yet.
+- `ROOMS_BY_BRANCH` — villa list, status (`available`/`booked`/`occupied`), guest details, and nightly `rate` per branch. A branch's Room Bookings card only enables once it has an entry here.
+- `MENU_ITEMS` — dishes, price, and ingredient list (shared across both branches). Managed via the Menu Config screen.
+- `INVENTORY_BY_BRANCH` — stock item, category, current/min stock, and unit, per branch. Ingredient names in `MENU_ITEMS` must exactly match an item name here, or a Food Order can't find anything to deduct from.
 
 Swap these for a real data source later without touching the rendering/chart code.
 

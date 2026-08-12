@@ -9,6 +9,8 @@
     branch: document.getElementById("screen-branch"),
     home: document.getElementById("screen-home"),
     rooms: document.getElementById("screen-rooms"),
+    menu: document.getElementById("screen-menu"),
+    inventory: document.getElementById("screen-inventory"),
     dashboard: document.getElementById("screen-dashboard"),
     form: document.getElementById("screen-form"),
     preview: document.getElementById("screen-preview"),
@@ -20,7 +22,7 @@
     img.src = src;
   }
 
-  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-dashboard", "screen-form", "screen-preview"];
+  const screenOrder = ["screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-menu", "screen-inventory", "screen-dashboard", "screen-form", "screen-preview"];
 
   function showScreen(id) {
     const currentEl = document.querySelector(".screen.active");
@@ -70,6 +72,7 @@
     setLogoSrc("dashboard-logo", selectedBranchLogo);
 
     updateRoomsCardAvailability();
+    updateInventoryBadge();
   }
 
   function applyRoleGates() {
@@ -180,6 +183,62 @@
     return diff > 0 ? diff : 1;
   }
 
+  // Ingredient names must match INVENTORY_BY_BRANCH item names exactly —
+  // that's how a placed order finds the right stock to deduct. The menu
+  // itself is shared across both branches; the inventory it draws from
+  // isn't.
+  const INGREDIENT_NAMES = ["Chicken", "Rice", "Coconut", "Fish", "Prawns", "Vegetables", "Eggs", "Rice Flour", "Cooking Oil", "Spices Mix", "Onions", "Salt"];
+
+  let nextDishId = 7;
+  const MENU_ITEMS = [
+    { id: 1, name: "Chicken Curry", price: 950, ingredients: [{ item: "Chicken", qty: 0.5 }, { item: "Rice", qty: 0.2 }] },
+    { id: 2, name: "Vegetable Fried Rice", price: 650, ingredients: [{ item: "Rice", qty: 0.3 }, { item: "Vegetables", qty: 0.2 }] },
+    { id: 3, name: "Fish Curry", price: 1050, ingredients: [{ item: "Fish", qty: 0.4 }, { item: "Coconut", qty: 0.15 }, { item: "Rice", qty: 0.2 }] },
+    { id: 4, name: "Prawn Curry", price: 1400, ingredients: [{ item: "Prawns", qty: 0.3 }, { item: "Coconut", qty: 0.15 }] },
+    { id: 5, name: "Vegetable Curry", price: 550, ingredients: [{ item: "Vegetables", qty: 0.3 }, { item: "Coconut", qty: 0.1 }] },
+    { id: 6, name: "Egg Hoppers (2pc)", price: 400, ingredients: [{ item: "Eggs", qty: 2 }, { item: "Rice Flour", qty: 0.15 }] },
+  ];
+
+  const INVENTORY_BY_BRANCH = {
+    "Wilpattu": [
+      { id: 1, name: "Chicken", category: "Meat", stock: 10, minStock: 5, unit: "kg" },
+      { id: 2, name: "Rice", category: "Grains", stock: 35, minStock: 15, unit: "kg" },
+      { id: 3, name: "Coconut", category: "Produce", stock: 2, minStock: 8, unit: "kg" },
+      { id: 4, name: "Fish", category: "Seafood", stock: 7, minStock: 5, unit: "kg" },
+      { id: 5, name: "Prawns", category: "Seafood", stock: 5, minStock: 4, unit: "kg" },
+      { id: 6, name: "Vegetables", category: "Produce", stock: 20, minStock: 10, unit: "kg" },
+      { id: 7, name: "Eggs", category: "Dairy & Eggs", stock: 28, minStock: 24, unit: "pcs" },
+      { id: 8, name: "Rice Flour", category: "Grains", stock: 3, minStock: 5, unit: "kg" },
+      { id: 9, name: "Cooking Oil", category: "Pantry", stock: 9, minStock: 6, unit: "L" },
+      { id: 10, name: "Spices Mix", category: "Pantry", stock: 4, minStock: 3, unit: "kg" },
+      { id: 11, name: "Onions", category: "Produce", stock: 1, minStock: 8, unit: "kg" },
+      { id: 12, name: "Salt", category: "Pantry", stock: 7, minStock: 2, unit: "kg" },
+    ],
+    "Arugam Bay": [
+      { id: 1, name: "Chicken", category: "Meat", stock: 12, minStock: 5, unit: "kg" },
+      { id: 2, name: "Rice", category: "Grains", stock: 40, minStock: 15, unit: "kg" },
+      { id: 3, name: "Coconut", category: "Produce", stock: 3, minStock: 8, unit: "kg" },
+      { id: 4, name: "Fish", category: "Seafood", stock: 6, minStock: 5, unit: "kg" },
+      { id: 5, name: "Prawns", category: "Seafood", stock: 1.5, minStock: 4, unit: "kg" },
+      { id: 6, name: "Vegetables", category: "Produce", stock: 18, minStock: 10, unit: "kg" },
+      { id: 7, name: "Eggs", category: "Dairy & Eggs", stock: 30, minStock: 24, unit: "pcs" },
+      { id: 8, name: "Rice Flour", category: "Grains", stock: 4, minStock: 5, unit: "kg" },
+      { id: 9, name: "Cooking Oil", category: "Pantry", stock: 10, minStock: 6, unit: "L" },
+      { id: 10, name: "Spices Mix", category: "Pantry", stock: 5, minStock: 3, unit: "kg" },
+      { id: 11, name: "Onions", category: "Produce", stock: 14, minStock: 8, unit: "kg" },
+      { id: 12, name: "Salt", category: "Pantry", stock: 8, minStock: 2, unit: "kg" },
+    ],
+  };
+
+  let toastTimeout = null;
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove("show"), 2500);
+  }
+
   function updateRoomsCardAvailability() {
     const btn = document.getElementById("open-rooms-btn");
     const badge = document.getElementById("rooms-card-badge");
@@ -283,20 +342,100 @@
         <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
         <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
         <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
-        <div class="room-detail-foodorders">
-          <h4>Food Orders</h4>
-          <button type="button" class="secondary-btn" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg>
-            Coming Soon
-          </button>
-        </div>
+        ${renderFoodOrdersPanel()}
         <button type="button" class="primary-btn big" id="check-out-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
         </button>
       `;
+      wireFoodOrdersPanel();
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
     }
+  }
+
+  // ---- Food ordering (inside an occupied villa's detail sheet) ----
+  let currentFoodOrder = {}; // dishId -> qty, reset each time the panel is (re)built
+
+  function renderFoodOrdersPanel() {
+    currentFoodOrder = {};
+    const rows = MENU_ITEMS.map(dish => `
+      <div class="food-order-row">
+        <div class="food-order-info">
+          <span class="food-order-name">${escapeHtml(dish.name)}</span>
+          <span class="food-order-price">${fmtLKR(dish.price)}</span>
+        </div>
+        <div class="food-order-qty-stepper">
+          <button type="button" class="stepper-input-btn food-qty-minus" data-dish-id="${dish.id}" aria-label="Remove one ${escapeHtml(dish.name)}">&minus;</button>
+          <span class="food-order-qty-value" id="food-qty-${dish.id}">0</span>
+          <button type="button" class="stepper-input-btn food-qty-plus" data-dish-id="${dish.id}" aria-label="Add one ${escapeHtml(dish.name)}">+</button>
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <div class="food-orders-panel">
+        <h4>Food Orders</h4>
+        <div class="food-order-list">${rows}</div>
+        <div class="food-order-total-row"><span>Total</span><span id="food-order-total">${fmtLKR(0)}</span></div>
+        <button type="button" class="primary-btn big" id="place-order-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+          Place Order
+        </button>
+      </div>
+    `;
+  }
+
+  function wireFoodOrdersPanel() {
+    document.querySelectorAll(".food-qty-plus").forEach(btn => {
+      btn.addEventListener("click", () => adjustFoodOrderQty(btn.dataset.dishId, 1));
+    });
+    document.querySelectorAll(".food-qty-minus").forEach(btn => {
+      btn.addEventListener("click", () => adjustFoodOrderQty(btn.dataset.dishId, -1));
+    });
+    document.getElementById("place-order-btn").addEventListener("click", placeFoodOrder);
+  }
+
+  function adjustFoodOrderQty(dishId, delta) {
+    const current = currentFoodOrder[dishId] || 0;
+    const next = Math.max(0, current + delta);
+    currentFoodOrder[dishId] = next;
+    document.getElementById("food-qty-" + dishId).textContent = next;
+    updateFoodOrderTotal();
+  }
+
+  function updateFoodOrderTotal() {
+    let total = 0;
+    let anyQty = false;
+    Object.keys(currentFoodOrder).forEach(id => {
+      const qty = currentFoodOrder[id];
+      if (qty > 0) {
+        anyQty = true;
+        const dish = MENU_ITEMS.find(d => d.id === Number(id));
+        if (dish) total += dish.price * qty;
+      }
+    });
+    document.getElementById("food-order-total").textContent = fmtLKR(total);
+    document.getElementById("place-order-btn").disabled = !anyQty;
+  }
+
+  function placeFoodOrder() {
+    const room = getActiveRoom();
+    const inventory = INVENTORY_BY_BRANCH[activeRoomRef.branch];
+
+    Object.keys(currentFoodOrder).forEach(id => {
+      const qty = currentFoodOrder[id];
+      if (qty <= 0) return;
+      const dish = MENU_ITEMS.find(d => d.id === Number(id));
+      if (!dish) return;
+      dish.ingredients.forEach(ing => {
+        const invItem = inventory.find(i => i.name === ing.item);
+        if (invItem) invItem.stock = Math.max(0, Math.round((invItem.stock - ing.qty * qty) * 100) / 100);
+      });
+    });
+
+    showToast("Order placed for " + room.name);
+    updateInventoryBadge();
+    renderRoomDetailBody();
   }
 
   function showNewBookingForm() {
@@ -373,6 +512,201 @@
   document.getElementById("open-rooms-btn").addEventListener("click", () => {
     renderRooms();
     showScreen("screen-rooms");
+  });
+
+  // ---- Menu Config (manager only) ----
+  let editingDishId = null;
+
+  function renderMenuScreen() {
+    const list = document.getElementById("dish-list");
+    list.innerHTML = MENU_ITEMS.map(dish => {
+      const ingredientsText = dish.ingredients.map(ing => `${ing.qty}${guessUnit(ing.item)} ${ing.item}`).join(", ");
+      return `
+        <div class="dish-row" data-dish-id="${dish.id}">
+          <div class="dish-row-top">
+            <div>
+              <div class="dish-row-name">${escapeHtml(dish.name)}</div>
+              <div class="dish-row-price">${fmtLKR(dish.price)}</div>
+            </div>
+            <div class="dish-row-actions">
+              <button type="button" class="edit-dish-btn" data-dish-id="${dish.id}" aria-label="Edit ${escapeHtml(dish.name)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              </button>
+              <button type="button" class="delete-dish-btn" data-dish-id="${dish.id}" aria-label="Delete ${escapeHtml(dish.name)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+              </button>
+            </div>
+          </div>
+          <p class="dish-row-ingredients">${escapeHtml(ingredientsText)}</p>
+        </div>
+      `;
+    }).join("") || `<p class="room-detail-empty">No dishes yet — tap "Add Dish" to start the menu.</p>`;
+
+    list.querySelectorAll(".edit-dish-btn").forEach(btn => {
+      btn.addEventListener("click", () => openDishSheet(Number(btn.dataset.dishId)));
+    });
+    list.querySelectorAll(".delete-dish-btn").forEach(btn => {
+      btn.addEventListener("click", () => deleteDish(Number(btn.dataset.dishId)));
+    });
+  }
+
+  function guessUnit(ingredientName) {
+    const item = INVENTORY_BY_BRANCH[selectedBranch] && INVENTORY_BY_BRANCH[selectedBranch].find(i => i.name === ingredientName);
+    return item ? item.unit : "";
+  }
+
+  function deleteDish(id) {
+    const dish = MENU_ITEMS.find(d => d.id === id);
+    if (!dish) return;
+    if (!confirm(`Delete "${dish.name}" from the menu?`)) return;
+    const idx = MENU_ITEMS.findIndex(d => d.id === id);
+    MENU_ITEMS.splice(idx, 1);
+    renderMenuScreen();
+  }
+
+  function openDishSheet(id) {
+    editingDishId = id;
+    const dish = id ? MENU_ITEMS.find(d => d.id === id) : null;
+
+    document.getElementById("dish-sheet-title").textContent = dish ? "Edit Dish" : "Add Dish";
+    document.getElementById("dish-name").value = dish ? dish.name : "";
+    document.getElementById("dish-price").value = dish ? dish.price : "";
+
+    document.getElementById("ingredient-list").innerHTML = "";
+    if (dish && dish.ingredients.length) {
+      dish.ingredients.forEach(ing => addIngredientRow(ing.item, ing.qty));
+    } else {
+      addIngredientRow();
+    }
+
+    document.getElementById("dish-sheet-overlay").classList.add("open");
+  }
+
+  function closeDishSheet() {
+    document.getElementById("dish-sheet-overlay").classList.remove("open");
+  }
+
+  function addIngredientRow(selectedItem = "", qty = "") {
+    const row = document.createElement("div");
+    row.className = "ingredient-row";
+    const options = INGREDIENT_NAMES.map(name =>
+      `<option value="${name}" ${name === selectedItem ? "selected" : ""}>${name}</option>`
+    ).join("");
+    row.innerHTML = `
+      <select class="ingredient-item">${options}</select>
+      <input type="number" class="ingredient-qty" placeholder="Qty (kg)" min="0" step="0.01" inputmode="decimal" value="${qty}">
+      <button type="button" class="remove-ingredient-btn" aria-label="Remove ingredient">&times;</button>
+    `;
+    row.querySelector(".remove-ingredient-btn").addEventListener("click", () => row.remove());
+    document.getElementById("ingredient-list").appendChild(row);
+  }
+
+  document.getElementById("add-dish-btn").addEventListener("click", () => openDishSheet(null));
+  document.getElementById("add-ingredient-btn").addEventListener("click", () => addIngredientRow());
+  document.getElementById("dish-sheet-close").addEventListener("click", closeDishSheet);
+  document.getElementById("dish-sheet-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "dish-sheet-overlay") closeDishSheet();
+  });
+
+  document.getElementById("dish-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("dish-name").value.trim();
+    const price = parseFloat(document.getElementById("dish-price").value) || 0;
+    if (!name) return;
+
+    const ingredients = [...document.querySelectorAll("#ingredient-list .ingredient-row")]
+      .map(row => ({
+        item: row.querySelector(".ingredient-item").value,
+        qty: parseFloat(row.querySelector(".ingredient-qty").value) || 0,
+      }))
+      .filter(ing => ing.qty > 0);
+
+    if (editingDishId) {
+      const dish = MENU_ITEMS.find(d => d.id === editingDishId);
+      dish.name = name;
+      dish.price = price;
+      dish.ingredients = ingredients;
+    } else {
+      MENU_ITEMS.push({ id: nextDishId++, name, price, ingredients });
+    }
+
+    closeDishSheet();
+    renderMenuScreen();
+  });
+
+  document.getElementById("open-menu-btn").addEventListener("click", () => {
+    document.getElementById("menu-branch-label").textContent = selectedBranchLabel;
+    setLogoSrc("menu-logo", selectedBranchLogo);
+    renderMenuScreen();
+    showScreen("screen-menu");
+  });
+
+  // ---- Inventory management ----
+  function updateInventoryBadge() {
+    const inventory = INVENTORY_BY_BRANCH[selectedBranch] || [];
+    const lowCount = inventory.filter(i => i.stock < i.minStock).length;
+    const badge = document.getElementById("inventory-low-badge");
+    const subtext = document.getElementById("inventory-card-subtext");
+
+    badge.style.display = lowCount > 0 ? "" : "none";
+    badge.textContent = lowCount;
+    subtext.textContent = lowCount > 0
+      ? `${lowCount} item${lowCount === 1 ? "" : "s"} running low`
+      : "Track stock and supplies";
+  }
+
+  function renderInventoryScreen() {
+    const inventory = INVENTORY_BY_BRANCH[selectedBranch] || [];
+    const isManager = currentRole === "manager";
+    const list = document.getElementById("inventory-list");
+
+    list.innerHTML = inventory.map(item => {
+      const isLow = item.stock < item.minStock;
+      const adjustControls = isManager ? `
+        <div class="stock-adjust">
+          <button type="button" class="stock-adjust-btn" data-item-id="${item.id}" data-delta="-1" aria-label="Decrease ${escapeHtml(item.name)}">&minus;</button>
+          <button type="button" class="stock-adjust-btn" data-item-id="${item.id}" data-delta="1" aria-label="Increase ${escapeHtml(item.name)}">+</button>
+        </div>
+      ` : "";
+
+      return `
+        <div class="inventory-row ${isLow ? "low-stock" : ""}">
+          <div class="inventory-row-top">
+            <div>
+              <div class="inventory-row-name">${escapeHtml(item.name)}</div>
+              <div class="inventory-row-category">${escapeHtml(item.category)}</div>
+            </div>
+            <span class="stock-badge ${isLow ? "low" : ""}">${isLow ? "Low" : "OK"}</span>
+          </div>
+          <div class="inventory-row-stock">
+            <span>Stock: <strong>${item.stock}${escapeHtml(item.unit)}</strong> (min ${item.minStock}${escapeHtml(item.unit)})</span>
+            ${adjustControls}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    if (isManager) {
+      list.querySelectorAll(".stock-adjust-btn").forEach(btn => {
+        btn.addEventListener("click", () => adjustInventoryStock(Number(btn.dataset.itemId), Number(btn.dataset.delta)));
+      });
+    }
+  }
+
+  function adjustInventoryStock(itemId, delta) {
+    const inventory = INVENTORY_BY_BRANCH[selectedBranch];
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    item.stock = Math.max(0, Math.round((item.stock + delta) * 100) / 100);
+    renderInventoryScreen();
+    updateInventoryBadge();
+  }
+
+  document.getElementById("open-inventory-btn").addEventListener("click", () => {
+    document.getElementById("inventory-branch-label").textContent = selectedBranchLabel;
+    setLogoSrc("inventory-logo", selectedBranchLogo);
+    renderInventoryScreen();
+    showScreen("screen-inventory");
   });
 
   // Finance dashboard — mock data for now; swap DASHBOARD_DATA for a real
