@@ -25,12 +25,18 @@ export function updateRoomsCardAvailability() {
     : "Check room availability and booking details";
 }
 
-export function renderRooms() {
+export function renderRooms(statusFilter = null, mode = null) {
   const grid = document.getElementById("rooms-grid");
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   grid.innerHTML = "";
 
+  if (statusFilter && !rooms.some(r => r.status === statusFilter)) {
+    grid.innerHTML = `<p class="room-detail-empty">No ${ROOM_STATUS_LABELS[statusFilter].toLowerCase()} villas right now.</p>`;
+    return;
+  }
+
   rooms.forEach((room, index) => {
+    if (statusFilter && room.status !== statusFilter) return;
     const card = document.createElement("button");
     card.type = "button";
     card.className = "room-card " + room.status;
@@ -40,22 +46,27 @@ export function renderRooms() {
       ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
       : "";
     const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
+    // When a status filter is active every card shares the same status —
+    // showing the badge on each one is just noise, so skip it then.
+    const statusBadge = statusFilter
+      ? ""
+      : `<span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>`;
 
     card.innerHTML = `
       ${ribbon}
       <svg class="room-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
       <span class="room-card-name">${escapeHtml(room.name)}</span>
       ${guestLine}
-      <span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>
+      ${statusBadge}
     `;
 
-    card.addEventListener("click", () => openRoomDetail(appState.selectedBranch, index));
+    card.addEventListener("click", () => openRoomDetail(appState.selectedBranch, index, mode));
     grid.appendChild(card);
   });
 }
 
-export function openRoomDetail(branch, index) {
-  activeRoomRef = { branch, index };
+export function openRoomDetail(branch, index, mode = null) {
+  activeRoomRef = { branch, index, mode };
   renderRoomDetailBody();
   document.getElementById("room-detail-overlay").classList.add("open");
 }
@@ -107,46 +118,49 @@ function renderRoomDetailBody() {
       renderRooms();
     });
   } else {
-    body.innerHTML = `
-      <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
-      <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
-      <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
-      <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
-      <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
-      ${renderFoodOrdersPanel()}
-      <button type="button" class="primary-btn big" id="check-out-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
-        Check Out
-      </button>
-    `;
-    wireFoodOrdersPanel();
-    document.getElementById("check-out-btn").addEventListener("click", startCheckout);
+    // Two distinct purposes now use this same "occupied villa" sheet:
+    // the Food Order shortcut (order food, nothing else) and every other
+    // entry point — Room Map, "Latest Boarded", a checkout row — which is
+    // just about the stay itself (info + Check Out), no food ordering.
+    const isFoodOrderMode = activeRoomRef.mode === "food-order";
+
+    if (isFoodOrderMode) {
+      body.innerHTML = renderFoodOrdersPanel();
+      wireFoodOrdersPanel();
+    } else {
+      body.innerHTML = `
+        <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
+        <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
+        <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
+        <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
+        <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
+        <button type="button" class="primary-btn big" id="check-out-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+          Check Out
+        </button>
+      `;
+      document.getElementById("check-out-btn").addEventListener("click", startCheckout);
+    }
   }
 }
 
 // ---- Food ordering (inside an occupied villa's detail sheet) ----
 let currentFoodOrder = {}; // dishId -> qty, reset each time the panel is (re)built
+let foodSearchQuery = "";
 
 function renderFoodOrdersPanel() {
   currentFoodOrder = {};
-  const rows = MENU_ITEMS.map(dish => `
-    <div class="food-order-row">
-      <div class="food-order-info">
-        <span class="food-order-name">${escapeHtml(dish.name)}</span>
-        <span class="food-order-price">${fmtLKR(dish.price)}</span>
-      </div>
-      <div class="food-order-qty-stepper">
-        <button type="button" class="stepper-input-btn food-qty-minus" data-dish-id="${dish.id}" aria-label="Remove one ${escapeHtml(dish.name)}">&minus;</button>
-        <span class="food-order-qty-value" id="food-qty-${dish.id}">0</span>
-        <button type="button" class="stepper-input-btn food-qty-plus" data-dish-id="${dish.id}" aria-label="Add one ${escapeHtml(dish.name)}">+</button>
-      </div>
-    </div>
-  `).join("");
+  foodSearchQuery = "";
 
   return `
     <div class="food-orders-panel">
       <h4>Food Orders</h4>
-      <div class="food-order-list">${rows}</div>
+      <div class="food-order-selected" id="food-order-selected" style="display:none"></div>
+      <div class="food-order-search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+        <input type="search" id="food-order-search" placeholder="Search dish name or #…" autocomplete="off" autocapitalize="off" enterkeyhint="search" />
+      </div>
+      <div class="food-order-list" id="food-order-list"></div>
       <div class="food-order-total-row"><span>Total</span><span id="food-order-total">${fmtLKR(0)}</span></div>
       <button type="button" class="primary-btn big" id="place-order-btn" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
@@ -156,12 +170,76 @@ function renderFoodOrdersPanel() {
   `;
 }
 
-function wireFoodOrdersPanel() {
-  document.querySelectorAll(".food-qty-plus").forEach(btn => {
+function renderFoodOrderList() {
+  const q = foodSearchQuery.trim().toLowerCase();
+  const matches = MENU_ITEMS.filter(dish => {
+    if (!q) return true;
+    const matchesNumber = String(dish.id) === q || String(dish.id).startsWith(q);
+    const matchesName = dish.name.toLowerCase().includes(q);
+    return matchesNumber || matchesName;
+  });
+
+  const list = document.getElementById("food-order-list");
+  list.innerHTML = matches.map(dish => {
+    const qty = currentFoodOrder[dish.id] || 0;
+    return `
+      <div class="food-order-row">
+        <div class="food-order-info">
+          <span class="food-order-name"><span class="food-order-number">#${dish.id}</span>${escapeHtml(dish.name)}</span>
+          <span class="food-order-price">${fmtLKR(dish.price)}</span>
+        </div>
+        <div class="food-order-qty-stepper">
+          <button type="button" class="stepper-input-btn food-qty-minus" data-dish-id="${dish.id}" aria-label="Remove one ${escapeHtml(dish.name)}">&minus;</button>
+          <span class="food-order-qty-value" id="food-qty-${dish.id}">${qty}</span>
+          <button type="button" class="stepper-input-btn food-qty-plus" data-dish-id="${dish.id}" aria-label="Add one ${escapeHtml(dish.name)}">+</button>
+        </div>
+      </div>
+    `;
+  }).join("") || `<p class="room-detail-empty">No dishes match “${escapeHtml(foodSearchQuery)}”.</p>`;
+
+  list.querySelectorAll(".food-qty-plus").forEach(btn => {
     btn.addEventListener("click", () => adjustFoodOrderQty(btn.dataset.dishId, 1));
   });
-  document.querySelectorAll(".food-qty-minus").forEach(btn => {
+  list.querySelectorAll(".food-qty-minus").forEach(btn => {
     btn.addEventListener("click", () => adjustFoodOrderQty(btn.dataset.dishId, -1));
+  });
+}
+
+function renderFoodOrderSelected() {
+  const selected = document.getElementById("food-order-selected");
+  const entries = Object.keys(currentFoodOrder)
+    .map(id => ({ dish: MENU_ITEMS.find(d => d.id === Number(id)), qty: currentFoodOrder[id] }))
+    .filter(e => e.dish && e.qty > 0);
+
+  if (!entries.length) {
+    selected.style.display = "none";
+    selected.innerHTML = "";
+    return;
+  }
+
+  selected.style.display = "flex";
+  selected.innerHTML = entries.map(e => `
+    <span class="food-order-chip">
+      ${escapeHtml(e.dish.name)} &times;${e.qty}
+      <button type="button" class="food-order-chip-remove" data-dish-id="${e.dish.id}" aria-label="Remove ${escapeHtml(e.dish.name)}">&times;</button>
+    </span>
+  `).join("");
+
+  selected.querySelectorAll(".food-order-chip-remove").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentFoodOrder[btn.dataset.dishId] = 0;
+      const qtyEl = document.getElementById("food-qty-" + btn.dataset.dishId);
+      if (qtyEl) qtyEl.textContent = "0";
+      updateFoodOrderTotal();
+    });
+  });
+}
+
+function wireFoodOrdersPanel() {
+  renderFoodOrderList();
+  document.getElementById("food-order-search").addEventListener("input", (e) => {
+    foodSearchQuery = e.target.value;
+    renderFoodOrderList();
   });
   document.getElementById("place-order-btn").addEventListener("click", placeFoodOrder);
 }
@@ -187,6 +265,7 @@ function updateFoodOrderTotal() {
   });
   document.getElementById("food-order-total").textContent = fmtLKR(total);
   document.getElementById("place-order-btn").disabled = !anyQty;
+  renderFoodOrderSelected();
 }
 
 function placeFoodOrder() {

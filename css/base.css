@@ -252,6 +252,32 @@ input:focus, textarea:focus, select:focus {
 .secondary-btn:hover { background: #fdf6ee; border-color: var(--maroon); }
 .secondary-btn:active { transform: scale(0.97); }
 
+/* Compact icon-only actions in a bottom sheet's header (close, and delete
+   when editing) — replaces full-width text buttons stacked under the
+   sheet's primary action, which looked heavy and misaligned. */
+.sheet-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.sheet-icon-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.sheet-icon-btn svg { width: 16px; height: 16px; }
+.sheet-icon-btn:active { transform: scale(0.92); }
+.sheet-icon-btn-danger { border-color: var(--danger); color: var(--danger); }
+@media (hover: hover) and (pointer: fine) {
+  .sheet-icon-btn:hover { background: #f7f5f0; border-color: var(--maroon-soft); color: var(--maroon); }
+  .sheet-icon-btn-danger:hover { background: #fdf2f1; border-color: var(--danger); color: var(--danger); }
+}
+
 /* Shared bottom export bar (invoice preview, dashboard, reports) */
 .export-bar {
   display: flex;

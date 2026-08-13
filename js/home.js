@@ -8,6 +8,8 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+let latestBoardedIndex = null;
+
 export function renderHomeDashboard() {
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   const today = todayISO();
@@ -41,19 +43,55 @@ export function renderHomeDashboard() {
     });
   }
 
-  const occupiedCount = rooms.filter(r => r.status === "occupied").length;
-  document.getElementById("occupied-now-count").textContent = occupiedCount;
+  const occupied = rooms.filter(r => r.status === "occupied");
+  const available = rooms.filter(r => r.status === "available");
+  document.getElementById("stat-occupied-count").textContent = occupied.length;
+  document.getElementById("stat-available-count").textContent = available.length;
+
+  // "Latest boarded" — the occupied villa with the most recent check-in date.
+  const latestLabel = document.getElementById("stat-latest-room");
+  latestBoardedIndex = null;
+  if (occupied.length) {
+    let latest = null;
+    rooms.forEach((r, i) => {
+      if (r.status !== "occupied") return;
+      if (!latest || r.checkin > latest.checkin) {
+        latest = r;
+        latestBoardedIndex = i;
+      }
+    });
+    latestLabel.textContent = latest.name;
+  } else {
+    latestLabel.textContent = "—";
+  }
 
   if (checkoutsToday.length) {
     showToast(`${checkoutsToday.length} checkout${checkoutsToday.length === 1 ? "" : "s"} today`);
   }
 }
 
-document.getElementById("occupied-now-card").addEventListener("click", () => {
-  renderRooms();
+document.getElementById("stat-occupied-card").addEventListener("click", () => {
+  renderRooms("occupied");
   showScreen("screen-rooms");
 });
 
+document.getElementById("stat-available-card").addEventListener("click", () => {
+  renderRooms("available");
+  showScreen("screen-rooms");
+});
+
+document.getElementById("stat-latest-card").addEventListener("click", () => {
+  if (latestBoardedIndex === null) return;
+  renderRooms();
+  showScreen("screen-rooms");
+  openRoomDetail(appState.selectedBranch, latestBoardedIndex);
+});
+
 document.getElementById("qa-food-order-btn").addEventListener("click", () => {
-  document.getElementById("open-rooms-btn").click();
+  // Only occupied villas can take a food order — no point showing the
+  // full map (available/booked villas would just be dead ends here).
+  // "food-order" mode also skips the Check Out button in the detail sheet,
+  // since that's not what this shortcut is for.
+  renderRooms("occupied", "food-order");
+  showScreen("screen-rooms");
 });

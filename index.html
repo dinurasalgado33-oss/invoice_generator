@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=4" />
-<link rel="stylesheet" href="css/brand-home.css?v=4" />
-<link rel="stylesheet" href="css/rooms.css?v=4" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=4" />
-<link rel="stylesheet" href="css/invoice.css?v=4" />
-<link rel="stylesheet" href="css/dashboard.css?v=4" />
-<link rel="stylesheet" href="css/reports.css?v=4" />
+<link rel="stylesheet" href="css/base.css?v=17" />
+<link rel="stylesheet" href="css/brand-home.css?v=17" />
+<link rel="stylesheet" href="css/rooms.css?v=17" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=17" />
+<link rel="stylesheet" href="css/invoice.css?v=17" />
+<link rel="stylesheet" href="css/dashboard.css?v=17" />
+<link rel="stylesheet" href="css/reports.css?v=17" />
 </head>
 <body>
 
@@ -85,16 +85,18 @@
       <div id="today-checkouts-list"><p class="room-detail-empty">No checkouts today.</p></div>
     </div>
 
-    <div class="dash-stat-row">
-      <button type="button" class="dash-stat-card" id="occupied-now-card">
-        <span class="dash-stat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-        </span>
-        <span class="dash-stat-text">
-          <strong id="occupied-now-count">0</strong>
-          <small>Occupied Now</small>
-        </span>
-        <svg class="dash-stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+    <div class="dash-stat-row dash-stat-row-triple">
+      <button type="button" class="dash-stat-mini" id="stat-occupied-card">
+        <span class="dash-stat-mini-value" id="stat-occupied-count">0</span>
+        <span class="dash-stat-mini-label">Occupied</span>
+      </button>
+      <button type="button" class="dash-stat-mini" id="stat-available-card">
+        <span class="dash-stat-mini-value" id="stat-available-count">0</span>
+        <span class="dash-stat-mini-label">Free</span>
+      </button>
+      <button type="button" class="dash-stat-mini" id="stat-latest-card">
+        <span class="dash-stat-mini-value dash-stat-mini-value-text" id="stat-latest-room">—</span>
+        <span class="dash-stat-mini-label">Latest Boarded</span>
       </button>
     </div>
 
@@ -178,9 +180,11 @@
       <div class="room-detail-header">
         <h3 id="room-detail-name">Villa</h3>
         <span class="room-detail-status" id="room-detail-status">Available</span>
+        <button type="button" class="sheet-icon-btn" id="room-detail-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
       </div>
       <div class="room-detail-body" id="room-detail-body"></div>
-      <button type="button" class="secondary-btn" id="room-detail-close">Close</button>
     </div>
   </div>
 
@@ -190,14 +194,34 @@
     <div class="brand small">
       <img id="menu-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
       <h2>Menu Config — <span id="menu-branch-label"></span></h2>
+      <button type="button" class="brand-header-action" id="add-dish-btn" aria-label="Add dish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+      </button>
     </div>
 
     <div class="list-wrap">
-      <div class="dish-list" id="dish-list"><!-- dish rows injected by JS --></div>
-      <button type="button" class="secondary-btn" id="add-dish-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
-        Add Dish
-      </button>
+      <div class="list-search-row">
+        <div class="list-search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+          <input type="search" id="menu-search" placeholder="Search dishes or #…" autocomplete="off" autocapitalize="off" enterkeyhint="search" />
+          <button type="button" id="menu-search-clear" class="list-search-clear" aria-label="Clear search" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <p class="list-search-status" id="menu-search-status" style="display:none"></p>
+      <div class="list-table-wrap">
+        <table class="list-table" id="menu-table">
+          <thead>
+            <tr>
+              <th>Dish</th>
+              <th>Price</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="dish-list"><!-- dish rows injected by JS --></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -207,6 +231,14 @@
       <div class="room-detail-handle"></div>
       <div class="room-detail-header">
         <h3 id="dish-sheet-title">Add Dish</h3>
+        <div class="sheet-header-actions">
+          <button type="button" class="sheet-icon-btn sheet-icon-btn-danger" id="dish-delete-btn" style="display:none" aria-label="Delete dish">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+          </button>
+          <button type="button" class="sheet-icon-btn" id="dish-sheet-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
       </div>
       <div class="room-detail-body">
         <form id="dish-form">
@@ -214,9 +246,15 @@
             <label>Dish Name</label>
             <input type="text" id="dish-name" required autocapitalize="words" enterkeyhint="next" />
           </div>
-          <div class="field">
-            <label>Price (LKR)</label>
-            <input type="number" id="dish-price" min="0" step="1" inputmode="decimal" required enterkeyhint="next" />
+          <div class="form-grid">
+            <div class="field">
+              <label>Category</label>
+              <select id="dish-category"></select>
+            </div>
+            <div class="field">
+              <label>Price (LKR)</label>
+              <input type="number" id="dish-price" min="0" step="1" inputmode="decimal" required enterkeyhint="next" />
+            </div>
           </div>
           <label class="field-label-standalone">Ingredients</label>
           <div class="ingredient-list" id="ingredient-list"><!-- ingredient rows injected by JS --></div>
@@ -230,7 +268,6 @@
           </button>
         </form>
       </div>
-      <button type="button" class="secondary-btn" id="dish-sheet-close">Close</button>
     </div>
   </div>
 
@@ -240,16 +277,94 @@
     <div class="brand small">
       <img id="inventory-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
       <h2>Inventory — <span id="inventory-branch-label"></span></h2>
+      <button type="button" class="brand-header-action" id="add-inventory-item-btn" aria-label="Add inventory item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+      </button>
     </div>
 
     <div class="list-wrap">
-      <div class="inventory-legend">
+      <div class="list-search-row">
+        <div class="list-search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+          <input type="search" id="inventory-search" placeholder="Search items or categories…" autocomplete="off" autocapitalize="off" enterkeyhint="search" />
+          <button type="button" id="inventory-search-clear" class="list-search-clear" aria-label="Clear search" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <button type="button" id="inventory-low-filter" class="inventory-filter-chip" aria-pressed="false">
+          <span class="legend-dot low"></span> Low stock only
+        </button>
+      </div>
+      <p class="list-search-status" id="inventory-search-status" style="display:none"></p>
+      <div class="inventory-legend" id="inventory-legend">
         <span class="legend-item"><span class="legend-dot ok"></span>OK</span>
         <span class="legend-item"><span class="legend-dot low"></span>Low Stock</span>
       </div>
-      <div class="inventory-list" id="inventory-list"><!-- item rows injected by JS --></div>
+      <div class="list-table-wrap">
+        <table class="list-table" id="inventory-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Stock</th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="inventory-list"><!-- item rows injected by JS --></tbody>
+        </table>
+      </div>
     </div>
   </section>
+
+  <!-- Add inventory item sheet -->
+  <div class="room-detail-overlay" id="item-sheet-overlay">
+    <div class="room-detail-sheet" id="item-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="item-sheet-title">Add Inventory Item</h3>
+        <div class="sheet-header-actions">
+          <button type="button" class="sheet-icon-btn sheet-icon-btn-danger" id="item-delete-btn" style="display:none" aria-label="Delete item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+          </button>
+          <button type="button" class="sheet-icon-btn" id="item-sheet-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div class="room-detail-body">
+        <form id="item-form">
+          <div class="field">
+            <label>Item Name</label>
+            <input type="text" id="item-name" required autocapitalize="words" enterkeyhint="next" />
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Category</label>
+              <select id="item-category"></select>
+            </div>
+            <div class="field">
+              <label>Unit</label>
+              <select id="item-unit"></select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Current Stock</label>
+              <input type="number" id="item-stock" min="0" step="0.01" inputmode="decimal" value="0" required enterkeyhint="next" />
+            </div>
+            <div class="field">
+              <label>Min Stock</label>
+              <input type="number" id="item-min-stock" min="0" step="0.01" inputmode="decimal" value="0" required enterkeyhint="done" />
+            </div>
+          </div>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+            Save Item
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
@@ -683,6 +798,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=4"></script>
+<script type="module" src="js/main.js?v=17"></script>
 </body>
 </html>
