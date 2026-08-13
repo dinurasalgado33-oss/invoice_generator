@@ -131,6 +131,9 @@
   background: var(--white);
   width: 100%;
   max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 22px 22px 0 0;
   padding: 8px 22px calc(22px + env(safe-area-inset-bottom));
   transform: translateY(100%);
