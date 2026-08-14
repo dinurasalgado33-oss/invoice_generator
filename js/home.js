@@ -91,3 +91,30 @@ document.getElementById("qa-food-order-btn").addEventListener("click", () => {
   renderRooms("occupied", "food-order");
   showScreen("screen-rooms");
 });
+
+// ---- Live clock + connection status (header) ----
+function updateClock() {
+  document.getElementById("dash-clock").textContent = new Date().toLocaleTimeString("en-GB", { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function updateConnectionStatus() {
+  const dot = document.getElementById("dash-connection-dot");
+  const label = document.getElementById("dash-connection-label");
+  const online = navigator.onLine;
+  dot.classList.toggle("offline", !online);
+
+  let text = online ? "Online" : "Offline";
+  // navigator.connection is Chrome/Android only — quietly skip the extra
+  // detail everywhere else rather than showing something we can't back up.
+  const conn = navigator.connection;
+  if (online && conn && conn.effectiveType) {
+    text += ` · ${conn.effectiveType === "4g" ? "Fast" : "Slow"}`;
+  }
+  label.textContent = text;
+}
+window.addEventListener("online", updateConnectionStatus);
+window.addEventListener("offline", updateConnectionStatus);
+if (navigator.connection) navigator.connection.addEventListener("change", updateConnectionStatus);
+updateConnectionStatus();

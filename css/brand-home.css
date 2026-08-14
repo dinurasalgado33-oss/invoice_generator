@@ -241,7 +241,35 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.dash-header-text .role-indicator { text-align: left; margin: 4px 0 0; color: var(--gold-light); opacity: 0.85; }
+.dash-header-text .role-indicator {
+  text-align: left;
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.95rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  opacity: 1;
+}
+
+.dash-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--gold-light);
+  opacity: 0.85;
+}
+.dash-clock { font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
+.dash-connection { display: flex; align-items: center; gap: 5px; }
+.dash-connection-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3fb851;
+  box-shadow: 0 0 4px #3fb851;
+  flex-shrink: 0;
+}
+.dash-connection-dot.offline { background: var(--danger); box-shadow: 0 0 4px var(--danger); }
 
 .dash-header .dash-switch-branch {
   flex-shrink: 0;

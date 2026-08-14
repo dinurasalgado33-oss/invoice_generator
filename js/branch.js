@@ -13,7 +13,6 @@ export function selectBranch(branchKey) {
   appState.selectedBranchLabel = btn.dataset.label;
   appState.selectedBranchLogo = btn.dataset.logo;
 
-  document.getElementById("home-branch-label").textContent = appState.selectedBranchLabel;
   document.getElementById("form-branch-label").textContent = appState.selectedBranchLabel;
   document.getElementById("rooms-branch-label").textContent = appState.selectedBranchLabel;
   document.getElementById("dashboard-branch-label").textContent = appState.selectedBranchLabel;

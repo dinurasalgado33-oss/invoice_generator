@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=20" />
-<link rel="stylesheet" href="css/brand-home.css?v=20" />
-<link rel="stylesheet" href="css/rooms.css?v=20" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=20" />
-<link rel="stylesheet" href="css/invoice.css?v=20" />
-<link rel="stylesheet" href="css/dashboard.css?v=20" />
-<link rel="stylesheet" href="css/reports.css?v=20" />
+<link rel="stylesheet" href="css/base.css?v=22" />
+<link rel="stylesheet" href="css/brand-home.css?v=22" />
+<link rel="stylesheet" href="css/rooms.css?v=22" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=22" />
+<link rel="stylesheet" href="css/invoice.css?v=22" />
+<link rel="stylesheet" href="css/dashboard.css?v=22" />
+<link rel="stylesheet" href="css/reports.css?v=22" />
 </head>
 <body>
 
@@ -75,8 +75,14 @@
       </button>
       <img id="home-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
       <div class="dash-header-text">
-        <h1 id="home-branch-label">Branch</h1>
         <p class="role-indicator" id="role-indicator">Role: Manager</p>
+        <div class="dash-status-row">
+          <span class="dash-clock" id="dash-clock">--:--:--</span>
+          <span class="dash-connection">
+            <span class="dash-connection-dot" id="dash-connection-dot"></span>
+            <span id="dash-connection-label">Online</span>
+          </span>
+        </div>
       </div>
     </div>
 
@@ -859,6 +865,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=20"></script>
+<script type="module" src="js/main.js?v=22"></script>
 </body>
 </html>
