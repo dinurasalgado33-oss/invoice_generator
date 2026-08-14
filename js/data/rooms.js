@@ -31,3 +31,24 @@ export const ROOMS_BY_BRANCH = {
 };
 
 export const ROOM_STATUS_LABELS = { available: "Available", booked: "Booked", occupied: "Occupied" };
+
+// Every check-in and check-out appends here — a manager-facing audit trail
+// of guest movement, separate from the live ROOMS_BY_BRANCH snapshot above.
+let nextRoomActivityId = 100;
+export const ROOM_ACTIVITY_LOG = [
+  { id: 1, branch: "Wilpattu", villa: "Forest Villa 2", guest: "Sanduni Rathnayake", action: "Check In", datetime: "2026-06-25T13:40:00" },
+  { id: 2, branch: "Wilpattu", villa: "Forest Villa 2", guest: "Sanduni Rathnayake", action: "Check Out", datetime: "2026-06-28T11:15:00" },
+  { id: 3, branch: "Arugam Bay", villa: "Beachfront Villa 08", guest: "Robert Johnson", action: "Check In", datetime: "2026-07-01T14:05:00" },
+  { id: 4, branch: "Arugam Bay", villa: "Beachfront Villa 08", guest: "Robert Johnson", action: "Check Out", datetime: "2026-07-05T10:50:00" },
+  { id: 5, branch: "Arugam Bay", villa: "Ocean Pool Villa 02", guest: "Emma Watson", action: "Check In", datetime: "2026-07-08T13:20:00" },
+  { id: 6, branch: "Arugam Bay", villa: "Ocean Pool Villa 02", guest: "Emma Watson", action: "Check Out", datetime: "2026-07-12T11:30:00" },
+  { id: 7, branch: "Arugam Bay", villa: "Ocean Pool Villa 01", guest: "Kasun Perera", action: "Check In", datetime: "2026-08-10T14:15:00" },
+  { id: 8, branch: "Arugam Bay", villa: "Garden Villa 05", guest: "Mr. & Mrs. Silva", action: "Check In", datetime: "2026-08-09T15:05:00" },
+  { id: 9, branch: "Arugam Bay", villa: "Beachfront Villa 07", guest: "Nadeesha Fernando", action: "Check In", datetime: "2026-08-10T13:50:00" },
+  { id: 10, branch: "Wilpattu", villa: "Forest Villa 1", guest: "Ruwan Jayasuriya", action: "Check In", datetime: "2026-08-10T14:30:00" },
+  { id: 11, branch: "Wilpattu", villa: "Forest Villa 7", guest: "Ishara Wickramasinghe", action: "Check In", datetime: "2026-08-10T12:45:00" },
+  { id: 12, branch: "Wilpattu", villa: "Forest Villa 5", guest: "Mr. & Mrs. Bandara", action: "Check In", datetime: "2026-08-11T14:00:00" },
+];
+export function logRoomActivity(branch, villa, guest, action) {
+  ROOM_ACTIVITY_LOG.push({ id: nextRoomActivityId++, branch, villa, guest, action, datetime: new Date().toISOString() });
+}

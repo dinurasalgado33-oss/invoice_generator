@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast } from "./utils.js";
-import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS } from "./data/rooms.js";
+import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { MENU_ITEMS } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
@@ -114,6 +114,7 @@ function renderRoomDetailBody() {
     `;
     document.getElementById("check-in-btn").addEventListener("click", () => {
       room.status = "occupied";
+      logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check In");
       renderRoomDetailBody();
       renderRooms();
     });
@@ -358,6 +359,7 @@ function prefillInvoiceForCheckout(room) {
 onAfterGenerate(() => {
   if (checkoutRoomRef) {
     const room = ROOMS_BY_BRANCH[checkoutRoomRef.branch][checkoutRoomRef.index];
+    logRoomActivity(checkoutRoomRef.branch, room.name, room.guest, "Check Out");
     room.status = "available";
     delete room.guest;
     delete room.phone;

@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { ACCOUNTS } from "./data/accounts.js";
+import { ACCOUNTS, logLogin } from "./data/accounts.js";
 import { selectBranch } from "./branch.js";
 
 // Staff login — client-side gate only (no backend), just keeps casual
@@ -51,6 +51,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
     localStorage.setItem(LOCKED_BRANCH_KEY, account.branch || "");
     appState.currentRole = account.role;
     errorEl.classList.remove("show");
+    logLogin(account.username, account.role, account.branch);
     routeAfterLogin();
   } else {
     errorEl.classList.add("show");

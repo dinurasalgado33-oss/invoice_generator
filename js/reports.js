@@ -1,15 +1,17 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast } from "./utils.js";
+import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
 import { INVOICES, FOOD_ORDER_RECORDS, INVENTORY_USAGE, BOOKINGS } from "./data/reports.js";
-import { ROOMS_BY_BRANCH } from "./data/rooms.js";
+import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG } from "./data/inventory.js";
+import { LOGIN_LOG } from "./data/accounts.js";
 
 const state = {
   preset: "month", // today | week | month | lastmonth | custom
   branch: "all",
   tab: "invoices",
   search: "",
+  restockView: "list", // list | grouped — only used by the Restock Log tab
 };
 
 const BRANCHES = ["Wilpattu", "Arugam Bay"];
@@ -89,6 +91,21 @@ function getFilteredRestockLog(range) {
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+function getFilteredLoginLog(range) {
+  // Manager logins aren't tied to one branch (they can work either) — show
+  // them regardless of which branch filter is active, alongside whichever
+  // staff logins match.
+  return LOGIN_LOG
+    .filter(l => inRange(l.datetime.slice(0, 10), range) && (state.branch === "all" || l.branch === state.branch || l.branch === null) && matchesSearch(l.username))
+    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+}
+
+function getFilteredRoomActivity(range) {
+  return ROOM_ACTIVITY_LOG
+    .filter(a => inRange(a.datetime.slice(0, 10), range) && matchesBranch(a.branch) && matchesSearch(a.guest + " " + a.villa))
+    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+}
+
 function getFilteredBookings(range) {
   return BOOKINGS
     .filter(b => inRange(b.checkin, range) && matchesBranch(b.branch) && matchesSearch(b.guest + " " + b.villa))
@@ -143,29 +160,31 @@ function computeBranchTotals(range) {
 function renderSummary(range) {
   const { revenue, count, avg, occupancy, inventorySpend, profit } = computeSummary(range);
   document.getElementById("reports-kpi-grid").innerHTML = `
-    <div class="kpi-card">
-      <span class="kpi-label">Total Revenue</span>
-      <span class="kpi-value">${fmtLKR(revenue)}</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Total Invoices</span>
-      <span class="kpi-value">${count.toLocaleString("en-US")}</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Avg. Invoice Value</span>
-      <span class="kpi-value">${fmtLKR(avg)}</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Occupancy Rate</span>
-      <span class="kpi-value">${occupancy}%</span>
-    </div>
-    <div class="kpi-card" title="Total Revenue minus Inventory Spend for this period">
-      <span class="kpi-label">Est. Profit</span>
-      <span class="kpi-value ${profit < 0 ? "kpi-value-negative" : ""}">${fmtLKR(profit)}</span>
-    </div>
-    <div class="kpi-card" title="From the Inventory Spend tab's restock log">
-      <span class="kpi-label">Inventory Spend</span>
-      <span class="kpi-value">${fmtLKR(inventorySpend)}</span>
+    <div class="kpi-strip-row">
+      <div class="kpi-pill">
+        <span class="kpi-pill-label">Revenue</span>
+        <span class="kpi-pill-value">${fmtLKR(revenue)}</span>
+      </div>
+      <div class="kpi-pill">
+        <span class="kpi-pill-label">Invoices</span>
+        <span class="kpi-pill-value">${count.toLocaleString("en-US")}</span>
+      </div>
+      <div class="kpi-pill">
+        <span class="kpi-pill-label">Avg. Invoice</span>
+        <span class="kpi-pill-value">${fmtLKR(avg)}</span>
+      </div>
+      <div class="kpi-pill">
+        <span class="kpi-pill-label">Occupancy</span>
+        <span class="kpi-pill-value">${occupancy}%</span>
+      </div>
+      <div class="kpi-pill" title="Revenue minus Inventory Spend for this period">
+        <span class="kpi-pill-label">Est. Profit</span>
+        <span class="kpi-pill-value ${profit < 0 ? "kpi-value-negative" : ""}">${fmtLKR(profit)}</span>
+      </div>
+      <div class="kpi-pill" title="From the Inventory Spend tab's restock log">
+        <span class="kpi-pill-label">Inv. Spend</span>
+        <span class="kpi-pill-value">${fmtLKR(inventorySpend)}</span>
+      </div>
     </div>
   `;
 
@@ -316,6 +335,77 @@ function renderSpendTab(range) {
   `;
 }
 
+function renderRestockLogRow(r) {
+  return `
+    <div class="report-row">
+      <div class="report-row-top">
+        <div>
+          <span class="report-row-title">${escapeHtml(r.itemName)}</span>
+          <span class="report-row-sub">${escapeHtml(r.category)} &middot; ${escapeHtml(r.branch)} &middot; ${formatDate(r.date)}</span>
+        </div>
+        <div class="report-row-end">
+          <span class="report-row-amount">${fmtLKR(r.totalCost)}</span>
+          <span class="report-row-sub">${r.qty}${escapeHtml(r.unit)} &middot; ${fmtLKR(r.unitCost)}/unit</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRestockLogTab(range) {
+  // Newest first — "add to inventory" purchases, latest on top.
+  const rows = [...getFilteredRestockLog(range)].sort((a, b) => (a.date < b.date ? 1 : -1));
+  if (!rows.length) return emptyState();
+
+  if (state.restockView === "grouped") {
+    const groups = {};
+    rows.forEach(r => {
+      if (!groups[r.category]) groups[r.category] = [];
+      groups[r.category].push(r);
+    });
+    return Object.keys(groups).sort().map(category => `
+      <h4 class="report-group-heading">${escapeHtml(category)}</h4>
+      ${groups[category].map(renderRestockLogRow).join("")}
+    `).join("");
+  }
+
+  return rows.map(renderRestockLogRow).join("");
+}
+
+function renderLoginsTab(range) {
+  const rows = getFilteredLoginLog(range);
+  if (!rows.length) return emptyState();
+
+  return rows.map(l => `
+    <div class="report-row">
+      <div class="report-row-top">
+        <div>
+          <span class="report-row-title">${escapeHtml(l.username)}</span>
+          <span class="report-row-sub">${l.role === "manager" ? "Manager" : "Staff"} &middot; ${l.branch ? escapeHtml(l.branch) : "All Branches"}</span>
+        </div>
+        <span class="report-row-amount">${formatDateTime(l.datetime)}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderActivityTab(range) {
+  const rows = getFilteredRoomActivity(range);
+  if (!rows.length) return emptyState();
+
+  return rows.map(a => `
+    <div class="report-row">
+      <div class="report-row-top">
+        <div>
+          <span class="report-row-title">${escapeHtml(a.guest)}</span>
+          <span class="report-row-sub">${escapeHtml(a.villa)} &middot; ${escapeHtml(a.branch)} &middot; ${formatDateTime(a.datetime)}</span>
+        </div>
+        <span class="stock-badge ${a.action === "Check In" ? "" : "low"}">${escapeHtml(a.action)}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
 function renderBookingsTab(range) {
   const rows = getFilteredBookings(range);
   if (!rows.length) return emptyState();
@@ -352,13 +442,20 @@ function renderBookingsTab(range) {
 
 function renderReportBody(range) {
   const body = document.getElementById("report-body");
-  const labels = { invoices: "Invoices", food: "Food Orders", inventory: "Inventory Usage", spend: "Inventory Spend", bookings: "Bookings & Occupancy" };
+  const labels = {
+    invoices: "Invoices", food: "Food Orders", inventory: "Inventory Usage", spend: "Inventory Spend",
+    restock: "Restock Log", logins: "Staff Logins", activity: "Check-in / Check-out", bookings: "Bookings & Occupancy",
+  };
   document.getElementById("report-tab-label").textContent = labels[state.tab];
+  document.getElementById("report-view-toggle").style.display = state.tab === "restock" ? "flex" : "none";
 
   if (state.tab === "invoices") body.innerHTML = renderInvoicesTab(range);
   else if (state.tab === "food") body.innerHTML = renderFoodTab(range);
   else if (state.tab === "inventory") body.innerHTML = renderInventoryTab();
   else if (state.tab === "spend") body.innerHTML = renderSpendTab(range);
+  else if (state.tab === "restock") body.innerHTML = renderRestockLogTab(range);
+  else if (state.tab === "logins") body.innerHTML = renderLoginsTab(range);
+  else if (state.tab === "activity") body.innerHTML = renderActivityTab(range);
   else body.innerHTML = renderBookingsTab(range);
 }
 
@@ -405,6 +502,15 @@ document.querySelectorAll(".report-tab").forEach(tab => {
   });
 });
 
+document.querySelectorAll("#report-view-toggle .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("#report-view-toggle .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    state.restockView = chip.dataset.view;
+    renderReportBody(getActiveRange());
+  });
+});
+
 // ---------- Export & share ----------
 function csvEscape(value) {
   const str = String(value);
@@ -438,10 +544,22 @@ function getExportRows() {
       rows: getFilteredInventoryUsage().map(r => [r.item, r.category, r.branch, r.opening, r.restocked, r.used, r.closing, r.minStock]),
     };
   }
-  if (state.tab === "spend") {
+  if (state.tab === "spend" || state.tab === "restock") {
     return {
       headers: ["Date", "Item", "Category", "Branch", "Qty", "Unit Cost (LKR)", "Total Cost (LKR)"],
       rows: getFilteredRestockLog(range).map(r => [r.date, r.itemName, r.category, r.branch, r.qty, r.unitCost, r.totalCost]),
+    };
+  }
+  if (state.tab === "logins") {
+    return {
+      headers: ["Username", "Role", "Branch", "Date & Time"],
+      rows: getFilteredLoginLog(range).map(l => [l.username, l.role, l.branch || "All Branches", l.datetime]),
+    };
+  }
+  if (state.tab === "activity") {
+    return {
+      headers: ["Guest", "Villa", "Branch", "Action", "Date & Time"],
+      rows: getFilteredRoomActivity(range).map(a => [a.guest, a.villa, a.branch, a.action, a.datetime]),
     };
   }
   return {

@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=19" />
-<link rel="stylesheet" href="css/brand-home.css?v=19" />
-<link rel="stylesheet" href="css/rooms.css?v=19" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=19" />
-<link rel="stylesheet" href="css/invoice.css?v=19" />
-<link rel="stylesheet" href="css/dashboard.css?v=19" />
-<link rel="stylesheet" href="css/reports.css?v=19" />
+<link rel="stylesheet" href="css/base.css?v=20" />
+<link rel="stylesheet" href="css/brand-home.css?v=20" />
+<link rel="stylesheet" href="css/rooms.css?v=20" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=20" />
+<link rel="stylesheet" href="css/invoice.css?v=20" />
+<link rel="stylesheet" href="css/dashboard.css?v=20" />
+<link rel="stylesheet" href="css/reports.css?v=20" />
 </head>
 <body>
 
@@ -490,8 +490,8 @@
       <p class="dashboard-report-date" id="reports-period-label"></p>
 
       <div class="list-wrap">
-        <div class="reports-filters no-print">
-          <div class="filter-group">
+        <div class="reports-filters">
+          <div class="filter-group no-print">
             <label>Period</label>
             <div class="chip-row" id="date-preset-row">
               <button type="button" class="chip" data-preset="today">Today</button>
@@ -507,7 +507,7 @@
             </div>
           </div>
 
-          <div class="filter-group">
+          <div class="filter-group no-print">
             <label>Branch</label>
             <select id="reports-branch-select">
               <option value="all">All Branches</option>
@@ -516,7 +516,9 @@
             </select>
           </div>
 
-          <div class="filter-group">
+          <div class="kpi-strip" id="reports-kpi-grid"><!-- injected by JS --></div>
+
+          <div class="filter-group no-print">
             <label>Search</label>
             <div class="input-icon">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
@@ -530,11 +532,18 @@
           <button type="button" class="report-tab" data-report="food">Food Orders</button>
           <button type="button" class="report-tab" data-report="inventory">Inventory Usage</button>
           <button type="button" class="report-tab" data-report="spend">Inventory Spend</button>
+          <button type="button" class="report-tab" data-report="restock">Restock Log</button>
+          <button type="button" class="report-tab" data-report="logins">Staff Logins</button>
+          <button type="button" class="report-tab" data-report="activity">Check-in / Check-out</button>
           <button type="button" class="report-tab" data-report="bookings">Bookings &amp; Occupancy</button>
         </div>
         <h3 class="report-tab-label print-only" id="report-tab-label"></h3>
 
-        <div class="kpi-grid" id="reports-kpi-grid"><!-- injected by JS --></div>
+        <div class="report-view-toggle no-print" id="report-view-toggle" style="display:none">
+          <button type="button" class="chip active" data-view="list">List</button>
+          <button type="button" class="chip" data-view="grouped">Grouped by Category</button>
+        </div>
+
         <div class="branch-compare" id="branch-compare" style="display:none"><!-- injected by JS --></div>
 
         <div class="report-body" id="report-body"><!-- injected by JS --></div>
@@ -850,6 +859,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=19"></script>
+<script type="module" src="js/main.js?v=20"></script>
 </body>
 </html>
