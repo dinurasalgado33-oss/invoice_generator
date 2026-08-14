@@ -48,6 +48,7 @@
 .brand-header-action svg { width: 18px; height: 18px; }
 .brand-header-action:hover { background: rgba(255, 255, 255, 0.22); }
 .brand-header-action:active { background: rgba(255, 255, 255, 0.3); transform: scale(0.94); }
+.brand-header-action[aria-pressed="true"] { background: var(--gold); color: var(--maroon-dark); }
 
 .logo {
   width: 96px;

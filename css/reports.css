@@ -118,6 +118,11 @@
 .report-row-end { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
 .report-row-amount { font-weight: 700; color: var(--maroon); font-size: 0.95rem; }
 
+.spend-trend { font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+.spend-trend.up { color: var(--danger); }
+.spend-trend.down { color: #2c6b2f; }
+.spend-trend.flat { color: var(--text-muted); font-weight: 600; }
+
 .report-row-usage {
   display: flex;
   flex-wrap: wrap;

@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=17" />
-<link rel="stylesheet" href="css/brand-home.css?v=17" />
-<link rel="stylesheet" href="css/rooms.css?v=17" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=17" />
-<link rel="stylesheet" href="css/invoice.css?v=17" />
-<link rel="stylesheet" href="css/dashboard.css?v=17" />
-<link rel="stylesheet" href="css/reports.css?v=17" />
+<link rel="stylesheet" href="css/base.css?v=19" />
+<link rel="stylesheet" href="css/brand-home.css?v=19" />
+<link rel="stylesheet" href="css/rooms.css?v=19" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=19" />
+<link rel="stylesheet" href="css/invoice.css?v=19" />
+<link rel="stylesheet" href="css/dashboard.css?v=19" />
+<link rel="stylesheet" href="css/reports.css?v=19" />
 </head>
 <body>
 
@@ -277,6 +277,9 @@
     <div class="brand small">
       <img id="inventory-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
       <h2>Inventory — <span id="inventory-branch-label"></span></h2>
+      <button type="button" class="brand-header-action" id="bulk-restock-btn" aria-label="Bulk restock" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg>
+      </button>
       <button type="button" class="brand-header-action" id="add-inventory-item-btn" aria-label="Add inventory item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
       </button>
@@ -314,7 +317,51 @@
         </table>
       </div>
     </div>
+
+    <div class="bulk-restock-bar" id="bulk-restock-bar" style="display:none">
+      <div class="bulk-restock-bar-summary">
+        <strong id="bulk-restock-count">0 items</strong>
+        <span id="bulk-restock-total">LKR 0</span>
+      </div>
+      <div class="bulk-restock-bar-actions">
+        <button type="button" class="bulk-restock-cancel-btn" id="bulk-restock-cancel">Cancel</button>
+        <button type="button" class="primary-btn" id="bulk-restock-save" disabled>Save Restock</button>
+      </div>
+    </div>
   </section>
+
+  <!-- Single-item restock sheet -->
+  <div class="room-detail-overlay" id="restock-sheet-overlay">
+    <div class="room-detail-sheet" id="restock-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="restock-sheet-title">Restock Item</h3>
+        <button type="button" class="sheet-icon-btn" id="restock-sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="room-detail-body">
+        <p class="restock-current-stock" id="restock-current-stock"></p>
+        <form id="restock-form">
+          <div class="form-grid">
+            <div class="field">
+              <label>Qty Received</label>
+              <input type="number" id="restock-qty" min="0" step="0.01" inputmode="decimal" required enterkeyhint="next" />
+            </div>
+            <div class="field">
+              <label>Unit Cost (LKR)</label>
+              <input type="number" id="restock-unit-cost" min="0" step="0.01" inputmode="decimal" required enterkeyhint="done" />
+            </div>
+          </div>
+          <p class="restock-total-line">Total: <strong id="restock-total-cost">LKR 0</strong></p>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+            Save Restock
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- Add inventory item sheet -->
   <div class="room-detail-overlay" id="item-sheet-overlay">
@@ -356,6 +403,10 @@
               <label>Min Stock</label>
               <input type="number" id="item-min-stock" min="0" step="0.01" inputmode="decimal" value="0" required enterkeyhint="done" />
             </div>
+          </div>
+          <div class="field">
+            <label>Cost per Unit (LKR)<span class="label-optional"> — used as the default restock cost</span></label>
+            <input type="number" id="item-cost" min="0" step="0.01" inputmode="decimal" value="0" enterkeyhint="done" />
           </div>
           <button type="submit" class="primary-btn big">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
@@ -478,6 +529,7 @@
           <button type="button" class="report-tab active" data-report="invoices">Invoices</button>
           <button type="button" class="report-tab" data-report="food">Food Orders</button>
           <button type="button" class="report-tab" data-report="inventory">Inventory Usage</button>
+          <button type="button" class="report-tab" data-report="spend">Inventory Spend</button>
           <button type="button" class="report-tab" data-report="bookings">Bookings &amp; Occupancy</button>
         </div>
         <h3 class="report-tab-label print-only" id="report-tab-label"></h3>
@@ -798,6 +850,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=17"></script>
+<script type="module" src="js/main.js?v=19"></script>
 </body>
 </html>

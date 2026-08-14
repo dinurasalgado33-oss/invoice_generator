@@ -1,7 +1,10 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, setLogoSrc, showToast } from "./utils.js";
-import { INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS, allocateInventoryItemId } from "./data/inventory.js";
+import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO } from "./utils.js";
+import {
+  INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
+  allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
+} from "./data/inventory.js";
 
 // Inventory is fully editable by every role — staff need to be able to
 // log stock changes day to day without waiting on a manager.
@@ -17,6 +20,12 @@ const collapsedCategories = new Set(INVENTORY_CATEGORIES);
 let searchQuery = "";
 let lowOnly = false;
 
+// Bulk restock — swaps the stock/adjust/edit columns for qty+cost inputs
+// on every visible row. Entries persist here (not just in the DOM) so
+// they survive a search filter or collapse toggle re-render.
+let bulkMode = false;
+const bulkEntries = {}; // itemId -> { qty, unitCost } (raw input strings)
+
 export function updateInventoryBadge() {
   const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const lowCount = inventory.filter(i => i.stock < i.minStock).length;
@@ -30,8 +39,40 @@ export function updateInventoryBadge() {
     : "Track stock and supplies";
 }
 
+function logRestock(branch, item, qty, unitCost, date) {
+  RESTOCK_LOG.push({
+    id: allocateRestockId(),
+    branch,
+    itemName: item.name,
+    category: item.category,
+    unit: item.unit,
+    qty,
+    unitCost,
+    totalCost: Math.round(qty * unitCost * 100) / 100,
+    date,
+  });
+  item.stock = Math.round((item.stock + qty) * 100) / 100;
+  item.costPerUnit = unitCost;
+}
+
 function renderInventoryRow(item, hidden, showCategoryTag) {
   const isLow = item.stock < item.minStock;
+
+  if (bulkMode) {
+    const entry = bulkEntries[item.id] || {};
+    return `
+      <tr class="list-item-row" data-item-id="${item.id}" data-category="${escapeHtml(item.category)}" ${hidden ? 'style="display:none"' : ""}>
+        <td class="list-td-name">${escapeHtml(item.name)}${showCategoryTag ? `<span class="list-item-tag">${escapeHtml(item.category)}</span>` : ""}</td>
+        <td colspan="3">
+          <div class="bulk-restock-inputs">
+            <input type="number" class="bulk-qty-input" data-item-id="${item.id}" placeholder="Qty (${escapeHtml(item.unit)})" min="0" step="0.01" inputmode="decimal" value="${entry.qty ?? ""}">
+            <input type="number" class="bulk-cost-input" data-item-id="${item.id}" placeholder="Unit cost" min="0" step="0.01" inputmode="decimal" value="${entry.unitCost ?? item.costPerUnit ?? ""}">
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
   return `
     <tr class="list-item-row ${isLow ? "low-stock" : ""}" data-item-id="${item.id}" data-category="${escapeHtml(item.category)}" ${hidden ? 'style="display:none"' : ""}>
       <td class="list-td-name">${escapeHtml(item.name)}${showCategoryTag ? `<span class="list-item-tag">${escapeHtml(item.category)}</span>` : ""}</td>
@@ -44,7 +85,10 @@ function renderInventoryRow(item, hidden, showCategoryTag) {
         <button type="button" class="stock-adjust-btn" data-item-id="${item.id}" data-delta="-1" aria-label="Decrease ${escapeHtml(item.name)}">&minus;</button>
         <button type="button" class="stock-adjust-btn" data-item-id="${item.id}" data-delta="1" aria-label="Increase ${escapeHtml(item.name)}">+</button>
       </td>
-      <td>
+      <td class="inv-td-actions">
+        <button type="button" class="list-restock-btn" data-item-id="${item.id}" aria-label="Restock ${escapeHtml(item.name)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
+        </button>
         <button type="button" class="list-edit-btn" data-item-id="${item.id}" aria-label="Edit ${escapeHtml(item.name)}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
         </button>
@@ -63,9 +107,10 @@ function renderCategoryRow(category, items, hidden) {
           <svg class="list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
           ${escapeHtml(category)}
           <span class="list-group-count">${items.length} item${items.length === 1 ? "" : "s"}${lowCount ? ` &middot; ${lowCount} low` : ""}</span>
+          ${bulkMode ? "" : `
           <button type="button" class="list-group-add-btn" data-category="${escapeHtml(category)}" aria-label="Add item to ${escapeHtml(category)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
-          </button>
+          </button>`}
         </span>
       </td>
     </tr>
@@ -99,7 +144,7 @@ function renderInventoryScreen() {
   const query = searchQuery.trim().toLowerCase();
   const isFiltering = !!query || lowOnly;
   table.classList.toggle("filtered", isFiltering);
-  legendEl.style.display = isFiltering ? "none" : "";
+  legendEl.style.display = isFiltering || bulkMode ? "none" : "";
 
   if (isFiltering) {
     const matches = inventory
@@ -155,6 +200,26 @@ function renderInventoryScreen() {
       renderInventoryScreen();
     });
   });
+
+  if (bulkMode) {
+    list.querySelectorAll(".bulk-qty-input").forEach(input => {
+      input.addEventListener("input", () => {
+        const entry = bulkEntries[input.dataset.itemId] || (bulkEntries[input.dataset.itemId] = {});
+        entry.qty = input.value;
+        updateBulkRestockBar();
+      });
+    });
+    list.querySelectorAll(".bulk-cost-input").forEach(input => {
+      input.addEventListener("input", () => {
+        const entry = bulkEntries[input.dataset.itemId] || (bulkEntries[input.dataset.itemId] = {});
+        entry.unitCost = input.value;
+        updateBulkRestockBar();
+      });
+    });
+    updateBulkRestockBar();
+    return;
+  }
+
   list.querySelectorAll(".list-group-add-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -166,6 +231,9 @@ function renderInventoryScreen() {
   });
   list.querySelectorAll(".list-edit-btn").forEach(btn => {
     btn.addEventListener("click", () => openItemSheet(Number(btn.dataset.itemId)));
+  });
+  list.querySelectorAll(".list-restock-btn").forEach(btn => {
+    btn.addEventListener("click", () => openRestockSheet(Number(btn.dataset.itemId)));
   });
 }
 
@@ -196,6 +264,7 @@ function openItemSheet(itemId = null, presetCategory = null) {
   document.getElementById("item-name").value = item ? item.name : "";
   document.getElementById("item-stock").value = item ? item.stock : "0";
   document.getElementById("item-min-stock").value = item ? item.minStock : "0";
+  document.getElementById("item-cost").value = item ? item.costPerUnit : "0";
   document.getElementById("item-delete-btn").style.display = item ? "" : "none";
 
   document.getElementById("item-sheet-overlay").classList.add("open");
@@ -221,13 +290,14 @@ document.getElementById("item-form").addEventListener("submit", (e) => {
   const unit = document.getElementById("item-unit").value;
   const stock = parseFloat(document.getElementById("item-stock").value) || 0;
   const minStock = parseFloat(document.getElementById("item-min-stock").value) || 0;
+  const costPerUnit = parseFloat(document.getElementById("item-cost").value) || 0;
 
   if (editingItemId) {
     const item = inventory.find(i => i.id === editingItemId);
-    Object.assign(item, { name, category, unit, stock, minStock });
+    Object.assign(item, { name, category, unit, stock, minStock, costPerUnit });
     showToast(`${name} updated`);
   } else {
-    inventory.push({ id: allocateInventoryItemId(), name, category, unit, stock, minStock });
+    inventory.push({ id: allocateInventoryItemId(), name, category, unit, stock, minStock, costPerUnit });
     showToast(`${name} added`);
   }
 
@@ -249,6 +319,114 @@ document.getElementById("item-delete-btn").addEventListener("click", () => {
   renderInventoryScreen();
   updateInventoryBadge();
   showToast(`${item.name} removed`);
+});
+
+// ---- Restock (single item) — logs qty + cost, distinct from the quick
+// +/- stepper which is for corrections/usage and carries no cost. ----
+let restockingItemId = null;
+
+function openRestockSheet(itemId) {
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
+  const item = inventory.find(i => i.id === itemId);
+  if (!item) return;
+  restockingItemId = itemId;
+
+  document.getElementById("restock-sheet-title").textContent = `Restock ${item.name}`;
+  document.getElementById("restock-current-stock").textContent = `Current stock: ${item.stock}${item.unit}`;
+  document.getElementById("restock-qty").value = "";
+  document.getElementById("restock-unit-cost").value = item.costPerUnit || "";
+  document.getElementById("restock-total-cost").textContent = fmtLKR(0);
+  document.getElementById("restock-sheet-overlay").classList.add("open");
+}
+
+function closeRestockSheet() {
+  document.getElementById("restock-sheet-overlay").classList.remove("open");
+  restockingItemId = null;
+}
+
+function updateRestockTotal() {
+  const qty = parseFloat(document.getElementById("restock-qty").value) || 0;
+  const cost = parseFloat(document.getElementById("restock-unit-cost").value) || 0;
+  document.getElementById("restock-total-cost").textContent = fmtLKR(qty * cost);
+}
+
+document.getElementById("restock-qty").addEventListener("input", updateRestockTotal);
+document.getElementById("restock-unit-cost").addEventListener("input", updateRestockTotal);
+document.getElementById("restock-sheet-close").addEventListener("click", closeRestockSheet);
+document.getElementById("restock-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "restock-sheet-overlay") closeRestockSheet();
+});
+
+document.getElementById("restock-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!restockingItemId) return;
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const item = inventory.find(i => i.id === restockingItemId);
+  if (!item) return;
+
+  const qty = parseFloat(document.getElementById("restock-qty").value) || 0;
+  const unitCost = parseFloat(document.getElementById("restock-unit-cost").value) || 0;
+  if (qty <= 0) return;
+
+  logRestock(appState.selectedBranch, item, qty, unitCost, todayISO());
+  closeRestockSheet();
+  renderInventoryScreen();
+  updateInventoryBadge();
+  showToast(`${item.name} restocked — ${fmtLKR(qty * unitCost)}`);
+});
+
+// ---- Bulk restock ----
+function updateBulkRestockBar() {
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
+  let count = 0;
+  let total = 0;
+  Object.keys(bulkEntries).forEach(itemId => {
+    const qty = parseFloat(bulkEntries[itemId].qty) || 0;
+    if (qty <= 0) return;
+    const item = inventory.find(i => i.id === Number(itemId));
+    if (!item) return;
+    const unitCost = parseFloat(bulkEntries[itemId].unitCost);
+    count += 1;
+    total += qty * (isNaN(unitCost) ? item.costPerUnit : unitCost);
+  });
+  document.getElementById("bulk-restock-count").textContent = `${count} item${count === 1 ? "" : "s"}`;
+  document.getElementById("bulk-restock-total").textContent = fmtLKR(total);
+  document.getElementById("bulk-restock-save").disabled = count === 0;
+}
+
+function setBulkMode(on) {
+  bulkMode = on;
+  document.getElementById("bulk-restock-btn").setAttribute("aria-pressed", String(on));
+  document.getElementById("bulk-restock-bar").style.display = on ? "flex" : "none";
+  if (!on) Object.keys(bulkEntries).forEach(k => delete bulkEntries[k]);
+  renderInventoryScreen();
+}
+
+document.getElementById("bulk-restock-btn").addEventListener("click", () => setBulkMode(!bulkMode));
+document.getElementById("bulk-restock-cancel").addEventListener("click", () => setBulkMode(false));
+
+document.getElementById("bulk-restock-save").addEventListener("click", () => {
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const date = todayISO();
+  let itemCount = 0;
+  let totalSpend = 0;
+
+  Object.keys(bulkEntries).forEach(itemId => {
+    const qty = parseFloat(bulkEntries[itemId].qty) || 0;
+    if (qty <= 0) return;
+    const item = inventory.find(i => i.id === Number(itemId));
+    if (!item) return;
+    const parsedCost = parseFloat(bulkEntries[itemId].unitCost);
+    const unitCost = isNaN(parsedCost) ? item.costPerUnit : parsedCost;
+
+    logRestock(appState.selectedBranch, item, qty, unitCost, date);
+    itemCount += 1;
+    totalSpend += qty * unitCost;
+  });
+
+  setBulkMode(false);
+  updateInventoryBadge();
+  showToast(itemCount ? `Restocked ${itemCount} item${itemCount === 1 ? "" : "s"} — ${fmtLKR(totalSpend)}` : "Nothing to restock");
 });
 
 // ---- Search / low-stock filter ----
@@ -286,6 +464,10 @@ document.getElementById("open-inventory-btn").addEventListener("click", () => {
   searchClearBtn.style.display = "none";
   lowOnly = false;
   lowFilterBtn.setAttribute("aria-pressed", "false");
+  bulkMode = false;
+  Object.keys(bulkEntries).forEach(k => delete bulkEntries[k]);
+  document.getElementById("bulk-restock-btn").setAttribute("aria-pressed", "false");
+  document.getElementById("bulk-restock-bar").style.display = "none";
 
   renderInventoryScreen();
   showScreen("screen-inventory");

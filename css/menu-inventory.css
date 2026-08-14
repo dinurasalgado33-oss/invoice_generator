@@ -222,6 +222,72 @@
   .list-edit-btn:hover { border-color: var(--maroon); color: var(--maroon); }
 }
 
+.inv-td-actions { display: flex; gap: 6px; }
+.list-restock-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1.5px solid #bfe2c1;
+  background: var(--white);
+  color: #2c6b2f;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.list-restock-btn svg { width: 14px; height: 14px; }
+.list-restock-btn:active { transform: scale(0.9); }
+@media (hover: hover) and (pointer: fine) {
+  .list-restock-btn:hover { background: #f0f9f0; }
+}
+
+/* Restock sheet (single item) */
+.restock-current-stock { color: var(--text-muted); font-size: 0.88rem; margin: -4px 0 14px; }
+.restock-total-line { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin: 4px 0 0; }
+.restock-total-line strong { color: var(--maroon); font-size: 1.1rem; }
+
+/* Bulk restock — inline qty/cost inputs replace the stock/adjust/edit
+   columns while active, plus a sticky summary bar at the screen bottom. */
+.bulk-restock-inputs { display: flex; gap: 8px; }
+.bulk-restock-inputs input {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+.bulk-restock-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--white);
+  border-top: 1.5px solid var(--border);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.08);
+}
+.bulk-restock-bar-summary { display: flex; flex-direction: column; gap: 2px; }
+.bulk-restock-bar-summary strong { color: var(--text); font-size: 0.9rem; }
+.bulk-restock-bar-summary span { color: var(--text-muted); font-size: 0.78rem; }
+.bulk-restock-bar-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.bulk-restock-bar-actions .primary-btn { width: auto; margin: 0; padding: 10px 16px; font-size: 0.85rem; }
+.bulk-restock-bar-actions .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.bulk-restock-cancel-btn {
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-muted);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bulk-restock-cancel-btn:hover { border-color: var(--maroon-soft); color: var(--maroon); }
+}
+
 /* Department (top level — Inventory only, category count is high enough to need it) */
 .inv-dept-row { cursor: pointer; background: var(--maroon); }
 .inv-dept-row td { padding: 11px 10px; }

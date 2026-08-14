@@ -1,12 +1,8 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, showToast } from "./utils.js";
+import { escapeHtml, showToast, todayISO } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { renderRooms, openRoomDetail } from "./rooms.js";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 let latestBoardedIndex = null;
 

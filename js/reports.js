@@ -3,6 +3,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast } from "./utils.js";
 import { INVOICES, FOOD_ORDER_RECORDS, INVENTORY_USAGE, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
+import { RESTOCK_LOG } from "./data/inventory.js";
 
 const state = {
   preset: "month", // today | week | month | lastmonth | custom
@@ -82,6 +83,12 @@ function getFilteredInventoryUsage() {
   return INVENTORY_USAGE.filter(r => matchesBranch(r.branch) && matchesSearch(r.item));
 }
 
+function getFilteredRestockLog(range) {
+  return RESTOCK_LOG
+    .filter(r => inRange(r.date, range) && matchesBranch(r.branch) && matchesSearch(r.itemName))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
 function getFilteredBookings(range) {
   return BOOKINGS
     .filter(b => inRange(b.checkin, range) && matchesBranch(b.branch) && matchesSearch(b.guest + " " + b.villa))
@@ -89,13 +96,21 @@ function getFilteredBookings(range) {
 }
 
 // ---------- Summary KPIs (date + branch only, independent of tab/search) ----------
+function computeInventorySpend(range) {
+  return RESTOCK_LOG
+    .filter(r => inRange(r.date, range) && matchesBranch(r.branch))
+    .reduce((sum, r) => sum + r.totalCost, 0);
+}
+
 function computeSummary(range) {
   const invoices = INVOICES.filter(inv => inRange(inv.date, range) && matchesBranch(inv.branch) && inv.status === "Active");
   const revenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
   const count = invoices.length;
   const avg = count ? revenue / count : 0;
   const occupancy = computeOccupancy(range);
-  return { revenue, count, avg, occupancy };
+  const inventorySpend = computeInventorySpend(range);
+  const profit = revenue - inventorySpend;
+  return { revenue, count, avg, occupancy, inventorySpend, profit };
 }
 
 function computeOccupancy(range) {
@@ -126,7 +141,7 @@ function computeBranchTotals(range) {
 
 // ---------- Rendering ----------
 function renderSummary(range) {
-  const { revenue, count, avg, occupancy } = computeSummary(range);
+  const { revenue, count, avg, occupancy, inventorySpend, profit } = computeSummary(range);
   document.getElementById("reports-kpi-grid").innerHTML = `
     <div class="kpi-card">
       <span class="kpi-label">Total Revenue</span>
@@ -143,6 +158,14 @@ function renderSummary(range) {
     <div class="kpi-card">
       <span class="kpi-label">Occupancy Rate</span>
       <span class="kpi-value">${occupancy}%</span>
+    </div>
+    <div class="kpi-card" title="Total Revenue minus Inventory Spend for this period">
+      <span class="kpi-label">Est. Profit</span>
+      <span class="kpi-value ${profit < 0 ? "kpi-value-negative" : ""}">${fmtLKR(profit)}</span>
+    </div>
+    <div class="kpi-card" title="From the Inventory Spend tab's restock log">
+      <span class="kpi-label">Inventory Spend</span>
+      <span class="kpi-value">${fmtLKR(inventorySpend)}</span>
     </div>
   `;
 
@@ -248,6 +271,51 @@ function renderInventoryTab() {
   }).join("");
 }
 
+function renderSpendTab(range) {
+  const rows = getFilteredRestockLog(range);
+  if (!rows.length) return emptyState();
+
+  const totalSpend = rows.reduce((s, r) => s + r.totalCost, 0);
+
+  const byItem = {};
+  rows.forEach(r => {
+    if (!byItem[r.itemName]) byItem[r.itemName] = { item: r.itemName, category: r.category, qty: 0, spend: 0, entries: [] };
+    byItem[r.itemName].qty += r.qty;
+    byItem[r.itemName].spend += r.totalCost;
+    byItem[r.itemName].entries.push(r);
+  });
+  const ranked = Object.values(byItem).sort((a, b) => b.spend - a.spend);
+
+  const list = ranked.map((d, i) => {
+    const first = d.entries[0].unitCost;
+    const last = d.entries[d.entries.length - 1].unitCost;
+    let trend = `<span class="spend-trend flat">No trend yet</span>`;
+    if (d.entries.length > 1 && first > 0 && last !== first) {
+      const pct = Math.round(((last - first) / first) * 100);
+      trend = `<span class="spend-trend ${pct > 0 ? "up" : "down"}">${pct > 0 ? "&uarr;" : "&darr;"} ${Math.abs(pct)}% since first buy</span>`;
+    }
+    return `
+      <div class="report-row">
+        <div class="report-row-top">
+          <div>
+            <span class="report-row-title">#${i + 1} ${escapeHtml(d.item)}</span>
+            <span class="report-row-sub">${escapeHtml(d.category)} &middot; ${d.entries.length} purchase${d.entries.length === 1 ? "" : "s"} &middot; avg ${fmtLKR(d.spend / d.qty)}/unit</span>
+          </div>
+          <div class="report-row-end">
+            <span class="report-row-amount">${fmtLKR(d.spend)}</span>
+            ${trend}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    ${list}
+    <div class="report-grand-total"><span>Total Spend</span><span>${fmtLKR(totalSpend)}</span></div>
+  `;
+}
+
 function renderBookingsTab(range) {
   const rows = getFilteredBookings(range);
   if (!rows.length) return emptyState();
@@ -284,12 +352,13 @@ function renderBookingsTab(range) {
 
 function renderReportBody(range) {
   const body = document.getElementById("report-body");
-  const labels = { invoices: "Invoices", food: "Food Orders", inventory: "Inventory Usage", bookings: "Bookings & Occupancy" };
+  const labels = { invoices: "Invoices", food: "Food Orders", inventory: "Inventory Usage", spend: "Inventory Spend", bookings: "Bookings & Occupancy" };
   document.getElementById("report-tab-label").textContent = labels[state.tab];
 
   if (state.tab === "invoices") body.innerHTML = renderInvoicesTab(range);
   else if (state.tab === "food") body.innerHTML = renderFoodTab(range);
   else if (state.tab === "inventory") body.innerHTML = renderInventoryTab();
+  else if (state.tab === "spend") body.innerHTML = renderSpendTab(range);
   else body.innerHTML = renderBookingsTab(range);
 }
 
@@ -369,6 +438,12 @@ function getExportRows() {
       rows: getFilteredInventoryUsage().map(r => [r.item, r.category, r.branch, r.opening, r.restocked, r.used, r.closing, r.minStock]),
     };
   }
+  if (state.tab === "spend") {
+    return {
+      headers: ["Date", "Item", "Category", "Branch", "Qty", "Unit Cost (LKR)", "Total Cost (LKR)"],
+      rows: getFilteredRestockLog(range).map(r => [r.date, r.itemName, r.category, r.branch, r.qty, r.unitCost, r.totalCost]),
+    };
+  }
   return {
     headers: ["Guest", "Villa", "Branch", "Check-in", "Check-out", "Status"],
     rows: getFilteredBookings(range).map(b => [b.guest, b.villa, b.branch, b.checkin, b.checkout, b.status]),
@@ -394,7 +469,7 @@ document.getElementById("print-report-btn").addEventListener("click", () => wind
 
 document.getElementById("copy-summary-btn").addEventListener("click", async () => {
   const range = getActiveRange();
-  const { revenue, count, avg, occupancy } = computeSummary(range);
+  const { revenue, count, avg, occupancy, inventorySpend, profit } = computeSummary(range);
   const branchLabel = state.branch === "all" ? "All Branches" : state.branch;
   const text = [
     "*Leopard Inn — Reports Summary*",
@@ -405,6 +480,8 @@ document.getElementById("copy-summary-btn").addEventListener("click", async () =
     `🧾 Invoices: ${count}`,
     `📊 Avg Invoice: ${fmtLKR(avg)}`,
     `🏨 Occupancy: ${occupancy}%`,
+    `📦 Inventory Spend: ${fmtLKR(inventorySpend)}`,
+    `📈 Est. Profit: ${fmtLKR(profit)}`,
   ].join("\n");
 
   try {
