@@ -59,8 +59,9 @@ document.getElementById("qa-activities-btn").addEventListener("click", () => {
 });
 
 document.getElementById("qa-checkin-btn").addEventListener("click", () => {
-  // Only free villas can be checked into.
-  renderRooms("available", "checkin");
+  // Walk-ins (available) and guests with an existing reservation arriving
+  // now (booked) both belong here — only occupied villas don't.
+  renderRooms(["available", "booked"], "checkin");
   showScreen("screen-rooms");
 });
 

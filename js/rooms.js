@@ -22,13 +22,19 @@ export function renderRooms(statusFilter = null, mode = null) {
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   grid.innerHTML = "";
 
-  if (statusFilter && !rooms.some(r => r.status === statusFilter)) {
-    grid.innerHTML = `<p class="room-detail-empty">No ${ROOM_STATUS_LABELS[statusFilter].toLowerCase()} villas right now.</p>`;
+  // statusFilter can be a single status ("occupied") or a list of statuses
+  // (["available", "booked"] — Check In needs both: walk-ins and guests
+  // with an existing reservation arriving today).
+  const statuses = statusFilter ? (Array.isArray(statusFilter) ? statusFilter : [statusFilter]) : null;
+
+  if (statuses && !rooms.some(r => statuses.includes(r.status))) {
+    const label = statuses.map(s => ROOM_STATUS_LABELS[s].toLowerCase()).join(" or ");
+    grid.innerHTML = `<p class="room-detail-empty">No ${label} villas right now.</p>`;
     return;
   }
 
   rooms.forEach((room, index) => {
-    if (statusFilter && room.status !== statusFilter) return;
+    if (statuses && !statuses.includes(room.status)) return;
     const card = document.createElement("button");
     card.type = "button";
     card.className = "room-card " + room.status;
@@ -38,9 +44,10 @@ export function renderRooms(statusFilter = null, mode = null) {
       ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
       : "";
     const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
-    // When a status filter is active every card shares the same status —
-    // showing the badge on each one is just noise, so skip it then.
-    const statusBadge = statusFilter
+    // Showing the status badge is only noise when every card in view
+    // shares the same single status — with a mixed list (or no filter)
+    // it's the only thing telling cards apart at a glance.
+    const statusBadge = statuses && statuses.length === 1
       ? ""
       : `<span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>`;
 
