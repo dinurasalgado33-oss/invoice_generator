@@ -56,6 +56,13 @@ export const FOOD_ORDER_RECORDS = [
   { id: 20, dish: "Vegetable Fried Rice", qty: 3, branch: "Wilpattu", date: "2026-08-11", revenue: 1950 },
 ];
 
+// Every completed order (from the Orders screen) appends a row per dish
+// here — that's what makes it count as a sale in the Food Orders report.
+let nextFoodOrderRecordId = 1000;
+export function allocateFoodOrderRecordId() {
+  return nextFoodOrderRecordId++;
+}
+
 // One usage snapshot per item per branch for "this period". opening +
 // restocked - used = closing (closing matches each item's current stock
 // in INVENTORY_BY_BRANCH, so the two screens tell a consistent story).

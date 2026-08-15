@@ -2,11 +2,8 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
-import { MENU_ITEMS } from "./data/menu.js";
-import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
-import { updateInventoryBadge } from "./inventory.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -22,32 +19,25 @@ export function renderRooms(statusFilter = null, mode = null) {
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   grid.innerHTML = "";
 
-  // statusFilter can be a single status ("occupied") or a list of statuses
-  // (["available", "booked"] — Check In needs both: walk-ins and guests
-  // with an existing reservation arriving today).
-  const statuses = statusFilter ? (Array.isArray(statusFilter) ? statusFilter : [statusFilter]) : null;
-
-  if (statuses && !rooms.some(r => statuses.includes(r.status))) {
-    const label = statuses.map(s => ROOM_STATUS_LABELS[s].toLowerCase()).join(" or ");
-    grid.innerHTML = `<p class="room-detail-empty">No ${label} villas right now.</p>`;
+  if (statusFilter && !rooms.some(r => r.status === statusFilter)) {
+    grid.innerHTML = `<p class="room-detail-empty">No ${ROOM_STATUS_LABELS[statusFilter].toLowerCase()} villas right now.</p>`;
     return;
   }
 
   rooms.forEach((room, index) => {
-    if (statuses && !statuses.includes(room.status)) return;
+    if (statusFilter && room.status !== statusFilter) return;
     const card = document.createElement("button");
     card.type = "button";
     card.className = "room-card " + room.status;
 
-    const hasStay = room.status === "booked" || room.status === "occupied";
+    const hasStay = room.status === "occupied";
     const ribbon = hasStay
       ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
       : "";
     const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
-    // Showing the status badge is only noise when every card in view
-    // shares the same single status — with a mixed list (or no filter)
-    // it's the only thing telling cards apart at a glance.
-    const statusBadge = statuses && statuses.length === 1
+    // When a status filter is active every card shares the same status —
+    // showing the badge on each one is just noise, so skip it then.
+    const statusBadge = statusFilter
       ? ""
       : `<span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>`;
 
@@ -99,36 +89,15 @@ function renderRoomDetailBody() {
       </button>
     `;
     document.getElementById("new-booking-btn").addEventListener("click", showNewBookingForm);
-  } else if (room.status === "booked") {
-    body.innerHTML = `
-      <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
-      <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
-      <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
-      <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
-      <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
-      <button type="button" class="primary-btn big" id="check-in-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
-        Check In
-      </button>
-    `;
-    document.getElementById("check-in-btn").addEventListener("click", () => {
-      room.status = "occupied";
-      logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check In");
-      renderRoomDetailBody();
-      renderRooms();
-    });
   } else {
-    // Three distinct purposes now use this same "occupied villa" sheet:
-    // the Food Order shortcut, the Activities shortcut (both charge to
-    // this room's eventual invoice, nothing else on screen), and every
-    // other entry point — Check Out quick action, a checkout row — which
-    // is just about the stay itself (info + Check Out).
+    // Two distinct purposes now use this same "occupied villa" sheet: the
+    // Activities shortcut (charges to this room's eventual invoice,
+    // nothing else on screen), and every other entry point — Check Out
+    // quick action, a checkout row — which is just about the stay itself
+    // (info + Check Out). Food ordering moved to its own Orders screen.
     const mode = activeRoomRef.mode;
 
-    if (mode === "food-order") {
-      body.innerHTML = renderFoodOrdersPanel();
-      wireFoodOrdersPanel();
-    } else if (mode === "activity") {
+    if (mode === "activity") {
       body.innerHTML = renderActivitiesPanel();
       wireActivitiesPanel();
     } else {
@@ -142,165 +111,43 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
         </button>
+        <button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
+      document.getElementById("cancel-checkin-btn").addEventListener("click", cancelCheckIn);
     }
   }
+}
+
+// Undo a mistaken check-in — clears the room back to available without
+// generating an invoice. Any food/activity charges already run up during
+// that stay are discarded along with it (they were never billed, since
+// billing only happens at Check Out).
+function cancelCheckIn() {
+  const room = getActiveRoom();
+  if (!confirm(`Cancel ${room.guest}'s check-in for ${room.name}? This can't be undone.`)) return;
+
+  logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check-In Cancelled");
+  room.status = "available";
+  delete room.guest;
+  delete room.phone;
+  delete room.checkin;
+  delete room.checkout;
+  delete room.pendingCharges;
+
+  showToast(`Check-in cancelled for ${room.name}`);
+  closeRoomDetail();
+  renderRooms();
 }
 
 // Appends a line item to a room's running bill — picked up by
 // prefillInvoiceForCheckout() whenever that villa is checked out, so
 // whatever was ordered/charged during the stay lands on the invoice.
-function chargeRoom(room, desc, qty, rate) {
+// Exported for orders.js — a completed food order bills the room the
+// same way an activity charge does.
+export function chargeRoom(room, desc, qty, rate) {
   if (!room.pendingCharges) room.pendingCharges = [];
   room.pendingCharges.push({ desc, qty: String(qty), rate, value: qty * rate });
-}
-
-// ---- Food ordering (inside an occupied villa's detail sheet) ----
-let currentFoodOrder = {}; // dishId -> qty, reset each time the panel is (re)built
-let foodSearchQuery = "";
-
-function renderFoodOrdersPanel() {
-  currentFoodOrder = {};
-  foodSearchQuery = "";
-
-  return `
-    <div class="food-orders-panel">
-      <h4>Food Orders</h4>
-      <div class="food-order-selected" id="food-order-selected" style="display:none"></div>
-      <div class="food-order-search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-        <input type="search" id="food-order-search" placeholder="Search dish name or #…" autocomplete="off" autocapitalize="off" enterkeyhint="search" />
-      </div>
-      <div class="food-order-list" id="food-order-list"></div>
-      <div class="food-order-total-row"><span>Total</span><span id="food-order-total">${fmtLKR(0)}</span></div>
-      <button type="button" class="primary-btn big" id="place-order-btn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
-        Place Order
-      </button>
-    </div>
-  `;
-}
-
-function renderFoodOrderList() {
-  const q = foodSearchQuery.trim().toLowerCase();
-  const matches = MENU_ITEMS.filter(dish => {
-    if (!q) return true;
-    const matchesNumber = String(dish.id) === q || String(dish.id).startsWith(q);
-    const matchesName = dish.name.toLowerCase().includes(q);
-    return matchesNumber || matchesName;
-  });
-
-  const list = document.getElementById("food-order-list");
-  list.innerHTML = matches.map(dish => {
-    const qty = currentFoodOrder[dish.id] || 0;
-    return `
-      <div class="food-order-row">
-        <div class="food-order-info">
-          <span class="food-order-name"><span class="food-order-number">#${dish.id}</span>${escapeHtml(dish.name)}</span>
-          <span class="food-order-price">${fmtLKR(dish.price)}</span>
-        </div>
-        <div class="food-order-qty-stepper">
-          <button type="button" class="stepper-input-btn food-qty-minus" data-dish-id="${dish.id}" aria-label="Remove one ${escapeHtml(dish.name)}">&minus;</button>
-          <span class="food-order-qty-value" id="food-qty-${dish.id}">${qty}</span>
-          <button type="button" class="stepper-input-btn food-qty-plus" data-dish-id="${dish.id}" aria-label="Add one ${escapeHtml(dish.name)}">+</button>
-        </div>
-      </div>
-    `;
-  }).join("") || `<p class="room-detail-empty">No dishes match “${escapeHtml(foodSearchQuery)}”.</p>`;
-
-  list.querySelectorAll(".food-qty-plus").forEach(btn => {
-    btn.addEventListener("click", () => adjustFoodOrderQty(btn.dataset.dishId, 1));
-  });
-  list.querySelectorAll(".food-qty-minus").forEach(btn => {
-    btn.addEventListener("click", () => adjustFoodOrderQty(btn.dataset.dishId, -1));
-  });
-}
-
-function renderFoodOrderSelected() {
-  const selected = document.getElementById("food-order-selected");
-  const entries = Object.keys(currentFoodOrder)
-    .map(id => ({ dish: MENU_ITEMS.find(d => d.id === Number(id)), qty: currentFoodOrder[id] }))
-    .filter(e => e.dish && e.qty > 0);
-
-  if (!entries.length) {
-    selected.style.display = "none";
-    selected.innerHTML = "";
-    return;
-  }
-
-  selected.style.display = "flex";
-  selected.innerHTML = entries.map(e => `
-    <span class="food-order-chip">
-      ${escapeHtml(e.dish.name)} &times;${e.qty}
-      <button type="button" class="food-order-chip-remove" data-dish-id="${e.dish.id}" aria-label="Remove ${escapeHtml(e.dish.name)}">&times;</button>
-    </span>
-  `).join("");
-
-  selected.querySelectorAll(".food-order-chip-remove").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentFoodOrder[btn.dataset.dishId] = 0;
-      const qtyEl = document.getElementById("food-qty-" + btn.dataset.dishId);
-      if (qtyEl) qtyEl.textContent = "0";
-      updateFoodOrderTotal();
-    });
-  });
-}
-
-function wireFoodOrdersPanel() {
-  renderFoodOrderList();
-  document.getElementById("food-order-search").addEventListener("input", (e) => {
-    foodSearchQuery = e.target.value;
-    renderFoodOrderList();
-  });
-  document.getElementById("place-order-btn").addEventListener("click", placeFoodOrder);
-}
-
-function adjustFoodOrderQty(dishId, delta) {
-  const current = currentFoodOrder[dishId] || 0;
-  const next = Math.max(0, current + delta);
-  currentFoodOrder[dishId] = next;
-  document.getElementById("food-qty-" + dishId).textContent = next;
-  updateFoodOrderTotal();
-}
-
-function updateFoodOrderTotal() {
-  let total = 0;
-  let anyQty = false;
-  Object.keys(currentFoodOrder).forEach(id => {
-    const qty = currentFoodOrder[id];
-    if (qty > 0) {
-      anyQty = true;
-      const dish = MENU_ITEMS.find(d => d.id === Number(id));
-      if (dish) total += dish.price * qty;
-    }
-  });
-  document.getElementById("food-order-total").textContent = fmtLKR(total);
-  document.getElementById("place-order-btn").disabled = !anyQty;
-  renderFoodOrderSelected();
-}
-
-function placeFoodOrder() {
-  const room = getActiveRoom();
-  const inventory = INVENTORY_BY_BRANCH[activeRoomRef.branch];
-  let orderTotal = 0;
-
-  Object.keys(currentFoodOrder).forEach(id => {
-    const qty = currentFoodOrder[id];
-    if (qty <= 0) return;
-    const dish = MENU_ITEMS.find(d => d.id === Number(id));
-    if (!dish) return;
-    dish.ingredients.forEach(ing => {
-      const invItem = inventory.find(i => i.name === ing.item);
-      if (invItem) invItem.stock = Math.max(0, Math.round((invItem.stock - ing.qty * qty) * 100) / 100);
-    });
-    chargeRoom(room, dish.name, qty, dish.price);
-    orderTotal += dish.price * qty;
-  });
-
-  showToast(`Order placed for ${room.name} — ${fmtLKR(orderTotal)} added to bill`);
-  updateInventoryBadge();
-  renderRoomDetailBody();
 }
 
 // ---- Activity charges (inside an occupied villa's detail sheet) ----

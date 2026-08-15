@@ -10,6 +10,7 @@
 import "./navigation.js";
 import "./invoice.js";
 import "./rooms.js";
+import "./orders.js";
 import "./home.js";
 import "./menu.js";
 import "./inventory.js";

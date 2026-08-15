@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=25" />
-<link rel="stylesheet" href="css/brand-home.css?v=25" />
-<link rel="stylesheet" href="css/rooms.css?v=25" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=25" />
-<link rel="stylesheet" href="css/invoice.css?v=25" />
-<link rel="stylesheet" href="css/dashboard.css?v=25" />
-<link rel="stylesheet" href="css/reports.css?v=25" />
-<link rel="stylesheet" href="css/reservation.css?v=25" />
+<link rel="stylesheet" href="css/base.css?v=26" />
+<link rel="stylesheet" href="css/brand-home.css?v=26" />
+<link rel="stylesheet" href="css/rooms.css?v=26" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=26" />
+<link rel="stylesheet" href="css/invoice.css?v=26" />
+<link rel="stylesheet" href="css/dashboard.css?v=26" />
+<link rel="stylesheet" href="css/reports.css?v=26" />
+<link rel="stylesheet" href="css/reservation.css?v=26" />
 </head>
 <body>
 
@@ -158,17 +158,59 @@
     <div class="rooms-wrap">
       <div class="rooms-legend">
         <span class="legend-item"><span class="legend-dot available"></span>Available</span>
-        <span class="legend-item"><span class="legend-dot booked"></span>Booked</span>
         <span class="legend-item"><span class="legend-dot occupied"></span>Occupied</span>
-      </div>
-
-      <div class="rooms-stage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /><path d="M2 12c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /></svg>
-        <span>Ocean &amp; Beachfront</span>
       </div>
 
       <div class="rooms-grid" id="rooms-grid">
         <!-- villa cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN: Food Orders -->
+  <section id="screen-orders" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="orders-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Food Orders — <span id="orders-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="report-tabs" id="orders-nav">
+        <button type="button" class="report-tab active" data-orders-view="create">Create Order</button>
+        <button type="button" class="report-tab" data-orders-view="orders">Orders</button>
+      </div>
+
+      <!-- Create / Edit order -->
+      <div id="orders-create-view">
+        <div class="field">
+          <label>Room</label>
+          <select id="order-room-select"></select>
+        </div>
+
+        <div class="order-edit-banner" id="order-edit-banner" style="display:none">
+          <span>Editing an existing order</span>
+          <button type="button" id="order-edit-cancel-btn">Cancel edit</button>
+        </div>
+
+        <div class="food-order-selected" id="order-selected" style="display:none"></div>
+
+        <div class="list-search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+          <input type="search" id="order-search" placeholder="Search dish name or #…" autocomplete="off" autocapitalize="off" enterkeyhint="search" />
+        </div>
+
+        <div class="food-order-list" id="order-dish-list"></div>
+        <div class="food-order-total-row"><span>Total</span><span id="order-total">LKR 0</span></div>
+        <button type="button" class="primary-btn big" id="order-submit-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+          <span id="order-submit-label">Place Order</span>
+        </button>
+      </div>
+
+      <!-- Pending orders -->
+      <div id="orders-list-view" style="display:none">
+        <div id="orders-pending-list"></div>
       </div>
     </div>
   </section>
@@ -1035,6 +1077,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=25"></script>
+<script type="module" src="js/main.js?v=26"></script>
 </body>
 </html>

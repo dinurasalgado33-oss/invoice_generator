@@ -42,15 +42,6 @@ export function renderHomeDashboard() {
   }
 }
 
-document.getElementById("qa-food-order-btn").addEventListener("click", () => {
-  // Only occupied villas can take a food order — no point showing the
-  // full map (available/booked villas would just be dead ends here).
-  // "food-order" mode also skips the Check Out button in the detail sheet,
-  // since that's not what this shortcut is for.
-  renderRooms("occupied", "food-order");
-  showScreen("screen-rooms");
-});
-
 document.getElementById("qa-activities-btn").addEventListener("click", () => {
   // Same idea as Food Order — only occupied villas can be charged for an
   // activity, and "activity" mode shows only the activities panel.
@@ -59,9 +50,8 @@ document.getElementById("qa-activities-btn").addEventListener("click", () => {
 });
 
 document.getElementById("qa-checkin-btn").addEventListener("click", () => {
-  // Walk-ins (available) and guests with an existing reservation arriving
-  // now (booked) both belong here — only occupied villas don't.
-  renderRooms(["available", "booked"], "checkin");
+  // Only free villas can be checked into.
+  renderRooms("available", "checkin");
   showScreen("screen-rooms");
 });
 

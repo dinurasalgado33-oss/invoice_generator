@@ -3,6 +3,7 @@ export const screens = {
   branch: document.getElementById("screen-branch"),
   home: document.getElementById("screen-home"),
   rooms: document.getElementById("screen-rooms"),
+  orders: document.getElementById("screen-orders"),
   menu: document.getElementById("screen-menu"),
   inventory: document.getElementById("screen-inventory"),
   dashboard: document.getElementById("screen-dashboard"),
@@ -14,7 +15,7 @@ export const screens = {
 };
 
 const screenOrder = [
-  "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-menu",
+  "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-orders", "screen-menu",
   "screen-inventory", "screen-dashboard", "screen-reports", "screen-form", "screen-preview",
   "screen-reservation-form", "screen-reservation-preview",
 ];

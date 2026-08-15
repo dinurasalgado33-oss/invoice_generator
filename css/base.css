@@ -252,6 +252,26 @@ input:focus, textarea:focus, select:focus {
 .secondary-btn:hover { background: #fdf6ee; border-color: var(--maroon); }
 .secondary-btn:active { transform: scale(0.97); }
 
+/* Plain text link for a rare, undo-style destructive action tucked below
+   a sheet's primary button — deliberately quiet, not a full button. */
+.sheet-text-danger-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+.sheet-text-danger-btn:active { opacity: 0.7; }
+@media (hover: hover) and (pointer: fine) {
+  .sheet-text-danger-btn:hover { text-decoration: underline; }
+}
+
 /* Compact icon-only actions in a bottom sheet's header (close, and delete
    when editing) — replaces full-width text buttons stacked under the
    sheet's primary action, which looked heavy and misaligned. */

@@ -13,27 +13,7 @@
 .legend-item { display: flex; align-items: center; gap: 6px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .legend-dot.available { background: #3f9142; }
-.legend-dot.booked { background: #d4af37; }
 .legend-dot.occupied { background: var(--maroon); }
-
-.rooms-stage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-  color: var(--gold-light);
-  border-radius: 999px;
-  padding: 11px 22px;
-  margin: 0 auto 28px;
-  max-width: 320px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  box-shadow: var(--shadow);
-}
-.rooms-stage svg { width: 19px; height: 19px; flex-shrink: 0; color: var(--gold); }
 
 .rooms-grid {
   display: grid;
@@ -62,7 +42,6 @@
 }
 
 .room-card.available { border-color: #bfe2c1; background: #f5fbf6; }
-.room-card.booked { border-color: #e8c766; background: #fdf8ea; padding-top: 28px; }
 .room-card.occupied { border-color: var(--maroon); background: #fdf6f2; padding-top: 28px; }
 
 .room-card-ribbon {
@@ -77,12 +56,10 @@
   padding: 3px 4px;
   line-height: 1.3;
 }
-.room-card.booked .room-card-ribbon { background: #d4af37; color: #4a3a08; }
 .room-card.occupied .room-card-ribbon { background: var(--maroon); color: var(--gold-light); }
 
 .room-card-icon { width: 26px; height: 26px; color: var(--text-muted); }
 .room-card.available .room-card-icon { color: #3f9142; }
-.room-card.booked .room-card-icon { color: #a37f14; }
 .room-card.occupied .room-card-icon { color: var(--maroon); }
 
 .room-card-name { font-weight: 700; color: var(--text); font-size: 0.78rem; line-height: 1.25; }
@@ -102,13 +79,12 @@
 }
 .room-card-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
 .room-card.available .room-card-status { background: #dff3e0; color: #2c6b2f; }
-.room-card.booked .room-card-status { background: #faedc0; color: #8a6d1f; }
 .room-card.occupied .room-card-status { background: var(--maroon); color: var(--gold-light); }
 
 @media (max-width: 380px) {
   .rooms-grid { gap: 8px; }
   .room-card { padding: 14px 4px 10px; }
-  .room-card.booked, .room-card.occupied { padding-top: 26px; }
+  .room-card.occupied { padding-top: 26px; }
   .room-card-name { font-size: 0.72rem; }
 }
 
@@ -171,7 +147,6 @@
   border-radius: 20px;
 }
 .room-detail-status.available { background: #dff3e0; color: #2c6b2f; }
-.room-detail-status.booked { background: #faedc0; color: #8a6d1f; }
 .room-detail-status.occupied { background: var(--maroon); color: var(--gold-light); }
 
 .room-detail-body { margin-bottom: 18px; }
@@ -323,4 +298,65 @@
   font-size: 1.05rem;
   margin-bottom: 12px;
 }
-#place-order-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#order-submit-btn:disabled, #charge-activity-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Orders screen — Create/Edit order + pending orders list */
+.order-edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fdf6ee;
+  border: 1.5px dashed var(--gold);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0 14px;
+  font-size: 0.82rem;
+  color: var(--maroon);
+  font-weight: 600;
+}
+.order-edit-banner button {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.pending-order-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+.pending-order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.pending-order-guest { display: block; font-weight: 700; color: var(--text); font-size: 0.92rem; }
+.pending-order-room { display: block; color: var(--text-muted); font-size: 0.78rem; margin-top: 1px; }
+.pending-order-total { font-weight: 700; color: var(--maroon); font-size: 0.95rem; flex-shrink: 0; }
+.pending-order-items { margin: 8px 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+
+.pending-order-actions { display: flex; gap: 8px; margin-top: 12px; }
+.pending-order-actions button {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-muted);
+}
+.pending-order-edit-btn:active, .pending-order-delete-btn:active, .pending-order-complete-btn:active { transform: scale(0.96); }
+.pending-order-delete-btn { border-color: var(--danger); color: var(--danger); }
+.pending-order-complete-btn { border-color: #3f9142; color: #2c6b2f; background: #eef8ef; }
+@media (hover: hover) and (pointer: fine) {
+  .pending-order-edit-btn:hover { border-color: var(--maroon); color: var(--maroon); }
+  .pending-order-delete-btn:hover { background: #fdf2f1; }
+  .pending-order-complete-btn:hover { background: #dff3e0; }
+}
