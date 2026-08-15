@@ -266,6 +266,8 @@ function openItemSheet(itemId = null, presetCategory = null) {
   document.getElementById("item-min-stock").value = item ? item.minStock : "0";
   document.getElementById("item-cost").value = item ? item.costPerUnit : "0";
   document.getElementById("item-delete-btn").style.display = item ? "" : "none";
+  document.getElementById("item-name-error").classList.remove("show");
+  document.getElementById("item-name").classList.remove("invalid");
 
   document.getElementById("item-sheet-overlay").classList.add("open");
 }
@@ -280,12 +282,26 @@ document.getElementById("item-sheet-overlay").addEventListener("click", (e) => {
   if (e.target.id === "item-sheet-overlay") closeItemSheet();
 });
 
+document.getElementById("item-name").addEventListener("input", () => {
+  document.getElementById("item-name-error").classList.remove("show");
+  document.getElementById("item-name").classList.remove("invalid");
+});
+
 document.getElementById("item-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const name = document.getElementById("item-name").value.trim();
   if (!name) return;
 
   const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+
+  const duplicate = inventory.some(i => i.id !== editingItemId && i.name.trim().toLowerCase() === name.toLowerCase());
+  if (duplicate) {
+    document.getElementById("item-name-error").classList.add("show");
+    document.getElementById("item-name").classList.add("invalid");
+    document.getElementById("item-name").focus();
+    return;
+  }
+
   const category = document.getElementById("item-category").value;
   const unit = document.getElementById("item-unit").value;
   const stock = parseFloat(document.getElementById("item-stock").value) || 0;
@@ -385,9 +401,10 @@ function updateBulkRestockBar() {
     if (qty <= 0) return;
     const item = inventory.find(i => i.id === Number(itemId));
     if (!item) return;
-    const unitCost = parseFloat(bulkEntries[itemId].unitCost);
+    const parsedCost = parseFloat(bulkEntries[itemId].unitCost);
+    const unitCost = isNaN(parsedCost) || parsedCost < 0 ? item.costPerUnit : parsedCost;
     count += 1;
-    total += qty * (isNaN(unitCost) ? item.costPerUnit : unitCost);
+    total += qty * unitCost;
   });
   document.getElementById("bulk-restock-count").textContent = `${count} item${count === 1 ? "" : "s"}`;
   document.getElementById("bulk-restock-total").textContent = fmtLKR(total);
@@ -417,7 +434,7 @@ document.getElementById("bulk-restock-save").addEventListener("click", () => {
     const item = inventory.find(i => i.id === Number(itemId));
     if (!item) return;
     const parsedCost = parseFloat(bulkEntries[itemId].unitCost);
-    const unitCost = isNaN(parsedCost) ? item.costPerUnit : parsedCost;
+    const unitCost = isNaN(parsedCost) || parsedCost < 0 ? item.costPerUnit : parsedCost;
 
     logRestock(appState.selectedBranch, item, qty, unitCost, date);
     itemCount += 1;

@@ -128,6 +128,8 @@ function openDishSheet(id, presetCategory = null) {
   document.getElementById("dish-price").value = dish ? dish.price : "";
   populateCategorySelect(dish ? dish.category : (presetCategory || MENU_CATEGORIES[0]));
   document.getElementById("dish-delete-btn").style.display = dish ? "" : "none";
+  document.getElementById("dish-name-error").classList.remove("show");
+  document.getElementById("dish-name").classList.remove("invalid");
 
   document.getElementById("ingredient-list").innerHTML = "";
   if (dish && dish.ingredients.length) {
@@ -172,12 +174,25 @@ document.getElementById("dish-sheet-overlay").addEventListener("click", (e) => {
   if (e.target.id === "dish-sheet-overlay") closeDishSheet();
 });
 
+document.getElementById("dish-name").addEventListener("input", () => {
+  document.getElementById("dish-name-error").classList.remove("show");
+  document.getElementById("dish-name").classList.remove("invalid");
+});
+
 document.getElementById("dish-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const name = document.getElementById("dish-name").value.trim();
   const category = document.getElementById("dish-category").value;
   const price = parseFloat(document.getElementById("dish-price").value) || 0;
   if (!name) return;
+
+  const duplicate = MENU_ITEMS.some(d => d.id !== editingDishId && d.name.trim().toLowerCase() === name.toLowerCase());
+  if (duplicate) {
+    document.getElementById("dish-name-error").classList.add("show");
+    document.getElementById("dish-name").classList.add("invalid");
+    document.getElementById("dish-name").focus();
+    return;
+  }
 
   const ingredients = [...document.querySelectorAll("#ingredient-list .ingredient-row")]
     .map(row => ({

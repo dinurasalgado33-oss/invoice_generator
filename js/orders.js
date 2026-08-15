@@ -15,12 +15,20 @@ let editingOrderId = null;
 
 // ---- Inventory reservation — deducted when an order is placed/edited,
 // returned if it's edited down or deleted before being completed. ----
+// Returns the names of any ingredients that didn't have enough stock to
+// cover this order — stock still gets clamped to 0 rather than blocking
+// the order, but the shortfall is surfaced to staff instead of vanishing.
 function deductIngredients(branch, dish, qty) {
   const inventory = INVENTORY_BY_BRANCH[branch];
+  const shortages = [];
   dish.ingredients.forEach(ing => {
     const invItem = inventory.find(i => i.name === ing.item);
-    if (invItem) invItem.stock = Math.max(0, Math.round((invItem.stock - ing.qty * qty) * 100) / 100);
+    if (!invItem) return;
+    const needed = ing.qty * qty;
+    if (invItem.stock < needed) shortages.push(invItem.name);
+    invItem.stock = Math.max(0, Math.round((invItem.stock - needed) * 100) / 100);
   });
+  return shortages;
 }
 
 function restoreIngredients(branch, dish, qty) {
@@ -183,22 +191,26 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
 
   const total = items.reduce((s, it) => s + it.qty * it.price, 0);
 
+  const shortages = new Set();
+
   if (editingOrderId) {
     const order = FOOD_ORDERS.find(o => o.id === editingOrderId);
     if (order) {
       restoreOrderIngredients(order);
       items.forEach(item => {
         const dish = MENU_ITEMS.find(d => d.id === item.dishId);
-        deductIngredients(order.branch, dish, item.qty);
+        deductIngredients(order.branch, dish, item.qty).forEach(name => shortages.add(name));
       });
       order.items = items;
       order.total = total;
-      showToast(`Order updated for ${order.roomName}`);
+      showToast(shortages.size
+        ? `Order updated for ${order.roomName} — ran out of ${[...shortages].join(", ")}`
+        : `Order updated for ${order.roomName}`);
     }
   } else {
     items.forEach(item => {
       const dish = MENU_ITEMS.find(d => d.id === item.dishId);
-      deductIngredients(appState.selectedBranch, dish, item.qty);
+      deductIngredients(appState.selectedBranch, dish, item.qty).forEach(name => shortages.add(name));
     });
     FOOD_ORDERS.push({
       id: allocateOrderId(),
@@ -211,7 +223,9 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
       status: "pending",
       createdAt: new Date().toISOString(),
     });
-    showToast(`Order placed for ${room.name} — ${fmtLKR(total)}`);
+    showToast(shortages.size
+      ? `Order placed for ${room.name} — ${fmtLKR(total)} (ran out of ${[...shortages].join(", ")})`
+      : `Order placed for ${room.name} — ${fmtLKR(total)}`);
   }
 
   updateInventoryBadge();
