@@ -4,6 +4,7 @@ import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast } from "./util
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
+import { confirmAction } from "./confirm.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -123,9 +124,15 @@ function renderRoomDetailBody() {
 // generating an invoice. Any food/activity charges already run up during
 // that stay are discarded along with it (they were never billed, since
 // billing only happens at Check Out).
-function cancelCheckIn() {
+async function cancelCheckIn() {
   const room = getActiveRoom();
-  if (!confirm(`Cancel ${room.guest}'s check-in for ${room.name}? This can't be undone.`)) return;
+  const ok = await confirmAction({
+    title: "Cancel check-in?",
+    message: `Cancel ${room.guest}'s check-in for ${room.name}? This can't be undone.`,
+    confirmLabel: "Cancel Check-In",
+    tone: "danger",
+  });
+  if (!ok) return;
 
   logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check-In Cancelled");
   room.status = "available";

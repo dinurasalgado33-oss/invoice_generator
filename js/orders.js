@@ -8,6 +8,7 @@ import { FOOD_ORDER_RECORDS, allocateFoodOrderRecordId } from "./data/reports.js
 import { FOOD_ORDERS, allocateOrderId } from "./data/orders.js";
 import { chargeRoom } from "./rooms.js";
 import { updateInventoryBadge } from "./inventory.js";
+import { confirmAction } from "./confirm.js";
 
 let currentOrderSelection = {}; // dishId -> qty, for the Create/Edit view
 let orderSearchQuery = "";
@@ -290,10 +291,16 @@ function editOrder(orderId) {
   switchOrdersView("create");
 }
 
-function deleteOrder(orderId) {
+async function deleteOrder(orderId) {
   const order = FOOD_ORDERS.find(o => o.id === orderId);
   if (!order) return;
-  if (!confirm(`Delete this order for ${order.roomName}? Reserved ingredients will be returned to inventory.`)) return;
+  const ok = await confirmAction({
+    title: "Delete this order?",
+    message: `Delete this order for ${order.roomName}? Reserved ingredients will be returned to inventory.`,
+    confirmLabel: "Delete Order",
+    tone: "danger",
+  });
+  if (!ok) return;
 
   restoreOrderIngredients(order);
   const idx = FOOD_ORDERS.findIndex(o => o.id === orderId);
@@ -304,10 +311,16 @@ function deleteOrder(orderId) {
   renderPendingOrdersList();
 }
 
-function completeOrder(orderId) {
+async function completeOrder(orderId) {
   const order = FOOD_ORDERS.find(o => o.id === orderId);
   if (!order) return;
-  if (!confirm(`Bill ${fmtLKR(order.total)} to ${order.roomName} and complete this order?`)) return;
+  const ok = await confirmAction({
+    title: "Complete this order?",
+    message: `Bill ${fmtLKR(order.total)} to ${order.roomName} and complete this order?`,
+    confirmLabel: "Complete Order",
+    tone: "safe",
+  });
+  if (!ok) return;
 
   const room = ROOMS_BY_BRANCH[order.branch][order.roomIndex];
   const today = todayISO();

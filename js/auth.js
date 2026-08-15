@@ -2,6 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { ACCOUNTS, logLogin } from "./data/accounts.js";
 import { selectBranch } from "./branch.js";
+import { confirmAction } from "./confirm.js";
 
 // Staff login — client-side gate only (no backend), just keeps casual
 // visitors out. Credentials live in this file, in plain view, so treat
@@ -63,8 +64,14 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   }
 });
 
-document.getElementById("logout-btn").addEventListener("click", () => {
-  if (!confirm("Log out?")) return;
+document.getElementById("logout-btn").addEventListener("click", async () => {
+  const ok = await confirmAction({
+    title: "Log out?",
+    message: "You'll need to sign in again to continue.",
+    confirmLabel: "Log Out",
+    tone: "danger",
+  });
+  if (!ok) return;
 
   localStorage.removeItem(LOGIN_KEY);
   localStorage.removeItem(ROLE_KEY);

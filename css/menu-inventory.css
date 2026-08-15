@@ -47,6 +47,11 @@
   color: var(--danger);
   font-size: 1.1rem;
   cursor: pointer;
+  transition: background .15s ease;
+}
+.ingredient-row .remove-ingredient-btn:active { transform: scale(0.9); }
+@media (hover: hover) and (pointer: fine) {
+  .ingredient-row .remove-ingredient-btn:hover { background: #fdf2f1; }
 }
 
 .inventory-legend {
@@ -202,6 +207,9 @@
   justify-content: center;
 }
 .stock-adjust-btn:active { transform: scale(0.9); }
+@media (hover: hover) and (pointer: fine) {
+  .stock-adjust-btn:hover { border-color: var(--maroon); color: var(--maroon-dark); }
+}
 
 /* Row-level edit icon button — shared */
 .list-edit-btn {

@@ -298,6 +298,47 @@ input:focus, textarea:focus, select:focus {
   .sheet-icon-btn-danger:hover { background: #fdf2f1; border-color: var(--danger); color: var(--danger); }
 }
 
+/* Shared confirm dialog — styled replacement for window.confirm(), used
+   for every destructive/state-changing action across the app. Slides up
+   as a compact bottom sheet, matching the same overlay pattern as the
+   larger Add Dish / Add Item / Room Detail sheets rather than a native
+   OS popup. */
+.confirm-sheet {
+  background: var(--white);
+  width: 100%;
+  max-width: 400px;
+  border-radius: 22px 22px 0 0;
+  padding: 8px 24px calc(24px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.19,.85,.35,1);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+.confirm-overlay.open .confirm-sheet { transform: translateY(0); }
+.confirm-sheet h3 {
+  margin: 4px 0 8px;
+  color: var(--maroon);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+}
+.confirm-sheet p {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button { flex: 1; margin: 0; }
+.confirm-sheet.tone-danger h3 { color: var(--danger); }
+.confirm-sheet.tone-danger #confirm-ok-btn {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--white);
+}
+@media (hover: hover) and (pointer: fine) {
+  .confirm-sheet.tone-danger #confirm-ok-btn:hover { background: #9c342e; box-shadow: 0 8px 20px rgba(179, 65, 58, 0.28); }
+}
+
 /* Shared bottom export bar (invoice preview, dashboard, reports) */
 .export-bar {
   display: flex;

@@ -334,6 +334,9 @@
 .quick-action-btn svg { width: 19px; height: 19px; color: var(--maroon); }
 .quick-action-btn:active { transform: scale(0.97); }
 .quick-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .quick-action-btn:hover:not(:disabled) { border-color: var(--maroon); }
+}
 .quick-action-btn .badge-dot {
   position: absolute;
   top: 8px;
@@ -355,6 +358,11 @@
   margin-bottom: 10px;
   cursor: pointer;
   box-shadow: var(--shadow);
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+.today-checkout-row:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) {
+  .today-checkout-row:hover { box-shadow: 0 8px 20px rgba(74, 14, 28, 0.16); }
 }
 .today-checkout-icon {
   flex-shrink: 0;

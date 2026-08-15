@@ -3,6 +3,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
 import { MENU_ITEMS, MENU_CATEGORIES, INGREDIENT_NAMES, allocateDishId } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
+import { confirmAction } from "./confirm.js";
 
 let editingDishId = null;
 
@@ -214,11 +215,17 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
   renderMenuScreen();
 });
 
-document.getElementById("dish-delete-btn").addEventListener("click", () => {
+document.getElementById("dish-delete-btn").addEventListener("click", async () => {
   if (!editingDishId) return;
   const dish = MENU_ITEMS.find(d => d.id === editingDishId);
   if (!dish) return;
-  if (!confirm(`Delete "${dish.name}" from the menu?`)) return;
+  const ok = await confirmAction({
+    title: "Delete this dish?",
+    message: `Delete "${dish.name}" from the menu?`,
+    confirmLabel: "Delete Dish",
+    tone: "danger",
+  });
+  if (!ok) return;
 
   const idx = MENU_ITEMS.findIndex(d => d.id === editingDishId);
   MENU_ITEMS.splice(idx, 1);

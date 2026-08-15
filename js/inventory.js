@@ -5,6 +5,7 @@ import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
 } from "./data/inventory.js";
+import { confirmAction } from "./confirm.js";
 
 // Inventory is fully editable by every role — staff need to be able to
 // log stock changes day to day without waiting on a manager.
@@ -322,12 +323,18 @@ document.getElementById("item-form").addEventListener("submit", (e) => {
   updateInventoryBadge();
 });
 
-document.getElementById("item-delete-btn").addEventListener("click", () => {
+document.getElementById("item-delete-btn").addEventListener("click", async () => {
   if (!editingItemId) return;
   const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
   const item = inventory.find(i => i.id === editingItemId);
   if (!item) return;
-  if (!confirm(`Remove "${item.name}" from inventory?`)) return;
+  const ok = await confirmAction({
+    title: "Remove this item?",
+    message: `Remove "${item.name}" from inventory?`,
+    confirmLabel: "Remove Item",
+    tone: "danger",
+  });
+  if (!ok) return;
 
   const idx = inventory.findIndex(i => i.id === editingItemId);
   inventory.splice(idx, 1);

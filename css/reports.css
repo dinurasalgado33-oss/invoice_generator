@@ -102,11 +102,16 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
+.report-tab:active { transform: scale(0.97); }
 .report-tab.active {
   background: var(--maroon);
   border-color: var(--maroon);
   color: var(--gold-light);
+}
+@media (hover: hover) and (pointer: fine) {
+  .report-tab:not(.active):hover { border-color: var(--maroon); color: var(--maroon); }
 }
 
 .report-view-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
