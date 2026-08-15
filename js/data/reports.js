@@ -33,6 +33,17 @@ export const INVOICES = [
   { id: "174", guest: "Robert Johnson", branch: "Arugam Bay", date: "2026-08-11", total: 67900, status: "Active" },
 ];
 
+// Real checkouts append here (js/invoice.js submit handler) — `total` is
+// the net amount actually billed for the stay (gross minus discount,
+// before advance is subtracted — advance is just an early payment, not
+// a reduction in revenue). `discount`/`serviceCharge`/`advance` are kept
+// alongside for transparency; seeded rows above predate this and simply
+// don't have them.
+let nextInvoiceId = 175;
+export function allocateInvoiceId() {
+  return String(nextInvoiceId++);
+}
+
 export const FOOD_ORDER_RECORDS = [
   { id: 1, dish: "Chicken Curry", qty: 2, branch: "Wilpattu", date: "2026-07-15", revenue: 1900 },
   { id: 2, dish: "Fish Curry", qty: 3, branch: "Arugam Bay", date: "2026-07-16", revenue: 3150 },

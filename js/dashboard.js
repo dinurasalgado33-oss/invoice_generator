@@ -48,12 +48,14 @@ function renderDashboard(branch) {
   document.getElementById("kpi-occupancy").textContent = occupancy + "%";
   document.getElementById("dashboard-report-date").textContent = "Generated " + now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
-  // Revenue split — only categories we actually track separately. Invoice
-  // totals already fold in any food/activity charges billed at checkout,
-  // so this isn't a pure "rooms only" figure, but it's the real number,
-  // not an invented one.
-  const allTimeRoomRevenue = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active").reduce((s, inv) => s + inv.total, 0);
+  // Revenue split — invoice totals already fold in any food/activity
+  // charges billed at checkout (they're line items on the same bill), so
+  // food revenue would be double-counted if added to the invoice total
+  // as a separate slice. Subtract it back out to get a true room-only
+  // figure; the two slices then sum to actual total revenue.
+  const allInvoiceRevenue = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active").reduce((s, inv) => s + inv.total, 0);
   const allTimeFoodRevenue = FOOD_ORDER_RECORDS.filter(r => r.branch === branch).reduce((s, r) => s + r.revenue, 0);
+  const allTimeRoomRevenue = Math.max(0, allInvoiceRevenue - allTimeFoodRevenue);
   const categoryLabels = ["Room & Checkout Billing", "Food & Beverage"];
   const categoryValues = [allTimeRoomRevenue, allTimeFoodRevenue];
   const palette = [CHART_COLORS.maroon, CHART_COLORS.gold];

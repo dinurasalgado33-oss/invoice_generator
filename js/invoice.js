@@ -2,6 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmt, setLogoSrc, showToast } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
+import { INVOICES, allocateInvoiceId } from "./data/reports.js";
 
 const afterGenerateCallbacks = [];
 export function onAfterGenerate(cb) {
@@ -308,6 +309,18 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   const notes = document.getElementById("notes").value.trim();
   document.getElementById("prev-notes").textContent = notes || "-";
   document.getElementById("prev-staff").textContent = val("staff-name") || "";
+
+  INVOICES.push({
+    id: allocateInvoiceId(),
+    guest: val("guest-name") || "-",
+    branch: appState.selectedBranch,
+    date: document.getElementById("inv-date").value,
+    total: netAmount,
+    status: "Active",
+    discount: discountAmount,
+    serviceCharge,
+    advance,
+  });
 
   appState.invoiceCounter++;
   localStorage.setItem("leopardinn-invoice-counter", String(appState.invoiceCounter));
