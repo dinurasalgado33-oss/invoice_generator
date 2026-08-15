@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=27" />
-<link rel="stylesheet" href="css/brand-home.css?v=27" />
-<link rel="stylesheet" href="css/rooms.css?v=27" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=27" />
-<link rel="stylesheet" href="css/invoice.css?v=27" />
-<link rel="stylesheet" href="css/dashboard.css?v=27" />
-<link rel="stylesheet" href="css/reports.css?v=27" />
-<link rel="stylesheet" href="css/reservation.css?v=27" />
+<link rel="stylesheet" href="css/base.css?v=28" />
+<link rel="stylesheet" href="css/brand-home.css?v=28" />
+<link rel="stylesheet" href="css/rooms.css?v=28" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=28" />
+<link rel="stylesheet" href="css/invoice.css?v=28" />
+<link rel="stylesheet" href="css/dashboard.css?v=28" />
+<link rel="stylesheet" href="css/reports.css?v=28" />
+<link rel="stylesheet" href="css/reservation.css?v=28" />
 </head>
 <body>
 
@@ -694,7 +694,7 @@
             </div>
           </div>
           <div class="field">
-            <label>ID / Reg. Card</label>
+            <label>Reservation No</label>
             <input type="text" id="reg-card-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
           </div>
           <div class="field">
@@ -758,12 +758,27 @@
               <input type="number" id="advance" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
             </div>
           </div>
+          <div class="field">
+            <label>Discount</label>
+            <div class="discount-input-row">
+              <div class="input-icon">
+                <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" /><path d="M1 10h22" /></svg>
+                <input type="number" id="discount-amount" min="0" step="0.01" inputmode="decimal" pattern="[0-9]*" value="0" enterkeyhint="next" />
+              </div>
+              <select id="discount-type" aria-label="Discount type">
+                <option value="amount">LKR</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="live-summary" aria-live="polite">
           <div class="live-summary-row"><span>Bill Total</span><span id="live-bill-total">LKR 0.00</span></div>
-          <div class="live-summary-row"><span>Service Charge</span><span id="live-service-charge">LKR 0.00</span></div>
+          <div class="live-summary-row"><span>Service charge for food</span><span id="live-service-charge">LKR 0.00</span></div>
           <div class="live-summary-row"><span>Gross Amount</span><span id="live-gross">LKR 0.00</span></div>
+          <div class="live-summary-row"><span>Discount</span><span id="live-discount">LKR 0.00</span></div>
+          <div class="live-summary-row"><span>Net Amount</span><span id="live-net">LKR 0.00</span></div>
           <div class="live-summary-row"><span>Advance</span><span id="live-advance">LKR 0.00</span></div>
           <div class="live-summary-row grand"><span>Grand Total</span><span id="live-grand">LKR 0.00</span></div>
         </div>
@@ -809,27 +824,32 @@
     <button class="back-btn no-print" data-back="screen-form">&larr; Edit Invoice</button>
 
     <div id="invoice-preview" class="invoice-paper">
-      <div class="invoice-bar top"></div>
+      <div class="reservation-header">
+        <img id="prev-inv-logo" src="" alt="" class="reservation-logo" onerror="this.style.display='none'" />
+        <div class="reservation-header-text">
+          <h2 id="prev-inv-hotel-name"></h2>
+          <p id="prev-inv-address"></p>
+          <p id="prev-inv-contact-line"></p>
+        </div>
+      </div>
+      <div class="reservation-header-rule"></div>
 
       <div class="invoice-body">
         <div class="invoice-topline">
-          <div class="invoice-topline-brand">
-            <span id="prev-branch"></span>
-          </div>
           <div class="invoice-meta">
-            <p><span>Reservation No:</span> <strong id="prev-number"></strong></p>
-            <p><span>Date:</span> <strong id="prev-date"></strong></p>
+            <p><span>Reservation No</span> <strong id="prev-number"></strong></p>
+            <p><span>Date</span> <strong id="prev-date"></strong></p>
           </div>
         </div>
 
         <div class="invoice-guest">
-          <p><span>Guest Name</span> <strong id="prev-guest-name"></strong></p>
-          <p><span>No of Guest</span> <strong id="prev-guest-count"></strong></p>
-          <p><span>Contact No</span> <strong id="prev-guest-phone"></strong></p>
-          <p><span>Reg.Card No</span> <strong id="prev-reg-card"></strong></p>
-          <p><span>Voucher No</span> <strong id="prev-voucher"></strong></p>
-          <p><span>Check in Date</span> <strong id="prev-checkin"></strong></p>
-          <p><span>Check out Date</span> <strong id="prev-checkout"></strong></p>
+          <div class="reservation-row"><span>Guest Name</span><strong id="prev-guest-name"></strong></div>
+          <div class="reservation-row"><span>No of Guest</span><strong id="prev-guest-count"></strong></div>
+          <div class="reservation-row"><span>Contact No</span><strong id="prev-guest-phone"></strong></div>
+          <div class="reservation-row"><span>Reservation No</span><strong id="prev-reg-card"></strong></div>
+          <div class="reservation-row"><span>Voucher No</span><strong id="prev-voucher"></strong></div>
+          <div class="reservation-row"><span>Check in Date</span><strong id="prev-checkin"></strong></div>
+          <div class="reservation-row"><span>Check out Date</span><strong id="prev-checkout"></strong></div>
         </div>
 
         <h3 class="invoice-list-title">List of Information</h3>
@@ -861,8 +881,10 @@
           </div>
           <div class="invoice-totals">
             <div class="totals-row"><span>Bill Total</span><span id="prev-bill-total"></span></div>
-            <div class="totals-row"><span>Service Charge</span><span id="prev-service-charge"></span></div>
+            <div class="totals-row"><span>Service charge for food</span><span id="prev-service-charge"></span></div>
             <div class="totals-row"><span>Gross Amount</span><span id="prev-gross"></span></div>
+            <div class="totals-row" id="prev-discount-row"><span id="prev-discount-label">Discount</span><span id="prev-discount"></span></div>
+            <div class="totals-row"><span>Net Amount</span><span id="prev-net"></span></div>
             <div class="totals-row"><span>Advance</span><span id="prev-advance"></span></div>
             <div class="totals-row grand"><span>Grand Total</span><span id="prev-total"></span></div>
           </div>
@@ -1078,6 +1100,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=27"></script>
+<script type="module" src="js/main.js?v=28"></script>
 </body>
 </html>

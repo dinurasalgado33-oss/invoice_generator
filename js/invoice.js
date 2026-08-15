@@ -1,6 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmt, showToast } from "./utils.js";
+import { escapeHtml, formatDate, fmt, setLogoSrc, showToast } from "./utils.js";
+import { BRANCH_INFO } from "./data/branches.js";
 
 const afterGenerateCallbacks = [];
 export function onAfterGenerate(cb) {
@@ -56,16 +57,22 @@ function computeTotals() {
   const serviceCharge = num("service-charge");
   const advance = num("advance");
   const grossAmount = billTotal + serviceCharge;
-  const grandTotal = grossAmount - advance;
-  return { billTotal, serviceCharge, advance, grossAmount, grandTotal };
+  const discountType = document.getElementById("discount-type").value;
+  const discountInput = num("discount-amount");
+  const discountAmount = discountType === "percent" ? grossAmount * (discountInput / 100) : discountInput;
+  const netAmount = grossAmount - discountAmount;
+  const grandTotal = netAmount - advance;
+  return { billTotal, serviceCharge, advance, grossAmount, discountType, discountInput, discountAmount, netAmount, grandTotal };
 }
 
 function updateLiveTotals() {
-  const { billTotal, serviceCharge, advance, grossAmount, grandTotal } = computeTotals();
+  const { billTotal, serviceCharge, advance, grossAmount, discountAmount, netAmount, grandTotal } = computeTotals();
   const currency = val("currency") || "LKR";
   document.getElementById("live-bill-total").textContent = fmt(billTotal, currency);
   document.getElementById("live-service-charge").textContent = fmt(serviceCharge, currency);
   document.getElementById("live-gross").textContent = fmt(grossAmount, currency);
+  document.getElementById("live-discount").textContent = fmt(discountAmount, currency);
+  document.getElementById("live-net").textContent = fmt(netAmount, currency);
   document.getElementById("live-advance").textContent = fmt(advance, currency);
   document.getElementById("live-grand").textContent = fmt(grandTotal, currency);
   document.getElementById("grand-total-warning").classList.toggle("show", grandTotal < 0);
@@ -120,12 +127,13 @@ export function clearItems() {
 document.getElementById("add-item-btn").addEventListener("click", () => addItemRow());
 
 document.getElementById("guest-count").addEventListener("input", sanitizeInteger);
-["service-charge", "advance"].forEach(id => {
+["service-charge", "advance", "discount-amount"].forEach(id => {
   document.getElementById(id).addEventListener("input", sanitizeDecimal);
 });
-["service-charge", "advance", "currency"].forEach(id => {
+["service-charge", "advance", "currency", "discount-amount"].forEach(id => {
   document.getElementById(id).addEventListener("input", updateLiveTotals);
 });
+document.getElementById("discount-type").addEventListener("change", updateLiveTotals);
 
 // Guest count +/- stepper
 const guestCountInput = document.getElementById("guest-count");
@@ -249,10 +257,15 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   e.preventDefault();
 
   const items = getItems();
-  const { billTotal, serviceCharge, advance, grossAmount, grandTotal } = computeTotals();
+  const { billTotal, serviceCharge, advance, grossAmount, discountType, discountAmount, netAmount, grandTotal } = computeTotals();
 
   // Header
-  document.getElementById("prev-branch").textContent = appState.selectedBranchLabel;
+  const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
+  document.getElementById("prev-inv-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
+  document.getElementById("prev-inv-address").textContent = branchInfo.address || "";
+  document.getElementById("prev-inv-contact-line").textContent =
+    [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
+  setLogoSrc("prev-inv-logo", appState.selectedBranchLogo);
   document.getElementById("prev-number").textContent = val("inv-number");
   document.getElementById("prev-date").textContent = formatDate(document.getElementById("inv-date").value);
 
@@ -267,13 +280,14 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
 
   // Items
   const itemsBodyPrev = document.getElementById("prev-items-body");
+  const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   itemsBodyPrev.innerHTML = items.map(it => `
     <tr>
       <td>${it.no}</td>
       <td>${escapeHtml(it.desc)}</td>
       <td>${escapeHtml(it.qty)}</td>
-      <td>${it.rate ? it.rate.toFixed(2) : ""}</td>
-      <td>${it.value ? it.value.toFixed(2) : "-"}</td>
+      <td>${it.rate ? money(it.rate) : ""}</td>
+      <td>${it.value ? money(it.value) : "-"}</td>
     </tr>
   `).join("");
 
@@ -283,7 +297,11 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   document.getElementById("prev-bill-total").textContent = fmt(billTotal, currency);
   document.getElementById("prev-service-charge").textContent = fmt(serviceCharge, currency);
   document.getElementById("prev-gross").textContent = fmt(grossAmount, currency);
-  document.getElementById("prev-advance").textContent = fmt(advance, currency);
+  document.getElementById("prev-discount-row").style.display = discountAmount ? "" : "none";
+  document.getElementById("prev-discount-label").textContent = discountType === "percent" ? `Discount (${val("discount-amount")}%)` : "Discount";
+  document.getElementById("prev-discount").textContent = discountAmount ? "-" + fmt(discountAmount, currency) : "";
+  document.getElementById("prev-net").textContent = fmt(netAmount, currency);
+  document.getElementById("prev-advance").textContent = advance ? fmt(advance, currency) : "-";
   document.getElementById("prev-total").textContent = fmt(grandTotal, currency);
 
   // Remark + signature
