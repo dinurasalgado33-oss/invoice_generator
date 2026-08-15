@@ -314,6 +314,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
 
   afterGenerateCallbacks.forEach(cb => cb());
 
+  showToast("Invoice generated");
   showScreen("screen-preview");
 });
 

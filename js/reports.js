@@ -608,6 +608,7 @@ document.getElementById("copy-summary-btn").addEventListener("click", async () =
 
   try {
     await navigator.clipboard.writeText(text);
+    showToast("Summary copied!");
   } catch {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -615,10 +616,15 @@ document.getElementById("copy-summary-btn").addEventListener("click", async () =
     textarea.style.opacity = "0";
     document.body.appendChild(textarea);
     textarea.select();
-    document.execCommand("copy");
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
     document.body.removeChild(textarea);
+    showToast(copied ? "Summary copied!" : "Couldn't copy summary");
   }
-  showToast("Summary copied!");
 });
 
 document.getElementById("open-reports-btn").addEventListener("click", () => {

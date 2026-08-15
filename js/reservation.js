@@ -104,6 +104,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   document.getElementById("resv-prev-bank").textContent = branchInfo.bankName || "-";
   document.getElementById("resv-prev-bank-branch").textContent = branchInfo.bankBranch || "-";
 
+  showToast("Reservation confirmation generated");
   showScreen("screen-reservation-preview");
 });
 
