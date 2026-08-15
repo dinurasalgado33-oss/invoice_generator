@@ -67,7 +67,7 @@ function renderDishList() {
   const q = orderSearchQuery.trim().toLowerCase();
   const matches = MENU_ITEMS.filter(dish => dish.branch === appState.selectedBranch).filter(dish => {
     if (!q) return true;
-    const matchesNumber = String(dish.id) === q || String(dish.id).startsWith(q);
+    const matchesNumber = String(dish.number) === q || String(dish.number).startsWith(q);
     const matchesName = dish.name.toLowerCase().includes(q);
     return matchesNumber || matchesName;
   });
@@ -78,7 +78,7 @@ function renderDishList() {
     return `
       <div class="food-order-row">
         <div class="food-order-info">
-          <span class="food-order-name"><span class="food-order-number">#${dish.id}</span>${escapeHtml(dish.name)}</span>
+          <span class="food-order-name"><span class="food-order-number">#${dish.number}</span>${escapeHtml(dish.name)}</span>
           <span class="food-order-price">${fmtLKR(dish.price)}</span>
         </div>
         <div class="food-order-qty-stepper">

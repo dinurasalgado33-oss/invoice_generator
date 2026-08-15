@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
-import { MENU_ITEMS, MENU_CATEGORIES, INGREDIENT_NAMES, allocateDishId } from "./data/menu.js";
+import { MENU_ITEMS, MENU_CATEGORIES, INGREDIENT_NAMES, allocateDishId, allocateDishNumber } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
 
@@ -23,7 +23,7 @@ function renderDishRow(dish, hidden, showCategoryTag) {
   return `
     <tr class="list-item-row" data-dish-id="${dish.id}" data-category="${escapeHtml(dish.category)}" ${hidden ? 'style="display:none"' : ""}>
       <td class="list-td-name">
-        <span class="list-item-number">#${dish.id}</span>${escapeHtml(dish.name)}${showCategoryTag ? `<span class="list-item-tag">${escapeHtml(dish.category)}</span>` : ""}
+        <span class="list-item-number">#${dish.number}</span>${escapeHtml(dish.name)}${showCategoryTag ? `<span class="list-item-tag">${escapeHtml(dish.category)}</span>` : ""}
       </td>
       <td class="list-td-price">${fmtLKR(dish.price)}</td>
       <td>
@@ -65,7 +65,7 @@ function renderMenuScreen() {
   if (isFiltering) {
     const matches = menuForBranch()
       .filter(dish => {
-        const matchesNumber = String(dish.id) === query || String(dish.id).startsWith(query);
+        const matchesNumber = String(dish.number) === query || String(dish.number).startsWith(query);
         const matchesName = dish.name.toLowerCase().includes(query);
         return matchesNumber || matchesName;
       })
@@ -128,7 +128,7 @@ function openDishSheet(id, presetCategory = null) {
   editingDishId = id;
   const dish = id ? MENU_ITEMS.find(d => d.id === id) : null;
 
-  document.getElementById("dish-sheet-title").textContent = dish ? `Edit Dish #${dish.id}` : "Add Dish";
+  document.getElementById("dish-sheet-title").textContent = dish ? `Edit Dish #${dish.number}` : "Add Dish";
   document.getElementById("dish-name").value = dish ? dish.name : "";
   document.getElementById("dish-price").value = dish ? dish.price : "";
   populateCategorySelect(dish ? dish.category : (presetCategory || MENU_CATEGORIES[0]));
@@ -211,7 +211,7 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
     Object.assign(dish, { name, category, price, ingredients });
     showToast(`${name} updated`);
   } else {
-    MENU_ITEMS.push({ id: allocateDishId(), name, category, price, ingredients, branch: appState.selectedBranch });
+    MENU_ITEMS.push({ id: allocateDishId(), number: allocateDishNumber(appState.selectedBranch), name, category, price, ingredients, branch: appState.selectedBranch });
     showToast(`${name} added`);
   }
 
