@@ -7,6 +7,10 @@ import { confirmAction } from "./confirm.js";
 
 let editingDishId = null;
 
+function menuForBranch() {
+  return MENU_ITEMS.filter(d => d.branch === appState.selectedBranch);
+}
+
 // Categories start collapsed, same as Inventory — the menu opens short and
 // staff drill into the section they need instead of scrolling everything.
 const collapsedCategories = new Set(MENU_CATEGORIES);
@@ -59,7 +63,7 @@ function renderMenuScreen() {
   table.classList.toggle("filtered", isFiltering);
 
   if (isFiltering) {
-    const matches = MENU_ITEMS
+    const matches = menuForBranch()
       .filter(dish => {
         const matchesNumber = String(dish.id) === query || String(dish.id).startsWith(query);
         const matchesName = dish.name.toLowerCase().includes(query);
@@ -74,7 +78,7 @@ function renderMenuScreen() {
     statusEl.textContent = `${matches.length} result${matches.length === 1 ? "" : "s"}`;
   } else {
     const groups = {};
-    MENU_ITEMS.forEach(dish => {
+    menuForBranch().forEach(dish => {
       if (!groups[dish.category]) groups[dish.category] = [];
       groups[dish.category].push(dish);
     });
@@ -187,7 +191,7 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
   const price = parseFloat(document.getElementById("dish-price").value) || 0;
   if (!name) return;
 
-  const duplicate = MENU_ITEMS.some(d => d.id !== editingDishId && d.name.trim().toLowerCase() === name.toLowerCase());
+  const duplicate = MENU_ITEMS.some(d => d.id !== editingDishId && d.branch === appState.selectedBranch && d.name.trim().toLowerCase() === name.toLowerCase());
   if (duplicate) {
     document.getElementById("dish-name-error").classList.add("show");
     document.getElementById("dish-name").classList.add("invalid");
@@ -207,7 +211,7 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
     Object.assign(dish, { name, category, price, ingredients });
     showToast(`${name} updated`);
   } else {
-    MENU_ITEMS.push({ id: allocateDishId(), name, category, price, ingredients });
+    MENU_ITEMS.push({ id: allocateDishId(), name, category, price, ingredients, branch: appState.selectedBranch });
     showToast(`${name} added`);
   }
 

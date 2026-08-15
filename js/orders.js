@@ -65,7 +65,7 @@ function populateRoomSelect() {
 // ---- Dish list (Create/Edit view) ----
 function renderDishList() {
   const q = orderSearchQuery.trim().toLowerCase();
-  const matches = MENU_ITEMS.filter(dish => {
+  const matches = MENU_ITEMS.filter(dish => dish.branch === appState.selectedBranch).filter(dish => {
     if (!q) return true;
     const matchesNumber = String(dish.id) === q || String(dish.id).startsWith(q);
     const matchesName = dish.name.toLowerCase().includes(q);
