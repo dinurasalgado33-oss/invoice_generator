@@ -1,10 +1,11 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast } from "./utils.js";
+import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
 import { confirmAction } from "./confirm.js";
+import { ACTIVITY_RECORDS, allocateActivityRecordId } from "./data/reports.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -285,6 +286,8 @@ function wireActivitiesPanel() {
 function chargeActivities() {
   const room = getActiveRoom();
   const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
+  const branch = activeRoomRef.branch;
+  const today = todayISO();
   let total = 0;
 
   Object.keys(currentActivitySelection).forEach(id => {
@@ -293,11 +296,13 @@ function chargeActivities() {
     const activity = activities.find(a => a.id === Number(id));
     if (!activity) return;
     chargeRoom(room, activity.name, qty, activity.price);
+    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), name: activity.name, qty, branch, date: today, revenue: activity.price * qty });
     total += activity.price * qty;
   });
 
   customActivityCharges.forEach(c => {
     chargeRoom(room, c.name, 1, c.price);
+    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), name: c.name, qty: 1, branch, date: today, revenue: c.price });
     total += c.price;
   });
 

@@ -74,6 +74,16 @@ export function allocateFoodOrderRecordId() {
   return nextFoodOrderRecordId++;
 }
 
+// Every activity charge (Room Map > villa > Activities) appends a row
+// here, same pattern as FOOD_ORDER_RECORDS — otherwise activity revenue
+// rides along on the invoice total with no way to attribute it to
+// "activities" instead of "room" in the Dashboard's revenue split.
+export const ACTIVITY_RECORDS = [];
+let nextActivityRecordId = 1;
+export function allocateActivityRecordId() {
+  return nextActivityRecordId++;
+}
+
 // One usage snapshot per item per branch for "this period". opening +
 // restocked - used = closing (closing matches each item's current stock
 // in INVENTORY_BY_BRANCH, so the two screens tell a consistent story).

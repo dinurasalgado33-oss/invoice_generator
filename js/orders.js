@@ -323,6 +323,10 @@ async function completeOrder(orderId) {
   if (!ok) return;
 
   const room = ROOMS_BY_BRANCH[order.branch][order.roomIndex];
+  if (!room || room.status !== "occupied" || room.guest !== order.guestName) {
+    showToast(`Can't complete — ${order.guestName} already checked out of ${order.roomName}`);
+    return;
+  }
   const today = todayISO();
 
   order.items.forEach(item => {

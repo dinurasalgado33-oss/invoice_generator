@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
-import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 
 let pieChart = null;
@@ -50,15 +50,16 @@ function renderDashboard(branch) {
 
   // Revenue split — invoice totals already fold in any food/activity
   // charges billed at checkout (they're line items on the same bill), so
-  // food revenue would be double-counted if added to the invoice total
-  // as a separate slice. Subtract it back out to get a true room-only
-  // figure; the two slices then sum to actual total revenue.
+  // food/activity revenue would be double-counted if added to the
+  // invoice total as separate slices. Subtract both back out to get a
+  // true room-only figure; all three slices then sum to actual revenue.
   const allInvoiceRevenue = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active").reduce((s, inv) => s + inv.total, 0);
   const allTimeFoodRevenue = FOOD_ORDER_RECORDS.filter(r => r.branch === branch).reduce((s, r) => s + r.revenue, 0);
-  const allTimeRoomRevenue = Math.max(0, allInvoiceRevenue - allTimeFoodRevenue);
-  const categoryLabels = ["Room & Checkout Billing", "Food & Beverage"];
-  const categoryValues = [allTimeRoomRevenue, allTimeFoodRevenue];
-  const palette = [CHART_COLORS.maroon, CHART_COLORS.gold];
+  const allTimeActivityRevenue = ACTIVITY_RECORDS.filter(r => r.branch === branch).reduce((s, r) => s + r.revenue, 0);
+  const allTimeRoomRevenue = Math.max(0, allInvoiceRevenue - allTimeFoodRevenue - allTimeActivityRevenue);
+  const categoryLabels = ["Room & Checkout Billing", "Food & Beverage", "Activities"];
+  const categoryValues = [allTimeRoomRevenue, allTimeFoodRevenue, allTimeActivityRevenue];
+  const palette = [CHART_COLORS.maroon, CHART_COLORS.gold, CHART_COLORS.teal];
 
   if (pieChart) pieChart.destroy();
   pieChart = new Chart(document.getElementById("revenue-pie-chart"), {
