@@ -293,6 +293,7 @@ function deleteOrder(orderId) {
 function completeOrder(orderId) {
   const order = FOOD_ORDERS.find(o => o.id === orderId);
   if (!order) return;
+  if (!confirm(`Bill ${fmtLKR(order.total)} to ${order.roomName} and complete this order?`)) return;
 
   const room = ROOMS_BY_BRANCH[order.branch][order.roomIndex];
   const today = todayISO();

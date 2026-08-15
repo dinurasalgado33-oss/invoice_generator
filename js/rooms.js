@@ -322,6 +322,7 @@ function showNewBookingForm() {
         <div class="field">
           <label>Check-out</label>
           <input type="date" id="nb-checkout" required value="${tomorrow}" />
+          <p class="field-error" id="nb-checkout-error">Check-out must be after check-in</p>
         </div>
       </div>
       <button type="submit" class="primary-btn big">
@@ -331,12 +332,29 @@ function showNewBookingForm() {
     </form>
   `;
 
+  const nbCheckin = document.getElementById("nb-checkin");
+  const nbCheckout = document.getElementById("nb-checkout");
+  nbCheckin.addEventListener("change", () => { nbCheckout.min = nbCheckin.value; });
+  nbCheckout.min = nbCheckin.value;
+  [nbCheckin, nbCheckout].forEach(input => {
+    input.addEventListener("input", () => {
+      document.getElementById("nb-checkout-error").classList.remove("show");
+      nbCheckout.classList.remove("invalid");
+    });
+  });
+
   document.getElementById("new-booking-form").addEventListener("submit", (e) => {
     e.preventDefault();
+    if (nbCheckout.value <= nbCheckin.value) {
+      document.getElementById("nb-checkout-error").classList.add("show");
+      nbCheckout.classList.add("invalid");
+      nbCheckout.focus();
+      return;
+    }
     room.guest = document.getElementById("nb-guest").value.trim();
     room.phone = document.getElementById("nb-phone").value.trim();
-    room.checkin = document.getElementById("nb-checkin").value;
-    room.checkout = document.getElementById("nb-checkout").value;
+    room.checkin = nbCheckin.value;
+    room.checkout = nbCheckout.value;
     room.status = "occupied";
     logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check In");
     showToast(`${room.guest} checked into ${room.name}`);
