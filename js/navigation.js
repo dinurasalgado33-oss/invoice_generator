@@ -9,11 +9,14 @@ export const screens = {
   reports: document.getElementById("screen-reports"),
   form: document.getElementById("screen-form"),
   preview: document.getElementById("screen-preview"),
+  reservationForm: document.getElementById("screen-reservation-form"),
+  reservationPreview: document.getElementById("screen-reservation-preview"),
 };
 
 const screenOrder = [
   "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-menu",
   "screen-inventory", "screen-dashboard", "screen-reports", "screen-form", "screen-preview",
+  "screen-reservation-form", "screen-reservation-preview",
 ];
 
 export function showScreen(id) {

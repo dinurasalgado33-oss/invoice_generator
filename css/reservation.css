@@ -1,0 +1,156 @@
+/* Reservation Confirmation form */
+#screen-reservation-form .field-label-standalone:first-of-type { margin-top: 4px; }
+
+.villa-rate-row { display: flex; align-items: center; gap: 8px; }
+.villa-rate-row .villa-name-input { flex: 2; }
+.villa-rate-row .villa-rate-input { flex: 1; }
+
+/* Reservation Confirmation preview — a guest-facing document, styled to
+   match the hotel's existing paper confirmation slip rather than the
+   itemized checkout invoice. */
+#screen-reservation-preview { padding-left: 16px; padding-right: 16px; }
+#screen-reservation-preview .back-btn { margin-left: 0; }
+
+.reservation-paper {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-top: 10px;
+  color: #1a1a1a;
+}
+
+.reservation-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(160deg, var(--maroon), var(--maroon-dark));
+  padding: 18px 22px;
+}
+.reservation-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+}
+.reservation-header-text { flex: 1; text-align: right; }
+.reservation-header-text h2 {
+  margin: 0 0 4px;
+  color: var(--gold);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.2px;
+}
+.reservation-header-text p {
+  margin: 1px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.78rem;
+}
+.reservation-header-rule { height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold)); }
+
+.reservation-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  position: relative;
+  padding: 26px 22px 18px;
+}
+.reservation-title-row h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.4rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #1a1a1a;
+}
+.reservation-issue-date {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.reservation-issue-date strong { color: #1a1a1a; }
+
+.reservation-body { position: relative; padding: 4px 22px 26px; }
+.reservation-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 65%;
+  max-width: 320px;
+  object-fit: contain;
+  /* Faintness comes from the PNG's own alpha channel, not CSS opacity —
+     translucent <img> + opacity rasterizes as a solid block in Chromium's
+     print-to-PDF pipeline (same issue avoided in invoice.css). */
+  pointer-events: none;
+  z-index: 0;
+}
+.reservation-content { position: relative; z-index: 1; }
+
+.reservation-section { margin-bottom: 22px; }
+.reservation-section h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.reservation-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 0.88rem;
+}
+.reservation-row span {
+  flex-shrink: 0;
+  min-width: 110px;
+  color: #1a1a1a;
+}
+.reservation-row span::after { content: ":"; margin-left: 8px; }
+.reservation-row strong { font-weight: 600; color: #1a1a1a; }
+
+.reservation-row-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+@media (max-width: 420px) {
+  .reservation-row-split { grid-template-columns: 1fr; }
+}
+
+.reservation-pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.reservation-pricing-table th,
+.reservation-pricing-table td {
+  border: 1px solid #1a1a1a;
+  padding: 8px 10px;
+  text-align: left;
+}
+.reservation-pricing-table th { background: var(--bg-alt, #f4f1ea); font-weight: 700; }
+.reservation-pricing-table td:last-child { text-align: right; }
+
+.reservation-bank-box {
+  border: 1px solid #1a1a1a;
+  padding: 10px 14px;
+  display: inline-block;
+  min-width: 260px;
+}
+.reservation-bank-box .reservation-row { padding: 2px 0; }
+
+.reservation-conditions p {
+  margin: 0 0 6px;
+  color: var(--danger);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+@media print {
+  .reservation-paper { box-shadow: none; border-radius: 0; }
+}

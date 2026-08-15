@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmt } from "./utils.js";
+import { escapeHtml, formatDate, fmt, showToast } from "./utils.js";
 
 const afterGenerateCallbacks = [];
 export function onAfterGenerate(cb) {
@@ -292,5 +292,8 @@ document.getElementById("image-btn").addEventListener("click", () => {
     link.download = `LeopardInn-${invNum}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
+  }).catch(() => {
+    if (hint) hint.style.visibility = "";
+    showToast("Couldn't generate image");
   });
 });

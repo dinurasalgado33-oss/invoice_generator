@@ -15,6 +15,7 @@ import "./menu.js";
 import "./inventory.js";
 import "./dashboard.js";
 import "./reports.js";
+import "./reservation.js";
 import "./branch.js";
 import { restoreSession } from "./auth.js";
 

@@ -6,13 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=24" />
-<link rel="stylesheet" href="css/brand-home.css?v=24" />
-<link rel="stylesheet" href="css/rooms.css?v=24" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=24" />
-<link rel="stylesheet" href="css/invoice.css?v=24" />
-<link rel="stylesheet" href="css/dashboard.css?v=24" />
-<link rel="stylesheet" href="css/reports.css?v=24" />
+<link rel="stylesheet" href="css/base.css?v=25" />
+<link rel="stylesheet" href="css/brand-home.css?v=25" />
+<link rel="stylesheet" href="css/rooms.css?v=25" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=25" />
+<link rel="stylesheet" href="css/invoice.css?v=25" />
+<link rel="stylesheet" href="css/dashboard.css?v=25" />
+<link rel="stylesheet" href="css/reports.css?v=25" />
+<link rel="stylesheet" href="css/reservation.css?v=25" />
 </head>
 <body>
 
@@ -117,6 +118,10 @@
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg></span>
           <span>Log Inventory</span>
           <span class="badge-dot" id="inventory-low-badge" style="display:none">0</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-reservation-btn">
+          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M9 16l2 2 4-4" /></svg></span>
+          <span>Reservation</span>
         </button>
       </div>
     </div>
@@ -850,10 +855,186 @@
     </div>
   </section>
 
+  <!-- SCREEN: Reservation Confirmation form -->
+  <section id="screen-reservation-form" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="resv-form-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Reservation — <span id="resv-form-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <form id="reservation-form">
+        <label class="field-label-standalone">Guest Details</label>
+        <div class="form-grid">
+          <div class="field">
+            <label>Title</label>
+            <select id="resv-title">
+              <option>Mr.</option>
+              <option>Mrs.</option>
+              <option>Miss</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Guest Name</label>
+            <input type="text" id="resv-guest-name" required autocapitalize="words" enterkeyhint="next" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Adults</label>
+            <input type="number" id="resv-adults" min="0" value="2" inputmode="numeric" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Children</label>
+            <input type="number" id="resv-children" min="0" value="0" inputmode="numeric" enterkeyhint="next" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Contact No</label>
+          <input type="tel" id="resv-contact" inputmode="tel" enterkeyhint="next" />
+        </div>
+
+        <label class="field-label-standalone">Stay Details</label>
+        <div class="form-grid">
+          <div class="field">
+            <label>Check-in Date</label>
+            <input type="date" id="resv-checkin-date" required />
+          </div>
+          <div class="field">
+            <label>Check-in Time</label>
+            <input type="time" id="resv-checkin-time" value="14:00" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Check-out Date</label>
+            <input type="date" id="resv-checkout-date" required />
+          </div>
+          <div class="field">
+            <label>Check-out Time</label>
+            <input type="time" id="resv-checkout-time" value="11:00" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Booking Type</label>
+          <input type="text" id="resv-booking-type" placeholder="e.g. Direct Booking, Online, Agent" enterkeyhint="next" />
+        </div>
+
+        <label class="field-label-standalone">Pricing</label>
+        <div class="ingredient-list" id="resv-villa-list"><!-- villa rows injected by JS --></div>
+        <button type="button" class="secondary-btn" id="resv-add-villa-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+          Add Villa
+        </button>
+
+        <button type="submit" class="primary-btn big">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+          Generate Confirmation
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- SCREEN: Reservation Confirmation preview -->
+  <section id="screen-reservation-preview" class="screen">
+    <button class="back-btn no-print" data-back="screen-reservation-form">&larr; Edit</button>
+
+    <div id="reservation-preview" class="reservation-paper">
+      <div class="reservation-header">
+        <img id="resv-prev-logo" src="" alt="" class="reservation-logo" onerror="this.style.display='none'" />
+        <div class="reservation-header-text">
+          <h2 id="resv-prev-hotel-name"></h2>
+          <p id="resv-prev-address"></p>
+          <p id="resv-prev-contact-line"></p>
+        </div>
+      </div>
+      <div class="reservation-header-rule"></div>
+
+      <div class="reservation-title-row">
+        <h1>Reservation Confirmation</h1>
+        <span class="reservation-issue-date">Issued <strong id="resv-prev-issue-date"></strong></span>
+      </div>
+
+      <div class="reservation-body">
+        <img src="assets/watermark.png" alt="" class="reservation-watermark" onerror="this.style.display='none'" />
+
+        <div class="reservation-content">
+          <section class="reservation-section">
+            <h3>Guest Details</h3>
+            <div class="reservation-row"><span>Guest Name</span><strong id="resv-prev-guest-name"></strong></div>
+            <div class="reservation-row-split">
+              <div class="reservation-row"><span>No of Guest</span><strong id="resv-prev-guest-total"></strong></div>
+              <div class="reservation-row"><span>Adults</span><strong id="resv-prev-adults"></strong></div>
+              <div class="reservation-row"><span>Children</span><strong id="resv-prev-children"></strong></div>
+            </div>
+            <div class="reservation-row"><span>Contact No</span><strong id="resv-prev-contact"></strong></div>
+          </section>
+
+          <section class="reservation-section">
+            <h3>Stay Details</h3>
+            <div class="reservation-row-split">
+              <div class="reservation-row"><span>Check in Date</span><strong id="resv-prev-checkin-date"></strong></div>
+              <div class="reservation-row"><span>Check in Time</span><strong id="resv-prev-checkin-time"></strong></div>
+            </div>
+            <div class="reservation-row-split">
+              <div class="reservation-row"><span>Check out Date</span><strong id="resv-prev-checkout-date"></strong></div>
+              <div class="reservation-row"><span>Check out Time</span><strong id="resv-prev-checkout-time"></strong></div>
+            </div>
+            <div class="reservation-row"><span>Duration</span><strong id="resv-prev-duration"></strong></div>
+            <div class="reservation-row"><span>Villa count</span><strong id="resv-prev-villa-count"></strong></div>
+            <div class="reservation-row"><span>Booking type</span><strong id="resv-prev-booking-type"></strong></div>
+          </section>
+
+          <section class="reservation-section">
+            <h3>Pricing</h3>
+            <table class="reservation-pricing-table">
+              <thead><tr><th>Villa name</th><th>Rate per 1 night</th></tr></thead>
+              <tbody id="resv-prev-pricing-body"></tbody>
+            </table>
+          </section>
+
+          <section class="reservation-section">
+            <h3>Payment Details</h3>
+            <div class="reservation-bank-box">
+              <div class="reservation-row"><span>Account Name</span><strong id="resv-prev-bank-account-name"></strong></div>
+              <div class="reservation-row"><span>Account Number</span><strong id="resv-prev-bank-account-no"></strong></div>
+              <div class="reservation-row"><span>Bank</span><strong id="resv-prev-bank"></strong></div>
+              <div class="reservation-row"><span>Branch</span><strong id="resv-prev-bank-branch"></strong></div>
+            </div>
+          </section>
+
+          <section class="reservation-section reservation-conditions">
+            <h3>Conditions</h3>
+            <p>* Required LKR 5,000 of advance payment to confirm the booking</p>
+            <p>* Up to 11 Years: Infant / Child sharing parent's room would be 100% complimentary for first 2 children and 25% of the Double room rate applicable per additional child.</p>
+            <p>* The reservation is valid only for 1 days after issuing.</p>
+            <p>* Once payment is made, kindly share the slip or confirmation for our records.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="export-bar no-print">
+      <button class="action-btn" id="resv-print-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+        Print / PDF
+      </button>
+      <button class="action-btn" id="resv-image-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+        Save Image
+      </button>
+      <button class="action-btn secondary" id="resv-new-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+        New Reservation
+      </button>
+    </div>
+  </section>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=24"></script>
+<script type="module" src="js/main.js?v=25"></script>
 </body>
 </html>
