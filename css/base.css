@@ -8,6 +8,7 @@
   --text-muted: #7d6a5c;
   --border: #e6dcc8;
   --bg: #f8f3ea;
+  --bg-alt: #f4f1ea;
   --white: #ffffff;
   --danger: #b3413a;
   --radius: 14px;
@@ -147,6 +148,22 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
   background: #fffdf8;
+}
+
+/* Custom chevron replaces the native OS dropdown arrow, matching the
+   SVG icon language used everywhere else in the app. background-image
+   (not the `background` shorthand) so it survives any more specific
+   selector that only overrides background-color. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 40px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237d6a5c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
 }
 
 /* Inputs with a leading icon (guest name, phone, reservation #, money fields) */

@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=32" />
-<link rel="stylesheet" href="css/brand-home.css?v=32" />
-<link rel="stylesheet" href="css/rooms.css?v=32" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=32" />
-<link rel="stylesheet" href="css/invoice.css?v=32" />
-<link rel="stylesheet" href="css/dashboard.css?v=32" />
-<link rel="stylesheet" href="css/reports.css?v=32" />
-<link rel="stylesheet" href="css/reservation.css?v=32" />
+<link rel="stylesheet" href="css/base.css?v=33" />
+<link rel="stylesheet" href="css/brand-home.css?v=33" />
+<link rel="stylesheet" href="css/rooms.css?v=33" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=33" />
+<link rel="stylesheet" href="css/invoice.css?v=33" />
+<link rel="stylesheet" href="css/dashboard.css?v=33" />
+<link rel="stylesheet" href="css/reports.css?v=33" />
+<link rel="stylesheet" href="css/reservation.css?v=33" />
 </head>
 <body>
 
@@ -932,7 +932,7 @@
     </div>
 
     <div class="list-wrap">
-      <form id="reservation-form">
+      <form id="reservation-form" novalidate>
         <label class="field-label-standalone">Guest Details</label>
         <div class="form-grid">
           <div class="field">
@@ -946,6 +946,7 @@
           <div class="field">
             <label>Guest Name</label>
             <input type="text" id="resv-guest-name" required autocapitalize="words" enterkeyhint="next" />
+            <p class="field-error" id="resv-guest-name-error">Guest name is required</p>
           </div>
         </div>
         <div class="form-grid">
@@ -978,6 +979,7 @@
           <div class="field">
             <label>Check-out Date</label>
             <input type="date" id="resv-checkout-date" required />
+            <p class="field-error" id="resv-checkout-date-error">Check-out must be after check-in</p>
           </div>
           <div class="field">
             <label>Check-out Time</label>
@@ -1116,6 +1118,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=32"></script>
+<script type="module" src="js/main.js?v=33"></script>
 </body>
 </html>

@@ -133,14 +133,15 @@
   padding: 8px 10px;
   text-align: left;
 }
-.reservation-pricing-table th { background: var(--bg-alt, #f4f1ea); font-weight: 700; }
+.reservation-pricing-table th { background: var(--bg-alt); font-weight: 700; }
 .reservation-pricing-table td:last-child { text-align: right; }
 
 .reservation-bank-box {
   border: 1px solid #1a1a1a;
   padding: 10px 14px;
   display: inline-block;
-  min-width: 260px;
+  width: min(260px, 100%);
+  box-sizing: border-box;
 }
 .reservation-bank-box .reservation-row { padding: 2px 0; }
 

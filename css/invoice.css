@@ -208,9 +208,11 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .discount-input-row select {
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 0 10px;
+  padding: 0 30px 0 10px;
   font-size: 0.95rem;
-  background: var(--white);
+  background-color: var(--white);
+  background-position: right 8px center;
+  background-size: 14px;
   color: var(--text);
 }
 

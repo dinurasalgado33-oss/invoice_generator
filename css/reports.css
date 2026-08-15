@@ -58,7 +58,7 @@
 .custom-range-row span { color: var(--text-muted); font-size: 0.85rem; }
 
 .kpi-strip {
-  background: var(--bg-alt, #f4f1ea);
+  background: var(--bg-alt);
   border: 1.5px solid var(--border);
   border-radius: 12px;
   overflow-x: auto;

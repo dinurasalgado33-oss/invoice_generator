@@ -159,7 +159,7 @@
 .list-table thead th {
   position: sticky;
   top: 0;
-  background: var(--bg-alt, #f4f1ea);
+  background: var(--bg-alt);
   color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 700;
@@ -173,7 +173,13 @@
 .list-table tbody tr:last-child { border-bottom: none; }
 .list-table tbody tr.low-stock { background: #fdf2f1; }
 .list-table td { padding: 8px 10px; vertical-align: middle; }
-.list-td-name { font-weight: 700; color: var(--text); }
+.list-td-name {
+  font-weight: 700;
+  color: var(--text);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .list-td-price { color: var(--text-muted); }
 .list-td-price strong { color: var(--text); font-weight: 700; }
 .inv-td-stock strong { color: var(--text); font-weight: 700; margin: 0 4px; }
@@ -316,7 +322,7 @@
 
 /* Group row — a category of items/dishes, collapsible. Nested one level
    under a department for Inventory; top level for Menu Config. */
-.list-group-row { cursor: pointer; background: var(--bg-alt, #f4f1ea); }
+.list-group-row { cursor: pointer; background: var(--bg-alt); }
 .list-group-row td { padding: 9px 10px 9px 12px; }
 .inv-dept-row ~ .list-group-row td { padding-left: 26px; }
 .list-group-toggle {

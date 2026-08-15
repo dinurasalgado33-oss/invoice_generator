@@ -25,6 +25,10 @@ function resetReservationForm() {
   document.getElementById("resv-checkout-time").value = "11:00";
   villaList.innerHTML = "";
   addVillaRow();
+  document.getElementById("resv-guest-name-error").classList.remove("show");
+  document.getElementById("resv-guest-name").classList.remove("invalid");
+  document.getElementById("resv-checkout-date-error").classList.remove("show");
+  document.getElementById("resv-checkout-date").classList.remove("invalid");
 }
 
 document.getElementById("resv-add-villa-btn").addEventListener("click", () => addVillaRow());
@@ -51,16 +55,49 @@ function formatTime12h(value) {
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
+const resvGuestNameInput = document.getElementById("resv-guest-name");
+const resvCheckinDateInput = document.getElementById("resv-checkin-date");
+const resvCheckoutDateInput = document.getElementById("resv-checkout-date");
+
+resvGuestNameInput.addEventListener("input", () => {
+  document.getElementById("resv-guest-name-error").classList.remove("show");
+  resvGuestNameInput.classList.remove("invalid");
+});
+resvCheckinDateInput.addEventListener("change", () => { resvCheckoutDateInput.min = resvCheckinDateInput.value; });
+[resvCheckinDateInput, resvCheckoutDateInput].forEach(input => {
+  input.addEventListener("input", () => {
+    document.getElementById("resv-checkout-date-error").classList.remove("show");
+    resvCheckoutDateInput.classList.remove("invalid");
+  });
+});
+
+function validateReservationForm() {
+  if (!resvGuestNameInput.value.trim()) {
+    document.getElementById("resv-guest-name-error").classList.add("show");
+    resvGuestNameInput.classList.add("invalid");
+    resvGuestNameInput.focus();
+    return false;
+  }
+  if (resvCheckinDateInput.value && resvCheckoutDateInput.value && resvCheckoutDateInput.value <= resvCheckinDateInput.value) {
+    document.getElementById("resv-checkout-date-error").classList.add("show");
+    resvCheckoutDateInput.classList.add("invalid");
+    resvCheckoutDateInput.focus();
+    return false;
+  }
+  return true;
+}
+
 document.getElementById("reservation-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  if (!validateReservationForm()) return;
 
   const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
   const title = document.getElementById("resv-title").value;
-  const guestName = document.getElementById("resv-guest-name").value.trim();
+  const guestName = resvGuestNameInput.value.trim();
   const adults = parseInt(document.getElementById("resv-adults").value, 10) || 0;
   const children = parseInt(document.getElementById("resv-children").value, 10) || 0;
-  const checkinDate = document.getElementById("resv-checkin-date").value;
-  const checkoutDate = document.getElementById("resv-checkout-date").value;
+  const checkinDate = resvCheckinDateInput.value;
+  const checkoutDate = resvCheckoutDateInput.value;
   const nights = nightsBetween(checkinDate, checkoutDate);
 
   const villas = [...villaList.querySelectorAll(".villa-rate-row")]
