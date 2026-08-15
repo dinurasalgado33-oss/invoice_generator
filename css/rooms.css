@@ -291,6 +291,26 @@
   background: var(--white);
 }
 .food-order-qty-stepper .stepper-input-btn { width: 34px; height: 34px; font-size: 1.05rem; }
+
+.activity-custom-row { display: flex; gap: 8px; margin: 4px 0 14px; }
+.activity-custom-row input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 0.85rem; }
+.activity-custom-row input#activity-custom-price { flex: 0 0 88px; }
+.activity-custom-row #activity-custom-add {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: none;
+  background: var(--maroon);
+  color: var(--gold-light);
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.activity-custom-row #activity-custom-add:active { transform: scale(0.92); }
 .food-order-qty-value { min-width: 26px; text-align: center; font-weight: 700; font-size: 0.9rem; }
 .food-order-total-row {
   display: flex;

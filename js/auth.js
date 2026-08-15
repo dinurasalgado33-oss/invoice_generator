@@ -63,6 +63,19 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   }
 });
 
+document.getElementById("logout-btn").addEventListener("click", () => {
+  if (!confirm("Log out?")) return;
+
+  localStorage.removeItem(LOGIN_KEY);
+  localStorage.removeItem(ROLE_KEY);
+  localStorage.removeItem(LOCKED_BRANCH_KEY);
+  appState.currentRole = null;
+
+  document.getElementById("login-form").reset();
+  document.getElementById("login-error").classList.remove("show");
+  showScreen("screen-login");
+});
+
 // Restore a logged-in session (skip login, and skip the branch picker too
 // if the account is locked to one branch). Exported and called explicitly
 // last from main.js, after every other module has finished wiring up its

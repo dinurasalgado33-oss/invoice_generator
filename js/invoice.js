@@ -272,11 +272,6 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   showScreen("screen-preview");
 });
 
-document.getElementById("open-invoice-btn").addEventListener("click", () => {
-  resetForm();
-  showScreen("screen-form");
-});
-
 document.getElementById("new-invoice-btn").addEventListener("click", () => {
   resetForm();
   showScreen("screen-form");

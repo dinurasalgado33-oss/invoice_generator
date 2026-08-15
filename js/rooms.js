@@ -4,6 +4,7 @@ import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast } from "./util
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { MENU_ITEMS } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
+import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
 import { updateInventoryBadge } from "./inventory.js";
 
@@ -11,18 +12,9 @@ let activeRoomRef = null; // { branch, index } — the villa the detail sheet is
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
 
 export function updateRoomsCardAvailability() {
-  const btn = document.getElementById("open-rooms-btn");
-  const badge = document.getElementById("rooms-card-badge");
-  const arrow = document.getElementById("rooms-card-arrow");
-  const subtext = document.getElementById("rooms-card-subtext");
   const hasData = Boolean(ROOMS_BY_BRANCH[appState.selectedBranch]);
-
-  btn.disabled = !hasData;
-  badge.style.display = hasData ? "none" : "";
-  arrow.style.display = hasData ? "" : "none";
-  subtext.textContent = hasData
-    ? "See which villas are booked and which are free"
-    : "Check room availability and booking details";
+  document.getElementById("qa-checkin-btn").disabled = !hasData;
+  document.getElementById("qa-checkout-btn").disabled = !hasData;
 }
 
 export function renderRooms(statusFilter = null, mode = null) {
@@ -95,8 +87,8 @@ function renderRoomDetailBody() {
       <div class="room-detail-row"><span>Rate</span><span>LKR ${room.rate.toLocaleString("en-US")} / night</span></div>
       <p class="room-detail-empty">This villa is free right now.</p>
       <button type="button" class="primary-btn big" id="new-booking-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
-        New Booking
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+        Check In Guest
       </button>
     `;
     document.getElementById("new-booking-btn").addEventListener("click", showNewBookingForm);
@@ -119,15 +111,19 @@ function renderRoomDetailBody() {
       renderRooms();
     });
   } else {
-    // Two distinct purposes now use this same "occupied villa" sheet:
-    // the Food Order shortcut (order food, nothing else) and every other
-    // entry point — Room Map, "Latest Boarded", a checkout row — which is
-    // just about the stay itself (info + Check Out), no food ordering.
-    const isFoodOrderMode = activeRoomRef.mode === "food-order";
+    // Three distinct purposes now use this same "occupied villa" sheet:
+    // the Food Order shortcut, the Activities shortcut (both charge to
+    // this room's eventual invoice, nothing else on screen), and every
+    // other entry point — Check Out quick action, a checkout row — which
+    // is just about the stay itself (info + Check Out).
+    const mode = activeRoomRef.mode;
 
-    if (isFoodOrderMode) {
+    if (mode === "food-order") {
       body.innerHTML = renderFoodOrdersPanel();
       wireFoodOrdersPanel();
+    } else if (mode === "activity") {
+      body.innerHTML = renderActivitiesPanel();
+      wireActivitiesPanel();
     } else {
       body.innerHTML = `
         <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
@@ -143,6 +139,14 @@ function renderRoomDetailBody() {
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
     }
   }
+}
+
+// Appends a line item to a room's running bill — picked up by
+// prefillInvoiceForCheckout() whenever that villa is checked out, so
+// whatever was ordered/charged during the stay lands on the invoice.
+function chargeRoom(room, desc, qty, rate) {
+  if (!room.pendingCharges) room.pendingCharges = [];
+  room.pendingCharges.push({ desc, qty: String(qty), rate, value: qty * rate });
 }
 
 // ---- Food ordering (inside an occupied villa's detail sheet) ----
@@ -272,6 +276,7 @@ function updateFoodOrderTotal() {
 function placeFoodOrder() {
   const room = getActiveRoom();
   const inventory = INVENTORY_BY_BRANCH[activeRoomRef.branch];
+  let orderTotal = 0;
 
   Object.keys(currentFoodOrder).forEach(id => {
     const qty = currentFoodOrder[id];
@@ -282,10 +287,160 @@ function placeFoodOrder() {
       const invItem = inventory.find(i => i.name === ing.item);
       if (invItem) invItem.stock = Math.max(0, Math.round((invItem.stock - ing.qty * qty) * 100) / 100);
     });
+    chargeRoom(room, dish.name, qty, dish.price);
+    orderTotal += dish.price * qty;
   });
 
-  showToast("Order placed for " + room.name);
+  showToast(`Order placed for ${room.name} — ${fmtLKR(orderTotal)} added to bill`);
   updateInventoryBadge();
+  renderRoomDetailBody();
+}
+
+// ---- Activity charges (inside an occupied villa's detail sheet) ----
+let currentActivitySelection = {}; // activityId -> qty, reset each time the panel is (re)built
+let customActivityCharges = []; // [{ name, price }] one-off entries from the custom row
+
+function renderActivitiesPanel() {
+  currentActivitySelection = {};
+  customActivityCharges = [];
+
+  const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
+  const rows = activities.map(a => `
+    <div class="food-order-row">
+      <div class="food-order-info">
+        <span class="food-order-name">${escapeHtml(a.name)}</span>
+        <span class="food-order-price">${fmtLKR(a.price)}</span>
+      </div>
+      <div class="food-order-qty-stepper">
+        <button type="button" class="stepper-input-btn activity-qty-minus" data-activity-id="${a.id}" aria-label="Remove one ${escapeHtml(a.name)}">&minus;</button>
+        <span class="food-order-qty-value" id="activity-qty-${a.id}">0</span>
+        <button type="button" class="stepper-input-btn activity-qty-plus" data-activity-id="${a.id}" aria-label="Add one ${escapeHtml(a.name)}">+</button>
+      </div>
+    </div>
+  `).join("");
+
+  return `
+    <div class="food-orders-panel">
+      <h4>Add Activity Charge</h4>
+      <div class="food-order-selected" id="activity-selected" style="display:none"></div>
+      <div class="food-order-list">${rows}</div>
+      <div class="activity-custom-row">
+        <input type="text" id="activity-custom-name" placeholder="Other activity" autocapitalize="words" />
+        <input type="number" id="activity-custom-price" placeholder="Price" min="0" step="1" inputmode="decimal" />
+        <button type="button" class="stepper-input-btn" id="activity-custom-add" aria-label="Add custom activity">+</button>
+      </div>
+      <div class="food-order-total-row"><span>Total</span><span id="activity-total">${fmtLKR(0)}</span></div>
+      <button type="button" class="primary-btn big" id="charge-activity-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+        Charge to Room Bill
+      </button>
+    </div>
+  `;
+}
+
+function renderActivitySelected() {
+  const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
+  const selected = document.getElementById("activity-selected");
+
+  const presetEntries = Object.keys(currentActivitySelection)
+    .map(id => ({ activity: activities.find(a => a.id === Number(id)), qty: currentActivitySelection[id] }))
+    .filter(e => e.activity && e.qty > 0)
+    .map(e => ({ label: `${e.activity.name} ×${e.qty}`, remove: () => { currentActivitySelection[e.activity.id] = 0; const el = document.getElementById("activity-qty-" + e.activity.id); if (el) el.textContent = "0"; } }));
+
+  const customEntries = customActivityCharges.map((c, i) => ({
+    label: c.name,
+    remove: () => { customActivityCharges.splice(i, 1); },
+  }));
+
+  const entries = [...presetEntries, ...customEntries];
+  if (!entries.length) {
+    selected.style.display = "none";
+    selected.innerHTML = "";
+    return;
+  }
+
+  selected.style.display = "flex";
+  selected.innerHTML = entries.map((e, i) => `
+    <span class="food-order-chip">
+      ${escapeHtml(e.label)}
+      <button type="button" class="food-order-chip-remove" data-entry-index="${i}" aria-label="Remove ${escapeHtml(e.label)}">&times;</button>
+    </span>
+  `).join("");
+
+  selected.querySelectorAll(".food-order-chip-remove").forEach((btn, i) => {
+    btn.addEventListener("click", () => {
+      entries[i].remove();
+      updateActivityTotal();
+    });
+  });
+}
+
+function updateActivityTotal() {
+  const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
+  let total = 0;
+  Object.keys(currentActivitySelection).forEach(id => {
+    const qty = currentActivitySelection[id];
+    if (qty > 0) {
+      const activity = activities.find(a => a.id === Number(id));
+      if (activity) total += activity.price * qty;
+    }
+  });
+  customActivityCharges.forEach(c => { total += c.price; });
+
+  document.getElementById("activity-total").textContent = fmtLKR(total);
+  document.getElementById("charge-activity-btn").disabled = total <= 0;
+  renderActivitySelected();
+}
+
+function adjustActivityQty(activityId, delta) {
+  const current = currentActivitySelection[activityId] || 0;
+  const next = Math.max(0, current + delta);
+  currentActivitySelection[activityId] = next;
+  document.getElementById("activity-qty-" + activityId).textContent = next;
+  updateActivityTotal();
+}
+
+function wireActivitiesPanel() {
+  document.querySelectorAll(".activity-qty-plus").forEach(btn => {
+    btn.addEventListener("click", () => adjustActivityQty(btn.dataset.activityId, 1));
+  });
+  document.querySelectorAll(".activity-qty-minus").forEach(btn => {
+    btn.addEventListener("click", () => adjustActivityQty(btn.dataset.activityId, -1));
+  });
+  document.getElementById("activity-custom-add").addEventListener("click", () => {
+    const nameInput = document.getElementById("activity-custom-name");
+    const priceInput = document.getElementById("activity-custom-price");
+    const name = nameInput.value.trim();
+    const price = parseFloat(priceInput.value) || 0;
+    if (!name || price <= 0) return;
+    customActivityCharges.push({ name, price });
+    nameInput.value = "";
+    priceInput.value = "";
+    updateActivityTotal();
+  });
+  document.getElementById("charge-activity-btn").addEventListener("click", chargeActivities);
+}
+
+function chargeActivities() {
+  const room = getActiveRoom();
+  const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
+  let total = 0;
+
+  Object.keys(currentActivitySelection).forEach(id => {
+    const qty = currentActivitySelection[id];
+    if (qty <= 0) return;
+    const activity = activities.find(a => a.id === Number(id));
+    if (!activity) return;
+    chargeRoom(room, activity.name, qty, activity.price);
+    total += activity.price * qty;
+  });
+
+  customActivityCharges.forEach(c => {
+    chargeRoom(room, c.name, 1, c.price);
+    total += c.price;
+  });
+
+  showToast(`Charged ${room.name} — ${fmtLKR(total)} added to bill`);
   renderRoomDetailBody();
 }
 
@@ -316,8 +471,8 @@ function showNewBookingForm() {
         </div>
       </div>
       <button type="submit" class="primary-btn big">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
-        Save Booking
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+        Check In Guest
       </button>
     </form>
   `;
@@ -328,7 +483,9 @@ function showNewBookingForm() {
     room.phone = document.getElementById("nb-phone").value.trim();
     room.checkin = document.getElementById("nb-checkin").value;
     room.checkout = document.getElementById("nb-checkout").value;
-    room.status = "booked";
+    room.status = "occupied";
+    logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check In");
+    showToast(`${room.guest} checked into ${room.name}`);
     renderRoomDetailBody();
     renderRooms();
   });
@@ -353,6 +510,12 @@ function prefillInvoiceForCheckout(room) {
   const rate = room.rate || 0;
   clearItems();
   addItemRow(room.name + " — Room Charge", String(nights), String(rate), String(nights * rate));
+
+  // Food orders and activity charges placed during the stay ride along
+  // onto the same invoice.
+  (room.pendingCharges || []).forEach(c => {
+    addItemRow(c.desc, c.qty, String(c.rate), String(c.value));
+  });
 }
 
 // If an invoice was generated from a Room Map checkout, the villa is free again.
@@ -365,6 +528,7 @@ onAfterGenerate(() => {
     delete room.phone;
     delete room.checkin;
     delete room.checkout;
+    delete room.pendingCharges;
     checkoutRoomRef = null;
   }
 });
@@ -372,9 +536,4 @@ onAfterGenerate(() => {
 document.getElementById("room-detail-close").addEventListener("click", closeRoomDetail);
 document.getElementById("room-detail-overlay").addEventListener("click", (e) => {
   if (e.target.id === "room-detail-overlay") closeRoomDetail();
-});
-
-document.getElementById("open-rooms-btn").addEventListener("click", () => {
-  renderRooms();
-  showScreen("screen-rooms");
 });

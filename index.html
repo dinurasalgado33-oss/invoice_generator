@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=22" />
-<link rel="stylesheet" href="css/brand-home.css?v=22" />
-<link rel="stylesheet" href="css/rooms.css?v=22" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=22" />
-<link rel="stylesheet" href="css/invoice.css?v=22" />
-<link rel="stylesheet" href="css/dashboard.css?v=22" />
-<link rel="stylesheet" href="css/reports.css?v=22" />
+<link rel="stylesheet" href="css/base.css?v=23" />
+<link rel="stylesheet" href="css/brand-home.css?v=23" />
+<link rel="stylesheet" href="css/rooms.css?v=23" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=23" />
+<link rel="stylesheet" href="css/invoice.css?v=23" />
+<link rel="stylesheet" href="css/dashboard.css?v=23" />
+<link rel="stylesheet" href="css/reports.css?v=23" />
 </head>
 <body>
 
@@ -84,6 +84,9 @@
           </span>
         </div>
       </div>
+      <button type="button" class="dash-logout-btn" id="logout-btn" aria-label="Log out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+      </button>
     </div>
 
     <div class="dash-section">
@@ -91,35 +94,24 @@
       <div id="today-checkouts-list"><p class="room-detail-empty">No checkouts today.</p></div>
     </div>
 
-    <div class="dash-stat-row dash-stat-row-triple">
-      <button type="button" class="dash-stat-mini" id="stat-occupied-card">
-        <span class="dash-stat-mini-value" id="stat-occupied-count">0</span>
-        <span class="dash-stat-mini-label">Occupied</span>
-      </button>
-      <button type="button" class="dash-stat-mini" id="stat-available-card">
-        <span class="dash-stat-mini-value" id="stat-available-count">0</span>
-        <span class="dash-stat-mini-label">Free</span>
-      </button>
-      <button type="button" class="dash-stat-mini" id="stat-latest-card">
-        <span class="dash-stat-mini-value dash-stat-mini-value-text" id="stat-latest-room">—</span>
-        <span class="dash-stat-mini-label">Latest Boarded</span>
-      </button>
-    </div>
-
     <div class="dash-section">
       <h3 class="dash-section-title">Quick Actions</h3>
       <div class="quick-actions-grid">
-        <button type="button" class="quick-action-btn" id="open-invoice-btn">
-          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8M10 9H8" /></svg></span>
-          <span>New Bill</span>
+        <button type="button" class="quick-action-btn" id="qa-checkin-btn" disabled>
+          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg></span>
+          <span>Check In</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-checkout-btn" disabled>
+          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg></span>
+          <span>Check Out</span>
         </button>
         <button type="button" class="quick-action-btn" id="qa-food-order-btn">
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg></span>
           <span>Food Order</span>
         </button>
-        <button type="button" class="quick-action-btn" id="open-rooms-btn" disabled>
-          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg></span>
-          <span>New Booking</span>
+        <button type="button" class="quick-action-btn" id="qa-activities-btn">
+          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 18c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /></svg></span>
+          <span>Activities</span>
         </button>
         <button type="button" class="quick-action-btn" id="open-inventory-btn">
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg></span>
@@ -147,9 +139,6 @@
       </div>
     </div>
 
-    <p class="coming-soon-badge dash-coming-soon" id="rooms-card-badge" style="display:none">Room Booking data not available for this branch yet</p>
-    <span id="rooms-card-subtext" style="display:none"></span>
-    <span id="rooms-card-arrow" style="display:none"></span>
     <span id="inventory-card-subtext" style="display:none"></span>
   </section>
 
@@ -865,6 +854,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=22"></script>
+<script type="module" src="js/main.js?v=23"></script>
 </body>
 </html>
