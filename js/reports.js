@@ -449,6 +449,10 @@ function renderReportBody(range) {
   document.getElementById("report-tab-label").textContent = labels[state.tab];
   document.getElementById("report-view-toggle").style.display = state.tab === "restock" ? "flex" : "none";
 
+  const isInventoryTab = state.tab === "inventory";
+  document.getElementById("period-filter-group").classList.toggle("disabled", isInventoryTab);
+  document.getElementById("period-filter-note").style.display = isInventoryTab ? "" : "none";
+
   if (state.tab === "invoices") body.innerHTML = renderInvoicesTab(range);
   else if (state.tab === "food") body.innerHTML = renderFoodTab(range);
   else if (state.tab === "inventory") body.innerHTML = renderInventoryTab();

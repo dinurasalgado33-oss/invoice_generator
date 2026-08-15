@@ -76,7 +76,6 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   document.getElementById("resv-prev-contact-line").textContent =
     [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
   setLogoSrc("resv-prev-logo", appState.selectedBranchLogo);
-  document.getElementById("resv-prev-issue-date").textContent = formatDate(todayISO());
 
   // Guest details
   document.getElementById("resv-prev-guest-name").textContent = guestName ? `${title} ${guestName}` : "-";

@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=26" />
-<link rel="stylesheet" href="css/brand-home.css?v=26" />
-<link rel="stylesheet" href="css/rooms.css?v=26" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=26" />
-<link rel="stylesheet" href="css/invoice.css?v=26" />
-<link rel="stylesheet" href="css/dashboard.css?v=26" />
-<link rel="stylesheet" href="css/reports.css?v=26" />
-<link rel="stylesheet" href="css/reservation.css?v=26" />
+<link rel="stylesheet" href="css/base.css?v=27" />
+<link rel="stylesheet" href="css/brand-home.css?v=27" />
+<link rel="stylesheet" href="css/rooms.css?v=27" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=27" />
+<link rel="stylesheet" href="css/invoice.css?v=27" />
+<link rel="stylesheet" href="css/dashboard.css?v=27" />
+<link rel="stylesheet" href="css/reports.css?v=27" />
+<link rel="stylesheet" href="css/reservation.css?v=27" />
 </head>
 <body>
 
@@ -476,11 +476,11 @@
       <div class="dashboard-wrap">
         <div class="kpi-grid">
           <div class="kpi-card">
-            <span class="kpi-label">Total Revenue</span>
+            <span class="kpi-label">This Month's Revenue</span>
             <span class="kpi-value" id="kpi-revenue">LKR 0</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-label">Invoices Generated</span>
+            <span class="kpi-label">Invoices This Month</span>
             <span class="kpi-value" id="kpi-invoices">0</span>
           </div>
           <div class="kpi-card">
@@ -488,7 +488,7 @@
             <span class="kpi-value" id="kpi-avg">LKR 0</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-label">Occupancy Rate</span>
+            <span class="kpi-label">Occupancy This Month</span>
             <span class="kpi-value" id="kpi-occupancy">0%</span>
           </div>
         </div>
@@ -508,7 +508,6 @@
           </div>
         </div>
 
-        <p class="dashboard-note no-print">Sample data shown for preview — will connect to real figures later.</p>
       </div>
     </div>
 
@@ -533,7 +532,7 @@
 
       <div class="list-wrap">
         <div class="reports-filters">
-          <div class="filter-group no-print">
+          <div class="filter-group no-print" id="period-filter-group">
             <label>Period</label>
             <div class="chip-row" id="date-preset-row">
               <button type="button" class="chip" data-preset="today">Today</button>
@@ -547,6 +546,7 @@
               <span>to</span>
               <input type="date" id="custom-to" />
             </div>
+            <p class="period-filter-note" id="period-filter-note" style="display:none">Inventory Usage shows current stock levels, not filtered by period.</p>
           </div>
 
           <div class="filter-group no-print">
@@ -708,6 +708,7 @@
           <div class="field">
             <label>Check-out</label>
             <input type="date" id="checkout-date" />
+            <p class="field-error" id="checkout-date-error">Check-out must be after check-in</p>
           </div>
         </div>
       </div>
@@ -766,6 +767,7 @@
           <div class="live-summary-row"><span>Advance</span><span id="live-advance">LKR 0.00</span></div>
           <div class="live-summary-row grand"><span>Grand Total</span><span id="live-grand">LKR 0.00</span></div>
         </div>
+        <p class="field-error" id="grand-total-warning">Advance exceeds the gross amount — Grand Total is negative. Double-check the advance paid.</p>
       </div>
 
       <div class="form-step" data-step="4">
@@ -995,7 +997,6 @@
 
       <div class="reservation-title-row">
         <h1>Reservation Confirmation</h1>
-        <span class="reservation-issue-date">Issued <strong id="resv-prev-issue-date"></strong></span>
       </div>
 
       <div class="reservation-body">
@@ -1005,7 +1006,7 @@
           <section class="reservation-section">
             <h3>Guest Details</h3>
             <div class="reservation-row"><span>Guest Name</span><strong id="resv-prev-guest-name"></strong></div>
-            <div class="reservation-row-split">
+            <div class="reservation-row-triple">
               <div class="reservation-row"><span>No of Guest</span><strong id="resv-prev-guest-total"></strong></div>
               <div class="reservation-row"><span>Adults</span><strong id="resv-prev-adults"></strong></div>
               <div class="reservation-row"><span>Children</span><strong id="resv-prev-children"></strong></div>
@@ -1077,6 +1078,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=26"></script>
+<script type="module" src="js/main.js?v=27"></script>
 </body>
 </html>

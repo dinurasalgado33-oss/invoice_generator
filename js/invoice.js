@@ -68,6 +68,7 @@ function updateLiveTotals() {
   document.getElementById("live-gross").textContent = fmt(grossAmount, currency);
   document.getElementById("live-advance").textContent = fmt(advance, currency);
   document.getElementById("live-grand").textContent = fmt(grandTotal, currency);
+  document.getElementById("grand-total-warning").classList.toggle("show", grandTotal < 0);
 }
 
 export function addItemRow(desc = "", qty = "", rate = "", value = "") {
@@ -158,6 +159,18 @@ function validateStep(step) {
     }
     error.classList.remove("show");
     guestName.classList.remove("invalid");
+
+    const checkinInput = document.getElementById("checkin-date");
+    const checkoutInput = document.getElementById("checkout-date");
+    const dateError = document.getElementById("checkout-date-error");
+    if (checkinInput.value && checkoutInput.value && checkoutInput.value <= checkinInput.value) {
+      dateError.classList.add("show");
+      checkoutInput.classList.add("invalid");
+      checkoutInput.focus();
+      return false;
+    }
+    dateError.classList.remove("show");
+    checkoutInput.classList.remove("invalid");
   }
   return true;
 }
@@ -191,6 +204,20 @@ stepPrevBtn.addEventListener("click", () => goToStep(currentStep - 1));
 document.getElementById("guest-name").addEventListener("input", () => {
   document.getElementById("guest-name-error").classList.remove("show");
   document.getElementById("guest-name").classList.remove("invalid");
+});
+
+// Keep the checkout picker from even offering an invalid date, and clear
+// the error as soon as the guest starts fixing it.
+const checkinDateInput = document.getElementById("checkin-date");
+const checkoutDateInput = document.getElementById("checkout-date");
+checkinDateInput.addEventListener("change", () => {
+  checkoutDateInput.min = checkinDateInput.value;
+});
+[checkinDateInput, checkoutDateInput].forEach(input => {
+  input.addEventListener("input", () => {
+    document.getElementById("checkout-date-error").classList.remove("show");
+    checkoutDateInput.classList.remove("invalid");
+  });
 });
 
 // Enter key on steps 1-3 advances to the next step instead of doing

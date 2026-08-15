@@ -54,7 +54,6 @@
   display: flex;
   align-items: baseline;
   justify-content: center;
-  position: relative;
   padding: 26px 22px 18px;
 }
 .reservation-title-row h1 {
@@ -64,14 +63,6 @@
   font-family: Georgia, 'Times New Roman', serif;
   color: #1a1a1a;
 }
-.reservation-issue-date {
-  position: absolute;
-  right: 22px;
-  bottom: 18px;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-.reservation-issue-date strong { color: #1a1a1a; }
 
 .reservation-body { position: relative; padding: 4px 22px 26px; }
 .reservation-watermark {
@@ -122,6 +113,15 @@
   .reservation-row-split { grid-template-columns: 1fr; }
 }
 
+.reservation-row-triple {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 4px 16px;
+}
+@media (max-width: 480px) {
+  .reservation-row-triple { grid-template-columns: 1fr; }
+}
+
 .reservation-pricing-table {
   width: 100%;
   border-collapse: collapse;
@@ -153,4 +153,11 @@
 
 @media print {
   .reservation-paper { box-shadow: none; border-radius: 0; }
+  /* Browsers strip background colors/gradients on print by default —
+     without this the maroon header, gold rule, and table header shading
+     all print blank. This is the fix. */
+  .reservation-paper, .reservation-paper * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

@@ -36,6 +36,20 @@
   .chip:not(.active):hover { border-color: var(--maroon); color: var(--maroon); }
 }
 
+/* Inventory Usage isn't filtered by period — dim the Period controls and
+   explain why, rather than leaving them clickable but silently ignored. */
+#period-filter-group.disabled .chip-row,
+#period-filter-group.disabled .custom-range-row {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.period-filter-note {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .custom-range-row {
   display: flex;
   align-items: center;
