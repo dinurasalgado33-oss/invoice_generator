@@ -19,9 +19,10 @@ export function allocateInventoryItemId() {
   return nextInventoryId++;
 }
 
-// Last-known unit cost (LKR) per item name — same base price at both
-// branches for simplicity. Updated automatically whenever a restock is
-// logged with a different cost, so it always reflects the latest buy.
+// Starting unit cost (LKR) per item name, used to seed each item's
+// costPerUnit below — same base price at both branches for simplicity.
+// This map itself is never mutated; each item's own `costPerUnit` field
+// is what actually updates when a restock is logged with a different cost.
 export const COST_PER_UNIT = {
   "Chicken": 1200, "Rice": 220, "Coconut": 120, "Fish": 1500, "Prawns": 2800,
   "Vegetables": 180, "Eggs": 35, "Rice Flour": 250, "Cooking Oil": 750,
@@ -135,6 +136,36 @@ export const INVENTORY_BY_BRANCH = {
 Object.values(INVENTORY_BY_BRANCH).forEach(items => {
   items.forEach(item => { item.costPerUnit = COST_PER_UNIT[item.name] || 0; });
 });
+
+// Snapshot of stock levels as of app load, before any restock/adjust/order
+// this session can touch them — this is what "opening" means below. Module
+// top-level code runs once, before any UI interaction, so this is safe.
+const openingStockByKey = {};
+Object.entries(INVENTORY_BY_BRANCH).forEach(([branch, items]) => {
+  items.forEach(item => { openingStockByKey[`${branch}::${item.name}`] = item.stock; });
+});
+
+// Reports' Inventory Usage tab used to read a frozen, hand-written
+// snapshot that never matched live stock once restocks/adjustments/order
+// deductions happened. This derives it live instead: stock only ever
+// moves via restock (+), the +/- adjuster, or an order deduction (-), so
+// opening + restocked - closing recovers "used" exactly, regardless of
+// which of those caused it.
+export function getInventoryUsage() {
+  const rows = [];
+  Object.entries(INVENTORY_BY_BRANCH).forEach(([branch, items]) => {
+    items.forEach(item => {
+      const opening = openingStockByKey[`${branch}::${item.name}`] ?? item.stock;
+      const restocked = RESTOCK_LOG
+        .filter(r => r.branch === branch && r.itemName === item.name)
+        .reduce((s, r) => s + r.qty, 0);
+      const closing = item.stock;
+      const used = Math.max(0, Math.round((opening + restocked - closing) * 100) / 100);
+      rows.push({ item: item.name, category: item.category, branch, opening, restocked, used, closing, minStock: item.minStock });
+    });
+  });
+  return rows;
+}
 
 // Restock purchase history — every logged restock (single or bulk) appends
 // here with its cost, so Reports can total spend, rank costliest items,

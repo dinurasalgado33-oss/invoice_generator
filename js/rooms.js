@@ -5,7 +5,7 @@ import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/roo
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
 import { confirmAction } from "./confirm.js";
-import { ACTIVITY_RECORDS, allocateActivityRecordId } from "./data/reports.js";
+import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS } from "./data/reports.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -134,6 +134,9 @@ async function cancelCheckIn() {
     tone: "danger",
   });
   if (!ok) return;
+
+  const booking = BOOKINGS.find(b => b.branch === activeRoomRef.branch && b.villa === room.name && b.guest === room.guest && b.checkin === room.checkin && b.status === "Checked In");
+  if (booking) booking.status = "Cancelled";
 
   logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check-In Cancelled");
   room.status = "available";
@@ -368,6 +371,7 @@ function showNewBookingForm() {
     room.checkin = nbCheckin.value;
     room.checkout = nbCheckout.value;
     room.status = "occupied";
+    BOOKINGS.push({ guest: room.guest, villa: room.name, branch: activeRoomRef.branch, checkin: room.checkin, checkout: room.checkout, status: "Checked In" });
     logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check In");
     showToast(`${room.guest} checked into ${room.name}`);
     renderRoomDetailBody();

@@ -7,6 +7,6 @@ export const appState = {
   selectedBranch: "",
   selectedBranchLabel: "",
   selectedBranchLogo: "",
-  currentRole: localStorage.getItem("leopardinn-role") || "manager",
+  currentRole: localStorage.getItem("leopardinn-role") || null,
   invoiceCounter: Number(localStorage.getItem("leopardinn-invoice-counter") || "1"),
 };

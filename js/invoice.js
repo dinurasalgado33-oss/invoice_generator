@@ -81,17 +81,22 @@ function updateLiveTotals() {
 
 export function addItemRow(desc = "", qty = "", rate = "", value = "") {
   const row = document.createElement("tr");
+  // desc/qty are set as DOM properties below, not interpolated into the
+  // HTML string — escapeHtml() only neutralizes <, >, & (via textContent
+  // round-tripping), not quotes, so it can't safely sit inside value="...".
   row.innerHTML = `
     <td class="col-no"></td>
-    <td class="col-desc" data-label="Description"><input type="text" class="item-desc" placeholder="e.g. Luxury Chalet with private pool (FB)" value="${desc}"></td>
-    <td class="col-qty" data-label="Qty"><input type="text" class="item-qty" placeholder="e.g. 2 nights" value="${qty}"></td>
+    <td class="col-desc" data-label="Description"><input type="text" class="item-desc" placeholder="e.g. Luxury Chalet with private pool (FB)"></td>
+    <td class="col-qty" data-label="Qty"><input type="text" class="item-qty" placeholder="e.g. 2 nights"></td>
     <td class="col-price" data-label="Rate (LKR)"><input type="number" class="item-rate" min="0" step="0.01" inputmode="decimal" value="${rate}"></td>
     <td class="col-total" data-label="Value"><input type="number" class="item-value" min="0" step="0.01" inputmode="decimal" value="${value}"></td>
     <td class="col-del"><button type="button" class="row-del-btn" title="Remove item">✕</button></td>
   `;
+  row.querySelector(".item-desc").value = desc;
   itemsBody.appendChild(row);
 
   const qtyInput = row.querySelector(".item-qty");
+  qtyInput.value = qty;
   const rateInput = row.querySelector(".item-rate");
   const valueInput = row.querySelector(".item-value");
 

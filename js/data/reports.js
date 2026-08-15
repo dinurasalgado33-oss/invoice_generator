@@ -84,37 +84,6 @@ export function allocateActivityRecordId() {
   return nextActivityRecordId++;
 }
 
-// One usage snapshot per item per branch for "this period". opening +
-// restocked - used = closing (closing matches each item's current stock
-// in INVENTORY_BY_BRANCH, so the two screens tell a consistent story).
-export const INVENTORY_USAGE = [
-  { item: "Chicken", category: "Meat", branch: "Wilpattu", opening: 15, restocked: 15, used: 20, closing: 10, minStock: 5 },
-  { item: "Rice", category: "Grains", branch: "Wilpattu", opening: 40, restocked: 20, used: 25, closing: 35, minStock: 15 },
-  { item: "Coconut", category: "Produce", branch: "Wilpattu", opening: 7, restocked: 5, used: 10, closing: 2, minStock: 8 },
-  { item: "Fish", category: "Seafood", branch: "Wilpattu", opening: 8, restocked: 8, used: 9, closing: 7, minStock: 5 },
-  { item: "Prawns", category: "Seafood", branch: "Wilpattu", opening: 4, restocked: 6, used: 5, closing: 5, minStock: 4 },
-  { item: "Vegetables", category: "Produce", branch: "Wilpattu", opening: 23, restocked: 15, used: 18, closing: 20, minStock: 10 },
-  { item: "Eggs", category: "Dairy & Eggs", branch: "Wilpattu", opening: 30, restocked: 20, used: 22, closing: 28, minStock: 24 },
-  { item: "Rice Flour", category: "Grains", branch: "Wilpattu", opening: 4, restocked: 3, used: 4, closing: 3, minStock: 5 },
-  { item: "Cooking Oil", category: "Pantry", branch: "Wilpattu", opening: 8, restocked: 6, used: 5, closing: 9, minStock: 6 },
-  { item: "Spices Mix", category: "Pantry", branch: "Wilpattu", opening: 3, restocked: 3, used: 2, closing: 4, minStock: 3 },
-  { item: "Onions", category: "Produce", branch: "Wilpattu", opening: 8, restocked: 5, used: 12, closing: 1, minStock: 8 },
-  { item: "Salt", category: "Pantry", branch: "Wilpattu", opening: 6, restocked: 3, used: 2, closing: 7, minStock: 2 },
-
-  { item: "Chicken", category: "Meat", branch: "Arugam Bay", opening: 16, restocked: 18, used: 22, closing: 12, minStock: 5 },
-  { item: "Rice", category: "Grains", branch: "Arugam Bay", opening: 45, restocked: 25, used: 30, closing: 40, minStock: 15 },
-  { item: "Coconut", category: "Produce", branch: "Arugam Bay", opening: 9, restocked: 6, used: 12, closing: 3, minStock: 8 },
-  { item: "Fish", category: "Seafood", branch: "Arugam Bay", opening: 7, restocked: 10, used: 11, closing: 6, minStock: 5 },
-  { item: "Prawns", category: "Seafood", branch: "Arugam Bay", opening: 4, restocked: 4, used: 6.5, closing: 1.5, minStock: 4 },
-  { item: "Vegetables", category: "Produce", branch: "Arugam Bay", opening: 20, restocked: 12, used: 14, closing: 18, minStock: 10 },
-  { item: "Eggs", category: "Dairy & Eggs", branch: "Arugam Bay", opening: 32, restocked: 24, used: 26, closing: 30, minStock: 24 },
-  { item: "Rice Flour", category: "Grains", branch: "Arugam Bay", opening: 5, restocked: 4, used: 5, closing: 4, minStock: 5 },
-  { item: "Cooking Oil", category: "Pantry", branch: "Arugam Bay", opening: 8, restocked: 8, used: 6, closing: 10, minStock: 6 },
-  { item: "Spices Mix", category: "Pantry", branch: "Arugam Bay", opening: 4, restocked: 4, used: 3, closing: 5, minStock: 3 },
-  { item: "Onions", category: "Produce", branch: "Arugam Bay", opening: 12, restocked: 10, used: 8, closing: 14, minStock: 8 },
-  { item: "Salt", category: "Pantry", branch: "Arugam Bay", opening: 8, restocked: 3, used: 3, closing: 8, minStock: 2 },
-];
-
 export const BOOKINGS = [
   { guest: "Kasun Perera", villa: "Ocean Pool Villa 01", branch: "Arugam Bay", checkin: "2026-08-10", checkout: "2026-08-13", status: "Checked In" },
   { guest: "Amanda Lee", villa: "Ocean Pool Villa 02", branch: "Arugam Bay", checkin: "2026-08-14", checkout: "2026-08-17", status: "Upcoming" },

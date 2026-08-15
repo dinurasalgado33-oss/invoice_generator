@@ -1,20 +1,21 @@
 # Leopard Inn — Staff Portal
 
-A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a finance dashboard, a reports/export screen, a room booking map with a full guest lifecycle, food ordering, and inventory management (all branches now).
+A mobile-friendly web app for Leopard Inn staff. Ships with an invoice generator, a reservation confirmation generator, a finance dashboard, a reports/export screen, a room booking map with a full guest lifecycle, food ordering, activity charges, and inventory management — for both branches.
 
 ## Project structure
 No build step — plain ES modules and multiple stylesheets, loaded directly by the browser.
 
 ```
 index.html          single HTML file, every screen, clearly commented per section
-css/                 one file per feature area (base, brand-home, rooms, menu-inventory, invoice, dashboard, reports)
+css/                 one file per feature area (base, brand-home, rooms, menu-inventory, invoice, dashboard, reports, reservation)
 js/
   main.js            entry point — imports every feature module, then calls restoreSession() last
   state.js           shared mutable app state (selectedBranch, currentRole, etc.)
   utils.js           formatting/DOM helpers used across modules
   navigation.js       screens map + showScreen()
-  auth.js, branch.js, home.js, invoice.js, rooms.js, menu.js, inventory.js, dashboard.js, reports.js
-  data/               pure mock data per feature (no logic) — swap these for real API calls later
+  confirm.js          styled confirm dialog, used in place of window.confirm() everywhere
+  auth.js, branch.js, home.js, invoice.js, rooms.js, orders.js, menu.js, inventory.js, dashboard.js, reports.js, reservation.js
+  data/               mock data per feature (no logic) — swap these for real API calls later
 ```
 
 Each feature module wires its own DOM listeners as a side effect of being imported — importing a module *is* initializing it (same pattern the old single-file script used, just split up). The one exception is `restoreSession()` in `auth.js`, which is called explicitly last from `main.js` since it depends on every other screen already being wired.
@@ -26,43 +27,42 @@ HTML was deliberately **not** split into fetched partials — that would need as
 ## How it works
 1. Staff log in (see **Login & roles** below).
 2. **Manager** accounts pick a branch (Wilpattu Forest Retreat / Arugam Bay Beachfront Hotel). **Staff** accounts are locked to one branch and skip straight to its home screen.
-3. From the branch home screen:
-   - **New Invoice** — fill in guest details and itemized charges, matching Leopard Inn's real invoice format (Reservation No, Reg. Card No, Voucher No, itemized charges, Service Charge, Gross/Advance/Grand Total, remarks, signature lines). Generate a preview styled like the printed invoice, then **Print / Save PDF**, **Save as Image**, or start a **New Invoice**.
-   - **Finance Dashboard** (manager only) — KPI tiles, a revenue-by-category chart, and a monthly revenue trend, with an **Export PDF Report** button. Currently mock data (see below).
-   - **Room Bookings & Info** — a theater-style map of villas (3 per row), a full guest lifecycle including food ordering, both branches. See **Room lifecycle** below.
-   - **Menu Config** (manager only) — add, edit, or delete dishes and their ingredient lists.
-   - **Inventory Management** — stock levels per branch; manager can adjust, staff get a read-only view. A red badge on the home card shows how many items are currently low.
+3. From the branch home screen's Quick Actions:
+   - **Check In / Check Out** — check-in opens a short form (guest name, phone, check-in/out dates); check-out jumps straight to the invoice generator, pre-filled from that stay.
+   - **Food Order** — a dedicated screen (not just a panel) to build and place/edit/complete orders per occupied room.
+   - **Activities** — inside a villa's detail sheet, charge preset or custom activities straight to that guest's bill.
+   - **Log Inventory** — stock levels per branch; add/edit items, restock (single or bulk).
+   - **Reservation** — generates a Reservation Confirmation (a separate guest-facing document from the invoice), styled to match the printed slip.
+4. Manager-only tools: **Reports & Export**, **Finance Dashboard**, **Menu Config**.
+
+Destructive or state-changing actions (cancel check-in, delete an order/dish/item, logout) go through a styled confirm dialog (`js/confirm.js`), not the browser's native `confirm()`.
 
 ## Room lifecycle
-Each villa is in one of three states, each with its own color and action on the detail sheet (tap any villa card to open it):
-- **Available** (green) — "New Booking" button opens a short form (guest name, phone, check-in/out); saving moves the villa to Booked.
-- **Booked** (gold/amber) — an upcoming reservation, guest not on-site yet. Shows guest details + a "Check In" button, which moves the villa to Occupied.
-- **Occupied** (maroon) — guest is checked in. Shows guest details, a live **Food Orders** panel, and a "Check Out" button.
+Each villa is either **Available** (green — "Check In Guest" opens a short form) or **Occupied** (maroon — shows guest details, a "Cancel this check-in" undo link, and a "Check Out" button). Food orders and activity charges placed during a stay ride along on `room.pendingCharges` and land on the same invoice at checkout; checking out (or cancelling a check-in) clears them.
 
-**Food Orders** (occupied villas only): lists every dish from Menu Config with a +/- stepper and a running total. "Place Order" deducts each dish's ingredients from that branch's inventory (e.g. 2× Fish Curry pulls 0.8kg Fish, 0.3kg Coconut, 0.4kg Rice), shows a brief confirmation toast, and updates the Inventory low-stock badge immediately if anything crosses its minimum.
-
-**Check Out** jumps straight to the invoice generator (screen-form) with the guest name, phone, and check-in/out dates pre-filled, plus one charge line already added: `<Villa Name> — Room Charge`, quantity = nights stayed, rate = that villa's nightly rate (from `ROOMS_BY_BRANCH`), value calculated automatically. Generating the invoice from there resets the villa back to Available.
+**Check Out** jumps to the invoice generator (`screen-form`) with guest name, phone, and check-in/out dates pre-filled, plus a `<Villa Name> — Room Charge` line (quantity = nights stayed, rate = that villa's nightly rate from `ROOMS_BY_BRANCH`). Generating the invoice frees the villa and pushes a real record into `INVOICES`, which is what Reports and the Finance Dashboard read from — checking guests out during a session is reflected in both immediately.
 
 ## Mock data
-None of this is wired to a backend yet — everything lives in-memory in `script.js` and resets on page reload:
-- `DASHBOARD_DATA` — revenue, invoice counts, occupancy, and monthly trend per branch.
-- `ROOMS_BY_BRANCH` — villa list, status (`available`/`booked`/`occupied`), guest details, and nightly `rate` per branch. A branch's Room Bookings card only enables once it has an entry here.
-- `MENU_ITEMS` — dishes, price, and ingredient list (shared across both branches). Managed via the Menu Config screen.
-- `INVENTORY_BY_BRANCH` — stock item, category, current/min stock, and unit, per branch. Ingredient names in `MENU_ITEMS` must exactly match an item name here, or a Food Order can't find anything to deduct from.
+None of this is wired to a backend yet — everything lives in-memory in `js/data/*.js` and resets on page reload:
+- `ROOMS_BY_BRANCH` (`js/data/rooms.js`) — villa list, status (`available`/`occupied`), guest details, and nightly `rate` per branch.
+- `MENU_ITEMS` (`js/data/menu.js`) — each dish is scoped to one `branch` (the two hotels run entirely separate menus); `id` is a globally unique internal key, `number` is the branch-local number staff actually see and search by (each branch numbers its own dishes from #1).
+- `INVENTORY_BY_BRANCH` (`js/data/inventory.js`) — stock item, category, current/min stock, and unit, per branch. Ingredient names in `MENU_ITEMS` must exactly match an item name here for Food Order to deduct from the right stock (most current dishes ship with an empty ingredient list, to be filled in gradually).
+- `INVOICES`, `FOOD_ORDER_RECORDS`, `ACTIVITY_RECORDS`, `BOOKINGS` (`js/data/reports.js`) — a small seeded history plus whatever real checkouts/orders/activities/check-ins happen during the session, which is what Reports and the Finance Dashboard actually read from.
 
 Swap these for a real data source later without touching the rendering/chart code.
 
 ## Login & roles
-Username/password is a **client-side gate only** — there's no backend, so the credentials live in plain text in `script.js` (the `ACCOUNTS` array). It keeps casual visitors out but is not real security: anyone with browser dev tools can read or bypass it. Don't reuse a password that matters elsewhere. Once logged in, a device stays signed in (via `localStorage`) until that flag is cleared.
+Username/password is a **client-side gate only** — there's no backend, so the credentials live in plain text in `js/data/accounts.js` (the `ACCOUNTS` array). It keeps casual visitors out but is not real security: anyone with browser dev tools can read or bypass it. Don't reuse a password that matters elsewhere. Once logged in, a device stays signed in (via `localStorage`) until that flag is cleared.
 
-Two accounts ship by default:
+Three accounts ship by default:
 
 | Username | Password | Role    | Branch              |
 |----------|----------|---------|----------------------|
 | ashen    | 1234     | manager | picks any branch     |
-| staff    | 1234     | staff   | locked to Wilpattu    |
+| staffw   | 1234     | staff   | locked to Wilpattu    |
+| staffa   | 1234     | staff   | locked to Arugam Bay  |
 
-Manager sees every feature and can switch branches. Staff are locked to their assigned branch (no "Change branch" option) and don't see the Finance Dashboard card. Add, remove, or re-role accounts by editing the `ACCOUNTS` array near the top of the login logic in `script.js` — set `branch: null` for an account that should pick its own branch, or a branch key to lock it.
+Manager sees every feature and can switch branches. Staff are locked to their assigned branch (no "Change branch" option) and don't see manager-only tools (Reports, Finance Dashboard, Menu Config). Add, remove, or re-role accounts by editing the `ACCOUNTS` array in `js/data/accounts.js` — set `branch: null` for an account that should pick its own branch, or a branch name to lock it.
 
 ## Logo files
 Three files live in `assets/`:

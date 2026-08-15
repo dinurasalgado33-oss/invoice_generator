@@ -40,7 +40,10 @@ document.getElementById("qa-reservation-btn").addEventListener("click", () => {
   showScreen("screen-reservation-form");
 });
 
-function nightsBetween(checkin, checkout) {
+// Distinct from utils.js's nightsBetween(), which returns 1 for a
+// same-day range — this one is used purely for a "N nights" display
+// where 0 (not booked/invalid) should read as "N/A", not "1 night".
+function reservationNights(checkin, checkout) {
   const a = new Date(checkin + "T00:00:00");
   const b = new Date(checkout + "T00:00:00");
   const diff = Math.round((b - a) / 86400000);
@@ -98,7 +101,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   const children = parseInt(document.getElementById("resv-children").value, 10) || 0;
   const checkinDate = resvCheckinDateInput.value;
   const checkoutDate = resvCheckoutDateInput.value;
-  const nights = nightsBetween(checkinDate, checkoutDate);
+  const nights = reservationNights(checkinDate, checkoutDate);
 
   const villas = [...villaList.querySelectorAll(".villa-rate-row")]
     .map(row => ({

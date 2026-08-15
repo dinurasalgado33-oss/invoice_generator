@@ -1,9 +1,9 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
-import { INVOICES, FOOD_ORDER_RECORDS, INVENTORY_USAGE, BOOKINGS } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
-import { RESTOCK_LOG } from "./data/inventory.js";
+import { RESTOCK_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
 
 const state = {
@@ -82,7 +82,7 @@ function getFilteredFoodOrders(range) {
 }
 
 function getFilteredInventoryUsage() {
-  return INVENTORY_USAGE.filter(r => matchesBranch(r.branch) && matchesSearch(r.item));
+  return getInventoryUsage().filter(r => matchesBranch(r.branch) && matchesSearch(r.item));
 }
 
 function getFilteredRestockLog(range) {
@@ -240,12 +240,16 @@ function renderFoodTab(range) {
   const rows = getFilteredFoodOrders(range);
   if (!rows.length) return emptyState();
 
+  // Grouped by branch + dish, not just dish name — the two branches run
+  // entirely separate menus, so an identically-named dish from each (e.g.
+  // both happen to have a "Chicken Fried Rice") is not the same item and
+  // shouldn't have its sales pooled together.
   const byDish = {};
   rows.forEach(r => {
-    if (!byDish[r.dish]) byDish[r.dish] = { dish: r.dish, qty: 0, revenue: 0, branches: new Set() };
-    byDish[r.dish].qty += r.qty;
-    byDish[r.dish].revenue += r.revenue;
-    byDish[r.dish].branches.add(r.branch);
+    const key = `${r.branch}::${r.dish}`;
+    if (!byDish[key]) byDish[key] = { dish: r.dish, branch: r.branch, qty: 0, revenue: 0 };
+    byDish[key].qty += r.qty;
+    byDish[key].revenue += r.revenue;
   });
   const ranked = Object.values(byDish).sort((a, b) => b.qty - a.qty);
 
@@ -254,7 +258,7 @@ function renderFoodTab(range) {
       <div class="report-row-top">
         <div>
           <span class="report-row-title">#${i + 1} ${escapeHtml(d.dish)}</span>
-          <span class="report-row-sub">${[...d.branches].join(", ")} &middot; ${d.qty} sold</span>
+          <span class="report-row-sub">${escapeHtml(d.branch)} &middot; ${d.qty} sold</span>
         </div>
         <div class="report-row-end">
           <span class="report-row-amount">${fmtLKR(d.revenue)}</span>
@@ -417,8 +421,6 @@ function renderBookingsTab(range) {
   }, 0);
   const occupancy = computeOccupancy(range);
 
-  const statusClass = { "Checked In": "occupied", "Upcoming": "booked", "Checked Out": "ok", "Cancelled": "low" };
-
   const list = rows.map(b => `
     <div class="report-row">
       <div class="report-row-top">
@@ -426,7 +428,7 @@ function renderBookingsTab(range) {
           <span class="report-row-title">${escapeHtml(b.guest)}</span>
           <span class="report-row-sub">${escapeHtml(b.villa)} &middot; ${escapeHtml(b.branch)} &middot; ${formatDate(b.checkin)} &rarr; ${formatDate(b.checkout)}</span>
         </div>
-        <span class="stock-badge ${statusClass[b.status] === "low" ? "low" : ""}">${escapeHtml(b.status)}</span>
+        <span class="stock-badge ${b.status === "Cancelled" ? "low" : ""}">${escapeHtml(b.status)}</span>
       </div>
     </div>
   `).join("");
@@ -533,13 +535,14 @@ function getExportRows() {
     const rows = getFilteredFoodOrders(range);
     const byDish = {};
     rows.forEach(r => {
-      if (!byDish[r.dish]) byDish[r.dish] = { dish: r.dish, qty: 0, revenue: 0 };
-      byDish[r.dish].qty += r.qty;
-      byDish[r.dish].revenue += r.revenue;
+      const key = `${r.branch}::${r.dish}`;
+      if (!byDish[key]) byDish[key] = { dish: r.dish, branch: r.branch, qty: 0, revenue: 0 };
+      byDish[key].qty += r.qty;
+      byDish[key].revenue += r.revenue;
     });
     return {
-      headers: ["Dish", "Qty Sold", "Revenue (LKR)"],
-      rows: Object.values(byDish).sort((a, b) => b.qty - a.qty).map(d => [d.dish, d.qty, d.revenue]),
+      headers: ["Dish", "Branch", "Qty Sold", "Revenue (LKR)"],
+      rows: Object.values(byDish).sort((a, b) => b.qty - a.qty).map(d => [d.dish, d.branch, d.qty, d.revenue]),
     };
   }
   if (state.tab === "inventory") {

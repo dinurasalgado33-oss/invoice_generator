@@ -51,7 +51,7 @@ document.getElementById("qa-activities-btn").addEventListener("click", () => {
 
 document.getElementById("qa-checkin-btn").addEventListener("click", () => {
   // Only free villas can be checked into.
-  renderRooms("available", "checkin");
+  renderRooms("available");
   showScreen("screen-rooms");
 });
 
