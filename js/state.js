@@ -8,5 +8,9 @@ export const appState = {
   selectedBranchLabel: "",
   selectedBranchLogo: "",
   currentRole: localStorage.getItem("leopardinn-role") || null,
-  invoiceCounter: Number(localStorage.getItem("leopardinn-invoice-counter") || "1"),
+  // Starts past the seeded INVOICES ids (151-174) so a fresh session's
+  // printed reservation numbers don't collide with the seed data — this
+  // number is also used directly as the INVOICES record id (invoice.js),
+  // so a collision there means two different invoices sharing one id.
+  invoiceCounter: Number(localStorage.getItem("leopardinn-invoice-counter") || "175"),
 };

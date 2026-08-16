@@ -2,12 +2,20 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmt, setLogoSrc, showToast } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
-import { INVOICES, allocateInvoiceId } from "./data/reports.js";
+import { INVOICES } from "./data/reports.js";
 
 const afterGenerateCallbacks = [];
 export function onAfterGenerate(cb) {
   afterGenerateCallbacks.push(cb);
 }
+
+// Blocks a second submit from creating a duplicate invoice. Only re-armed
+// by resetForm() (a fresh "New Invoice" or checkout prefill) — NOT at the
+// end of the submit handler itself, since form.requestSubmit() dispatches
+// its event synchronously: resetting the flag there would let a second
+// rapid-fire submit slip through before the first one's screen swap ever
+// happens.
+let isSubmitting = false;
 
 function num(id) {
   return parseFloat(document.getElementById(id).value) || 0;
@@ -59,7 +67,12 @@ function computeTotals() {
   const advance = num("advance");
   const grossAmount = billTotal + serviceCharge;
   const discountType = document.getElementById("discount-type").value;
-  const discountInput = num("discount-amount");
+  const discountInputRaw = num("discount-amount");
+  // A discount can never exceed what it's discounting — cap percent at
+  // 100% and a flat amount at the gross, rather than letting it drive the
+  // net amount negative (advance is allowed to exceed gross, since that's
+  // a legitimate refund-style scenario; a discount overshooting isn't).
+  const discountInput = discountType === "percent" ? Math.min(100, discountInputRaw) : Math.min(discountInputRaw, grossAmount);
   const discountAmount = discountType === "percent" ? grossAmount * (discountInput / 100) : discountInput;
   const netAmount = grossAmount - discountAmount;
   const grandTotal = netAmount - advance;
@@ -124,6 +137,7 @@ export function addItemRow(desc = "", qty = "", rate = "", value = "") {
 
   renumberRows();
   updateLiveTotals();
+  document.getElementById("items-error").classList.remove("show");
 }
 
 export function clearItems() {
@@ -140,6 +154,14 @@ document.getElementById("guest-count").addEventListener("input", sanitizeInteger
   document.getElementById(id).addEventListener("input", updateLiveTotals);
 });
 document.getElementById("discount-type").addEventListener("change", updateLiveTotals);
+
+// Snap an out-of-range discount back to its cap once the staff member
+// finishes typing, rather than fighting every keystroke while they type.
+document.getElementById("discount-amount").addEventListener("blur", () => {
+  const { discountInput } = computeTotals();
+  const field = document.getElementById("discount-amount");
+  if (Number(field.value) !== discountInput) field.value = discountInput || "";
+});
 
 // Guest count +/- stepper
 const guestCountInput = document.getElementById("guest-count");
@@ -185,6 +207,15 @@ function validateStep(step) {
     }
     dateError.classList.remove("show");
     checkoutInput.classList.remove("invalid");
+  }
+
+  if (step === 2) {
+    const itemsError = document.getElementById("items-error");
+    if (getItems().length === 0) {
+      itemsError.classList.add("show");
+      return false;
+    }
+    itemsError.classList.remove("show");
   }
   return true;
 }
@@ -256,13 +287,24 @@ export function resetForm() {
   updateLiveTotals();
   currentStep = 1;
   goToStep(1);
+  isSubmitting = false;
 }
 
 // Form submit -> build preview
 document.getElementById("invoice-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  if (isSubmitting) return;
 
   const items = getItems();
+  // Guards in case a line item was deleted after passing step 2 (e.g. the
+  // guest was navigated back to Charges and removed the only row).
+  if (items.length === 0) {
+    document.getElementById("items-error").classList.add("show");
+    goToStep(2);
+    return;
+  }
+  isSubmitting = true;
+
   const { billTotal, serviceCharge, advance, grossAmount, discountType, discountAmount, netAmount, grandTotal } = computeTotals();
 
   // Header
@@ -277,7 +319,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
 
   // Guest details
   document.getElementById("prev-guest-name").textContent = val("guest-name") || "-";
-  document.getElementById("prev-guest-count").textContent = val("guest-count") || "-";
+  document.getElementById("prev-guest-count").textContent = Number(val("guest-count")) > 0 ? val("guest-count") : "-";
   document.getElementById("prev-guest-phone").textContent = val("guest-phone") || "-";
   document.getElementById("prev-reg-card").textContent = val("reg-card-no") || "N/A";
   document.getElementById("prev-voucher").textContent = val("voucher-no") || "N/A";
@@ -315,8 +357,11 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   document.getElementById("prev-notes").textContent = notes || "-";
   document.getElementById("prev-staff").textContent = val("staff-name") || "";
 
+  // The record's id is the same number printed on the document — so a
+  // paper invoice can always be found in Reports by the number on it,
+  // instead of a separate internal counter nobody printed.
   INVOICES.push({
-    id: allocateInvoiceId(),
+    id: val("inv-number") || String(appState.invoiceCounter),
     guest: val("guest-name") || "-",
     branch: appState.selectedBranch,
     date: document.getElementById("inv-date").value,

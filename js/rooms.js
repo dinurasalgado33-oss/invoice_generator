@@ -410,6 +410,10 @@ function prefillInvoiceForCheckout(room) {
 onAfterGenerate(() => {
   if (checkoutRoomRef) {
     const room = ROOMS_BY_BRANCH[checkoutRoomRef.branch][checkoutRoomRef.index];
+
+    const booking = BOOKINGS.find(b => b.branch === checkoutRoomRef.branch && b.villa === room.name && b.guest === room.guest && b.checkin === room.checkin && b.status === "Checked In");
+    if (booking) booking.status = "Checked Out";
+
     logRoomActivity(checkoutRoomRef.branch, room.name, room.guest, "Check Out");
     room.status = "available";
     delete room.guest;

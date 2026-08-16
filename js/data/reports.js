@@ -38,11 +38,10 @@ export const INVOICES = [
 // before advance is subtracted — advance is just an early payment, not
 // a reduction in revenue). `discount`/`serviceCharge`/`advance` are kept
 // alongside for transparency; seeded rows above predate this and simply
-// don't have them.
-let nextInvoiceId = 175;
-export function allocateInvoiceId() {
-  return String(nextInvoiceId++);
-}
+// don't have them. `id` is the same "Reservation No" printed on the
+// document (appState.invoiceCounter, seeded past 174 in state.js) — not
+// a separate internal counter — so a printed invoice can always be found
+// here by the number on it.
 
 export const FOOD_ORDER_RECORDS = [
   { id: 1, dish: "Chicken Curry", qty: 2, branch: "Wilpattu", date: "2026-07-15", revenue: 1900 },
