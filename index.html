@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=41" />
-<link rel="stylesheet" href="css/brand-home.css?v=41" />
-<link rel="stylesheet" href="css/rooms.css?v=41" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=41" />
-<link rel="stylesheet" href="css/invoice.css?v=41" />
-<link rel="stylesheet" href="css/dashboard.css?v=41" />
-<link rel="stylesheet" href="css/reports.css?v=41" />
-<link rel="stylesheet" href="css/reservation.css?v=41" />
+<link rel="stylesheet" href="css/base.css?v=42" />
+<link rel="stylesheet" href="css/brand-home.css?v=42" />
+<link rel="stylesheet" href="css/rooms.css?v=42" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=42" />
+<link rel="stylesheet" href="css/invoice.css?v=42" />
+<link rel="stylesheet" href="css/dashboard.css?v=42" />
+<link rel="stylesheet" href="css/reports.css?v=42" />
+<link rel="stylesheet" href="css/reservation.css?v=42" />
 </head>
 <body>
 
@@ -988,7 +988,12 @@
         </div>
         <div class="field">
           <label>Booking Type</label>
-          <input type="text" id="resv-booking-type" placeholder="e.g. Direct Booking, Online, Agent" enterkeyhint="next" />
+          <select id="resv-booking-type">
+            <option value="Villa Only">Villa Only</option>
+            <option value="BB">BB (Bed &amp; Breakfast)</option>
+            <option value="HB">HB (Half Board)</option>
+            <option value="FB">FB (Full Board)</option>
+          </select>
         </div>
 
         <label class="field-label-standalone">Pricing</label>
@@ -1119,6 +1124,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=41"></script>
+<script type="module" src="js/main.js?v=42"></script>
 </body>
 </html>
