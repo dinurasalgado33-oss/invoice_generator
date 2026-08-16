@@ -5,6 +5,8 @@ export const screens = {
   rooms: document.getElementById("screen-rooms"),
   orders: document.getElementById("screen-orders"),
   menu: document.getElementById("screen-menu"),
+  configure: document.getElementById("screen-configure"),
+  configureVillas: document.getElementById("screen-configure-villas"),
   inventory: document.getElementById("screen-inventory"),
   dashboard: document.getElementById("screen-dashboard"),
   reports: document.getElementById("screen-reports"),
@@ -15,7 +17,8 @@ export const screens = {
 };
 
 const screenOrder = [
-  "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-orders", "screen-menu",
+  "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-orders",
+  "screen-configure", "screen-menu", "screen-configure-villas",
   "screen-inventory", "screen-dashboard", "screen-reports", "screen-form", "screen-preview",
   "screen-reservation-form", "screen-reservation-preview",
 ];

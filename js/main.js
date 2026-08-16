@@ -13,6 +13,7 @@ import "./rooms.js";
 import "./orders.js";
 import "./home.js";
 import "./menu.js";
+import "./configure.js";
 import "./inventory.js";
 import "./dashboard.js";
 import "./reports.js";

@@ -167,6 +167,16 @@
   padding: 0 16px;
 }
 
+/* Configure hub — same launch-card visual language, stacked as a list
+   of settings entry points rather than centered branch-home actions. */
+.launch-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 24px;
+}
+.launch-card-list .launch-card { max-width: none; }
+
 .launch-card {
   position: relative;
   display: flex;
