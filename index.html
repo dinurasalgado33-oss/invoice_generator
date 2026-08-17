@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=52" />
-<link rel="stylesheet" href="css/brand-home.css?v=52" />
-<link rel="stylesheet" href="css/rooms.css?v=52" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=52" />
-<link rel="stylesheet" href="css/invoice.css?v=52" />
-<link rel="stylesheet" href="css/dashboard.css?v=52" />
-<link rel="stylesheet" href="css/reports.css?v=52" />
-<link rel="stylesheet" href="css/reservation.css?v=52" />
+<link rel="stylesheet" href="css/base.css?v=53" />
+<link rel="stylesheet" href="css/brand-home.css?v=53" />
+<link rel="stylesheet" href="css/rooms.css?v=53" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=53" />
+<link rel="stylesheet" href="css/invoice.css?v=53" />
+<link rel="stylesheet" href="css/dashboard.css?v=53" />
+<link rel="stylesheet" href="css/reports.css?v=53" />
+<link rel="stylesheet" href="css/reservation.css?v=53" />
 </head>
 <body>
 
@@ -259,8 +259,80 @@
         </span>
         <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
+      <button type="button" class="launch-card" id="open-configure-activities-btn">
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M12 2v6" /><path d="M9 5l3-3 3 3" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>Configure Activities</strong>
+          <small>Add, edit, or remove guest activities</small>
+        </span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
     </div>
   </section>
+
+  <!-- SCREEN: Configure activities — add/edit/delete per branch (manager only) -->
+  <section id="screen-configure-activities" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-activities-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Activities — <span id="configure-activities-branch-label"></span></h2>
+      <button type="button" class="brand-header-action" id="add-activity-btn" aria-label="Add activity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+      </button>
+    </div>
+
+    <div class="list-wrap">
+      <div class="list-table-wrap">
+        <table class="list-table" id="configure-activities-table">
+          <thead>
+            <tr>
+              <th>Activity</th>
+              <th>Price</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="configure-activities-list"><!-- activity rows injected by JS --></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Activity add/edit sheet -->
+  <div class="room-detail-overlay" id="activity-sheet-overlay">
+    <div class="room-detail-sheet" id="activity-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="activity-sheet-title">Add Activity</h3>
+        <div class="sheet-header-actions">
+          <button type="button" class="sheet-icon-btn sheet-icon-btn-danger" id="activity-delete-btn" aria-label="Delete activity" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+          </button>
+          <button type="button" class="sheet-icon-btn" id="activity-sheet-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div class="room-detail-body">
+        <form id="activity-form">
+          <div class="field">
+            <label>Activity Name</label>
+            <input type="text" id="activity-name" required autocapitalize="words" enterkeyhint="next" />
+            <p class="field-error" id="activity-name-error">An activity with this name already exists</p>
+          </div>
+          <div class="field">
+            <label>Price (LKR)</label>
+            <input type="number" id="activity-price" min="1" step="1" inputmode="decimal" required enterkeyhint="done" />
+          </div>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+            Save Activity
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- SCREEN: Configure villas — edit nightly rates (manager only) -->
   <section id="screen-configure-villas" class="screen">
@@ -1207,6 +1279,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=52"></script>
+<script type="module" src="js/main.js?v=53"></script>
 </body>
 </html>
