@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
-import { MENU_ITEMS, MENU_CATEGORIES, INGREDIENT_NAMES, allocateDishId, allocateDishNumber } from "./data/menu.js";
+import { MENU_ITEMS, MENU_CATEGORIES, allocateDishId, allocateDishNumber } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
 
@@ -113,8 +113,12 @@ function renderMenuScreen() {
   });
 }
 
-function guessUnit(ingredientName) {
-  const item = INVENTORY_BY_BRANCH[appState.selectedBranch] && INVENTORY_BY_BRANCH[appState.selectedBranch].find(i => i.name === ingredientName);
+function branchInventory() {
+  return INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
+}
+
+function guessUnit(itemId) {
+  const item = branchInventory().find(i => i.id === Number(itemId));
   return item ? item.unit : "";
 }
 
@@ -138,7 +142,7 @@ function openDishSheet(id, presetCategory = null) {
 
   document.getElementById("ingredient-list").innerHTML = "";
   if (dish && dish.ingredients.length) {
-    dish.ingredients.forEach(ing => addIngredientRow(ing.item, ing.qty));
+    dish.ingredients.forEach(ing => addIngredientRow(ing.itemId, ing.qty));
   } else {
     addIngredientRow();
   }
@@ -150,12 +154,16 @@ function closeDishSheet() {
   document.getElementById("dish-sheet-overlay").classList.remove("open");
 }
 
-function addIngredientRow(selectedItem = "", qty = "") {
+// Options come from this branch's real inventory, keyed by item id — so a
+// recipe survives the item being renamed, and can only point at stock that
+// actually exists at this branch.
+function addIngredientRow(selectedItemId = null, qty = "") {
   const row = document.createElement("div");
   row.className = "ingredient-row";
-  const initial = selectedItem || INGREDIENT_NAMES[0];
-  const options = INGREDIENT_NAMES.map(name =>
-    `<option value="${name}" ${name === initial ? "selected" : ""}>${name}</option>`
+  const inventory = branchInventory();
+  const initial = selectedItemId ?? (inventory[0] && inventory[0].id);
+  const options = inventory.map(item =>
+    `<option value="${item.id}" ${item.id === initial ? "selected" : ""}>${escapeHtml(item.name)}</option>`
   ).join("");
   row.innerHTML = `
     <select class="ingredient-item">${options}</select>
@@ -201,10 +209,10 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
 
   const ingredients = [...document.querySelectorAll("#ingredient-list .ingredient-row")]
     .map(row => ({
-      item: row.querySelector(".ingredient-item").value,
+      itemId: Number(row.querySelector(".ingredient-item").value),
       qty: parseFloat(row.querySelector(".ingredient-qty").value) || 0,
     }))
-    .filter(ing => ing.qty > 0);
+    .filter(ing => ing.qty > 0 && ing.itemId);
 
   if (editingDishId) {
     const dish = MENU_ITEMS.find(d => d.id === editingDishId);

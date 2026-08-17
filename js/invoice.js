@@ -17,6 +17,14 @@ export function onAfterGenerate(cb) {
 // happens.
 let isSubmitting = false;
 
+// Which stay this invoice is billing, set by rooms.js when a checkout
+// prefills the form. Stamped onto the INVOICES row so a bill can be traced
+// back to its villa and booking instead of only matching on guest name.
+let checkoutContext = null;
+export function setCheckoutContext(ctx) {
+  checkoutContext = ctx;
+}
+
 function num(id) {
   return parseFloat(document.getElementById(id).value) || 0;
 }
@@ -362,6 +370,8 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   // instead of a separate internal counter nobody printed.
   INVOICES.push({
     id: val("inv-number") || String(appState.invoiceCounter),
+    roomId: checkoutContext ? checkoutContext.roomId : null,
+    bookingId: checkoutContext ? checkoutContext.bookingId : null,
     guest: val("guest-name") || "-",
     branch: appState.selectedBranch,
     date: document.getElementById("inv-date").value,
@@ -371,6 +381,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     serviceCharge,
     advance,
   });
+  checkoutContext = null;
 
   appState.invoiceCounter++;
   localStorage.setItem("leopardinn-invoice-counter", String(appState.invoiceCounter));

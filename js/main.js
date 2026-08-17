@@ -7,6 +7,7 @@
 // perfectly sequenced. `restoreSession()` is the one exception: it must
 // run only after every screen has finished wiring itself up, so it's
 // called explicitly, last.
+import { initInventoryDerived } from "./data/inventory.js";
 import "./navigation.js";
 import "./invoice.js";
 import "./rooms.js";
@@ -20,5 +21,11 @@ import "./reports.js";
 import "./reservation.js";
 import "./branch.js";
 import { restoreSession } from "./auth.js";
+
+// Derived inventory state (opening-stock snapshot, seeded costs, id
+// counters) is computed here rather than at module load — with a backend
+// the dataset won't have arrived yet when the modules first evaluate, so
+// this is the single line that moves to "after the first snapshot".
+initInventoryDerived();
 
 restoreSession();

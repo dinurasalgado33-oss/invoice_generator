@@ -43,27 +43,31 @@ export const INVOICES = [
 // a separate internal counter — so a printed invoice can always be found
 // here by the number on it.
 
+// One row per dish sold. `dishId` is the join key; `dish` is the dish name
+// at the time of sale, kept so an old sale still reads correctly after the
+// dish is renamed. Same id-to-join / name-to-display split used by
+// BOOKINGS, RESTOCK_LOG and ROOM_ACTIVITY_LOG.
 export const FOOD_ORDER_RECORDS = [
-  { id: 1, dish: "Chicken Curry", qty: 2, branch: "Wilpattu", date: "2026-07-15", revenue: 1900 },
-  { id: 2, dish: "Fish Curry", qty: 3, branch: "Arugam Bay", date: "2026-07-16", revenue: 3150 },
-  { id: 3, dish: "Vegetable Fried Rice", qty: 4, branch: "Wilpattu", date: "2026-07-18", revenue: 2600 },
-  { id: 4, dish: "Prawn Curry", qty: 2, branch: "Arugam Bay", date: "2026-07-20", revenue: 2800 },
-  { id: 5, dish: "Egg Hoppers (2pc)", qty: 5, branch: "Wilpattu", date: "2026-07-21", revenue: 2000 },
-  { id: 6, dish: "Chicken Curry", qty: 3, branch: "Arugam Bay", date: "2026-07-23", revenue: 2850 },
-  { id: 7, dish: "Vegetable Curry", qty: 2, branch: "Wilpattu", date: "2026-07-25", revenue: 1100 },
-  { id: 8, dish: "Fish Curry", qty: 2, branch: "Wilpattu", date: "2026-07-27", revenue: 2100 },
-  { id: 9, dish: "Chicken Curry", qty: 4, branch: "Wilpattu", date: "2026-07-29", revenue: 3800 },
-  { id: 10, dish: "Prawn Curry", qty: 3, branch: "Arugam Bay", date: "2026-07-31", revenue: 4200 },
-  { id: 11, dish: "Vegetable Fried Rice", qty: 2, branch: "Arugam Bay", date: "2026-08-01", revenue: 1300 },
-  { id: 12, dish: "Egg Hoppers (2pc)", qty: 3, branch: "Arugam Bay", date: "2026-08-02", revenue: 1200 },
-  { id: 13, dish: "Chicken Curry", qty: 2, branch: "Arugam Bay", date: "2026-08-03", revenue: 1900 },
-  { id: 14, dish: "Fish Curry", qty: 4, branch: "Arugam Bay", date: "2026-08-04", revenue: 4200 },
-  { id: 15, dish: "Vegetable Curry", qty: 3, branch: "Arugam Bay", date: "2026-08-05", revenue: 1650 },
-  { id: 16, dish: "Chicken Curry", qty: 2, branch: "Wilpattu", date: "2026-08-06", revenue: 1900 },
-  { id: 17, dish: "Prawn Curry", qty: 1, branch: "Wilpattu", date: "2026-08-07", revenue: 1400 },
-  { id: 18, dish: "Fish Curry", qty: 2, branch: "Arugam Bay", date: "2026-08-09", revenue: 2100 },
-  { id: 19, dish: "Egg Hoppers (2pc)", qty: 4, branch: "Wilpattu", date: "2026-08-10", revenue: 1600 },
-  { id: 20, dish: "Vegetable Fried Rice", qty: 3, branch: "Wilpattu", date: "2026-08-11", revenue: 1950 },
+  { id: 1, dishId: 127, dish: "Chicken Kottu", qty: 2, branch: "Wilpattu", date: "2026-07-15", revenue: 2400 },
+  { id: 2, dishId: 19, dish: "Chicken Fried Rice", qty: 3, branch: "Arugam Bay", date: "2026-07-16", revenue: 3450 },
+  { id: 3, dishId: 125, dish: "Vegetable Kottu", qty: 4, branch: "Wilpattu", date: "2026-07-18", revenue: 3600 },
+  { id: 4, dishId: 29, dish: "Chicken Noodles", qty: 2, branch: "Arugam Bay", date: "2026-07-20", revenue: 2000 },
+  { id: 5, dishId: 113, dish: "Egg Fried Rice", qty: 5, branch: "Wilpattu", date: "2026-07-21", revenue: 4750 },
+  { id: 6, dishId: 24, dish: "Chicken Kottu", qty: 3, branch: "Arugam Bay", date: "2026-07-23", revenue: 3600 },
+  { id: 7, dishId: 125, dish: "Vegetable Kottu", qty: 2, branch: "Wilpattu", date: "2026-07-25", revenue: 1800 },
+  { id: 8, dishId: 114, dish: "Chicken Fried Rice", qty: 2, branch: "Wilpattu", date: "2026-07-27", revenue: 2100 },
+  { id: 9, dishId: 127, dish: "Chicken Kottu", qty: 4, branch: "Wilpattu", date: "2026-07-29", revenue: 4800 },
+  { id: 10, dishId: 29, dish: "Chicken Noodles", qty: 3, branch: "Arugam Bay", date: "2026-07-31", revenue: 3000 },
+  { id: 11, dishId: 22, dish: "Vegetable Kottu", qty: 2, branch: "Arugam Bay", date: "2026-08-01", revenue: 1900 },
+  { id: 12, dishId: 18, dish: "Egg Fried Rice", qty: 3, branch: "Arugam Bay", date: "2026-08-02", revenue: 3000 },
+  { id: 13, dishId: 24, dish: "Chicken Kottu", qty: 2, branch: "Arugam Bay", date: "2026-08-03", revenue: 2400 },
+  { id: 14, dishId: 19, dish: "Chicken Fried Rice", qty: 4, branch: "Arugam Bay", date: "2026-08-04", revenue: 4600 },
+  { id: 15, dishId: 22, dish: "Vegetable Kottu", qty: 3, branch: "Arugam Bay", date: "2026-08-05", revenue: 2850 },
+  { id: 16, dishId: 127, dish: "Chicken Kottu", qty: 2, branch: "Wilpattu", date: "2026-08-06", revenue: 2400 },
+  { id: 17, dishId: 130, dish: "Chicken Noodles", qty: 1, branch: "Wilpattu", date: "2026-08-07", revenue: 990 },
+  { id: 18, dishId: 19, dish: "Chicken Fried Rice", qty: 2, branch: "Arugam Bay", date: "2026-08-09", revenue: 2300 },
+  { id: 19, dishId: 113, dish: "Egg Fried Rice", qty: 4, branch: "Wilpattu", date: "2026-08-10", revenue: 3800 },
+  { id: 20, dishId: 125, dish: "Vegetable Kottu", qty: 3, branch: "Wilpattu", date: "2026-08-11", revenue: 2700 },
 ];
 
 // Every completed order (from the Orders screen) appends a row per dish
@@ -83,21 +87,29 @@ export function allocateActivityRecordId() {
   return nextActivityRecordId++;
 }
 
+// `roomId` is the join key; `villa` is the villa name at booking time.
+// Each booking also carries its own `id` so check-out can close the exact
+// row it opened, instead of re-finding it by matching guest+villa+dates.
+let nextBookingId = 17;
+export function allocateBookingId() {
+  return nextBookingId++;
+}
+
 export const BOOKINGS = [
-  { guest: "Kasun Perera", villa: "Zenith Villa", branch: "Arugam Bay", checkin: "2026-08-10", checkout: "2026-08-13", status: "Checked In" },
-  { guest: "Amanda Lee", villa: "Swell Villa", branch: "Arugam Bay", checkin: "2026-08-14", checkout: "2026-08-17", status: "Upcoming" },
-  { guest: "Mr. & Mrs. Silva", villa: "Tide Villa", branch: "Arugam Bay", checkin: "2026-08-09", checkout: "2026-08-12", status: "Checked In" },
-  { guest: "Priya Nair", villa: "Barrel Villa", branch: "Arugam Bay", checkin: "2026-08-15", checkout: "2026-08-18", status: "Upcoming" },
-  { guest: "Nadeesha Fernando", villa: "Flow Villa", branch: "Arugam Bay", checkin: "2026-08-10", checkout: "2026-08-15", status: "Checked In" },
-  { guest: "John Smith", villa: "Break Villa", branch: "Arugam Bay", checkin: "2026-08-12", checkout: "2026-08-13", status: "Upcoming" },
-  { guest: "Emma Watson", villa: "Swell Villa", branch: "Arugam Bay", checkin: "2026-07-08", checkout: "2026-07-12", status: "Checked Out" },
-  { guest: "Robert Johnson", villa: "Break Villa", branch: "Arugam Bay", checkin: "2026-07-01", checkout: "2026-07-05", status: "Checked Out" },
-  { guest: "Ruwan Jayasuriya", villa: "Balcony Villa", branch: "Wilpattu", checkin: "2026-08-10", checkout: "2026-08-12", status: "Checked In" },
-  { guest: "Chathurika Fernando", villa: "Pool Villa 1", branch: "Wilpattu", checkin: "2026-08-14", checkout: "2026-08-19", status: "Upcoming" },
-  { guest: "Mr. & Mrs. Bandara", villa: "Pool Villa 2", branch: "Wilpattu", checkin: "2026-08-11", checkout: "2026-08-13", status: "Checked In" },
-  { guest: "Tharindu Perera", villa: "Pool Villa 2", branch: "Wilpattu", checkin: "2026-08-16", checkout: "2026-08-18", status: "Upcoming" },
-  { guest: "Ishara Wickramasinghe", villa: "A Type Villa", branch: "Wilpattu", checkin: "2026-08-10", checkout: "2026-08-15", status: "Checked In" },
-  { guest: "David Miller", villa: "A Type Villa", branch: "Wilpattu", checkin: "2026-08-12", checkout: "2026-08-14", status: "Upcoming" },
-  { guest: "Sanduni Rathnayake", villa: "Pool Villa 1", branch: "Wilpattu", checkin: "2026-06-25", checkout: "2026-06-28", status: "Checked Out" },
-  { guest: "Michael Chen", villa: "Barrel Villa", branch: "Arugam Bay", checkin: "2026-06-30", checkout: "2026-07-02", status: "Cancelled" },
+  { id: 1, roomId: 1, guest: "Kasun Perera", villa: "Zenith Villa", branch: "Arugam Bay", checkin: "2026-08-10", checkout: "2026-08-13", status: "Checked In" },
+  { id: 2, roomId: 2, guest: "Amanda Lee", villa: "Swell Villa", branch: "Arugam Bay", checkin: "2026-08-14", checkout: "2026-08-17", status: "Upcoming" },
+  { id: 3, roomId: 3, guest: "Mr. & Mrs. Silva", villa: "Tide Villa", branch: "Arugam Bay", checkin: "2026-08-09", checkout: "2026-08-12", status: "Checked In" },
+  { id: 4, roomId: 4, guest: "Priya Nair", villa: "Barrel Villa", branch: "Arugam Bay", checkin: "2026-08-15", checkout: "2026-08-18", status: "Upcoming" },
+  { id: 5, roomId: 5, guest: "Nadeesha Fernando", villa: "Flow Villa", branch: "Arugam Bay", checkin: "2026-08-10", checkout: "2026-08-15", status: "Checked In" },
+  { id: 6, roomId: 6, guest: "John Smith", villa: "Break Villa", branch: "Arugam Bay", checkin: "2026-08-12", checkout: "2026-08-13", status: "Upcoming" },
+  { id: 7, roomId: 2, guest: "Emma Watson", villa: "Swell Villa", branch: "Arugam Bay", checkin: "2026-07-08", checkout: "2026-07-12", status: "Checked Out" },
+  { id: 8, roomId: 6, guest: "Robert Johnson", villa: "Break Villa", branch: "Arugam Bay", checkin: "2026-07-01", checkout: "2026-07-05", status: "Checked Out" },
+  { id: 9, roomId: 7, guest: "Ruwan Jayasuriya", villa: "Balcony Villa", branch: "Wilpattu", checkin: "2026-08-10", checkout: "2026-08-12", status: "Checked In" },
+  { id: 10, roomId: 8, guest: "Chathurika Fernando", villa: "Pool Villa 1", branch: "Wilpattu", checkin: "2026-08-14", checkout: "2026-08-19", status: "Upcoming" },
+  { id: 11, roomId: 9, guest: "Mr. & Mrs. Bandara", villa: "Pool Villa 2", branch: "Wilpattu", checkin: "2026-08-11", checkout: "2026-08-13", status: "Checked In" },
+  { id: 12, roomId: 9, guest: "Tharindu Perera", villa: "Pool Villa 2", branch: "Wilpattu", checkin: "2026-08-16", checkout: "2026-08-18", status: "Upcoming" },
+  { id: 13, roomId: 10, guest: "Ishara Wickramasinghe", villa: "A Type Villa", branch: "Wilpattu", checkin: "2026-08-10", checkout: "2026-08-15", status: "Checked In" },
+  { id: 14, roomId: 10, guest: "David Miller", villa: "A Type Villa", branch: "Wilpattu", checkin: "2026-08-12", checkout: "2026-08-14", status: "Upcoming" },
+  { id: 15, roomId: 8, guest: "Sanduni Rathnayake", villa: "Pool Villa 1", branch: "Wilpattu", checkin: "2026-06-25", checkout: "2026-06-28", status: "Checked Out" },
+  { id: 16, roomId: 4, guest: "Michael Chen", villa: "Barrel Villa", branch: "Arugam Bay", checkin: "2026-06-30", checkout: "2026-07-02", status: "Cancelled" },
 ];

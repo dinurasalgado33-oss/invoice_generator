@@ -1,6 +1,8 @@
-// Ingredient names must match INVENTORY_BY_BRANCH item names exactly —
-// that's how a placed order finds the right stock to deduct.
-export const INGREDIENT_NAMES = ["Chicken", "Rice", "Coconut", "Fish", "Prawns", "Vegetables", "Eggs", "Rice Flour", "Cooking Oil", "Spices Mix", "Onions", "Salt"];
+// A dish's `ingredients` are `{ itemId, qty }` — itemId points at an
+// INVENTORY_BY_BRANCH item's stable id, so a recipe keeps working after
+// the stock item is renamed, and can only reference stock that exists at
+// that dish's own branch. (This used to match on item *name*, which broke
+// silently the moment anything was renamed.)
 
 // Each branch runs its own menu — Arugam Bay is an à la carte beach-hotel
 // menu, Wilpattu is its own full-board price list — so dishes are scoped

@@ -23,7 +23,7 @@ function deductIngredients(branch, dish, qty) {
   const inventory = INVENTORY_BY_BRANCH[branch];
   const shortages = [];
   dish.ingredients.forEach(ing => {
-    const invItem = inventory.find(i => i.name === ing.item);
+    const invItem = inventory.find(i => i.id === ing.itemId);
     if (!invItem) return;
     const needed = ing.qty * qty;
     if (invItem.stock < needed) shortages.push(invItem.name);
@@ -35,7 +35,7 @@ function deductIngredients(branch, dish, qty) {
 function restoreIngredients(branch, dish, qty) {
   const inventory = INVENTORY_BY_BRANCH[branch];
   dish.ingredients.forEach(ing => {
-    const invItem = inventory.find(i => i.name === ing.item);
+    const invItem = inventory.find(i => i.id === ing.itemId);
     if (invItem) invItem.stock = Math.round((invItem.stock + ing.qty * qty) * 100) / 100;
   });
 }
@@ -50,14 +50,14 @@ function restoreOrderIngredients(order) {
 // ---- Room picker (Create/Edit view) ----
 function getOccupiedRooms() {
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
-  return rooms.map((room, index) => ({ room, index })).filter(r => r.room.status === "occupied");
+  return rooms.filter(room => room.status === "occupied");
 }
 
 function populateRoomSelect() {
   const select = document.getElementById("order-room-select");
   const occupied = getOccupiedRooms();
   select.innerHTML = occupied.length
-    ? occupied.map(r => `<option value="${r.index}">${escapeHtml(r.room.name)} — ${escapeHtml(r.room.guest)}</option>`).join("")
+    ? occupied.map(room => `<option value="${room.id}">${escapeHtml(room.name)} — ${escapeHtml(room.guest)}</option>`).join("")
     : `<option value="">No occupied villas</option>`;
   select.disabled = !occupied.length;
 }
@@ -177,8 +177,8 @@ document.getElementById("order-edit-cancel-btn").addEventListener("click", () =>
 });
 
 document.getElementById("order-submit-btn").addEventListener("click", () => {
-  const roomIndex = Number(document.getElementById("order-room-select").value);
-  const room = ROOMS_BY_BRANCH[appState.selectedBranch][roomIndex];
+  const roomId = Number(document.getElementById("order-room-select").value);
+  const room = (ROOMS_BY_BRANCH[appState.selectedBranch] || []).find(r => r.id === roomId);
   if (!room) return;
 
   const items = Object.keys(currentOrderSelection)
@@ -216,7 +216,7 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
     FOOD_ORDERS.push({
       id: allocateOrderId(),
       branch: appState.selectedBranch,
-      roomIndex,
+      roomId,
       roomName: room.name,
       guestName: room.guest,
       items,
@@ -280,7 +280,7 @@ function editOrder(orderId) {
 
   populateRoomSelect();
   const roomSelect = document.getElementById("order-room-select");
-  roomSelect.value = String(order.roomIndex);
+  roomSelect.value = String(order.roomId);
   roomSelect.disabled = true;
 
   document.getElementById("order-edit-banner").style.display = "flex";
@@ -322,7 +322,7 @@ async function completeOrder(orderId) {
   });
   if (!ok) return;
 
-  const room = ROOMS_BY_BRANCH[order.branch][order.roomIndex];
+  const room = (ROOMS_BY_BRANCH[order.branch] || []).find(r => r.id === order.roomId);
   if (!room || room.status !== "occupied" || room.guest !== order.guestName) {
     showToast(`Can't complete — ${order.guestName} already checked out of ${order.roomName}`);
     return;
@@ -333,6 +333,7 @@ async function completeOrder(orderId) {
     chargeRoom(room, item.name, item.qty, item.price);
     FOOD_ORDER_RECORDS.push({
       id: allocateFoodOrderRecordId(),
+      dishId: item.dishId,
       dish: item.name,
       qty: item.qty,
       branch: order.branch,

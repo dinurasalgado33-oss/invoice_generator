@@ -88,62 +88,84 @@ export const INVENTORY_BY_BRANCH = {
     { id: 42, name: "Receipt Rolls", category: "Maintenance & Office", stock: 8, minStock: 4, unit: "pcs" },
   ],
   "Arugam Bay": [
-    { id: 1, name: "Chicken", category: "Meat", stock: 12, minStock: 5, unit: "kg" },
-    { id: 2, name: "Rice", category: "Grains", stock: 40, minStock: 15, unit: "kg" },
-    { id: 3, name: "Coconut", category: "Produce", stock: 3, minStock: 8, unit: "kg" },
-    { id: 4, name: "Fish", category: "Seafood", stock: 6, minStock: 5, unit: "kg" },
-    { id: 5, name: "Prawns", category: "Seafood", stock: 1.5, minStock: 4, unit: "kg" },
-    { id: 6, name: "Vegetables", category: "Produce", stock: 18, minStock: 10, unit: "kg" },
-    { id: 7, name: "Eggs", category: "Dairy & Eggs", stock: 30, minStock: 24, unit: "pcs" },
-    { id: 8, name: "Rice Flour", category: "Grains", stock: 4, minStock: 5, unit: "kg" },
-    { id: 9, name: "Cooking Oil", category: "Pantry", stock: 10, minStock: 6, unit: "L" },
-    { id: 10, name: "Spices Mix", category: "Pantry", stock: 5, minStock: 3, unit: "kg" },
-    { id: 11, name: "Onions", category: "Produce", stock: 14, minStock: 8, unit: "kg" },
-    { id: 12, name: "Salt", category: "Pantry", stock: 8, minStock: 2, unit: "kg" },
-    { id: 13, name: "Sugar", category: "Pantry", stock: 15, minStock: 5, unit: "kg" },
-    { id: 14, name: "Tea Bags", category: "Beverages", stock: 400, minStock: 100, unit: "pcs" },
-    { id: 15, name: "Coffee Powder", category: "Beverages", stock: 5, minStock: 2, unit: "kg" },
-    { id: 16, name: "Milk Powder", category: "Beverages", stock: 6, minStock: 2, unit: "kg" },
-    { id: 17, name: "Bottled Water", category: "Beverages", stock: 200, minStock: 80, unit: "pcs" },
-    { id: 18, name: "Soft Drinks", category: "Beverages", stock: 90, minStock: 30, unit: "pcs" },
-    { id: 19, name: "Soap Bars", category: "Toiletries & Amenities", stock: 220, minStock: 80, unit: "pcs" },
-    { id: 20, name: "Shampoo Bottles", category: "Toiletries & Amenities", stock: 130, minStock: 50, unit: "pcs" },
-    { id: 21, name: "Toothbrush Kits", category: "Toiletries & Amenities", stock: 85, minStock: 35, unit: "pcs" },
-    { id: 22, name: "Shower Caps", category: "Toiletries & Amenities", stock: 100, minStock: 40, unit: "pcs" },
-    { id: 23, name: "Slippers (Guest Pairs)", category: "Toiletries & Amenities", stock: 55, minStock: 25, unit: "pcs" },
-    { id: 24, name: "Toilet Paper Rolls", category: "Housekeeping", stock: 260, minStock: 100, unit: "pcs" },
-    { id: 25, name: "Tissue Boxes", category: "Housekeeping", stock: 95, minStock: 40, unit: "pcs" },
-    { id: 26, name: "Laundry Detergent", category: "Housekeeping", stock: 20, minStock: 10, unit: "kg" },
-    { id: 27, name: "Garbage Bags", category: "Housekeeping", stock: 300, minStock: 120, unit: "pcs" },
-    { id: 28, name: "Air Freshener", category: "Housekeeping", stock: 18, minStock: 10, unit: "pcs" },
-    { id: 29, name: "Bedsheet Sets", category: "Linen", stock: 60, minStock: 25, unit: "pcs" },
-    { id: 30, name: "Pillow Covers", category: "Linen", stock: 120, minStock: 50, unit: "pcs" },
-    { id: 31, name: "Bath Towels", category: "Linen", stock: 150, minStock: 60, unit: "pcs" },
-    { id: 32, name: "Hand Towels", category: "Linen", stock: 170, minStock: 60, unit: "pcs" },
-    { id: 33, name: "Bath Mats", category: "Linen", stock: 45, minStock: 20, unit: "pcs" },
-    { id: 34, name: "Floor Cleaner", category: "Cleaning Supplies", stock: 14, minStock: 6, unit: "L" },
-    { id: 35, name: "Glass Cleaner", category: "Cleaning Supplies", stock: 3, minStock: 4, unit: "L" },
-    { id: 36, name: "Disinfectant", category: "Cleaning Supplies", stock: 10, minStock: 5, unit: "L" },
-    { id: 37, name: "Mop Heads", category: "Cleaning Supplies", stock: 3, minStock: 5, unit: "pcs" },
-    { id: 38, name: "Rubber Gloves", category: "Cleaning Supplies", stock: 55, minStock: 25, unit: "pcs" },
-    { id: 39, name: "Light Bulbs", category: "Maintenance & Office", stock: 40, minStock: 20, unit: "pcs" },
-    { id: 40, name: "Batteries (AA)", category: "Maintenance & Office", stock: 65, minStock: 25, unit: "pcs" },
-    { id: 41, name: "Printer Paper", category: "Maintenance & Office", stock: 7, minStock: 3, unit: "pcs" },
-    { id: 42, name: "Receipt Rolls", category: "Maintenance & Office", stock: 10, minStock: 4, unit: "pcs" },
+    { id: 101, name: "Chicken", category: "Meat", stock: 12, minStock: 5, unit: "kg" },
+    { id: 102, name: "Rice", category: "Grains", stock: 40, minStock: 15, unit: "kg" },
+    { id: 103, name: "Coconut", category: "Produce", stock: 3, minStock: 8, unit: "kg" },
+    { id: 104, name: "Fish", category: "Seafood", stock: 6, minStock: 5, unit: "kg" },
+    { id: 105, name: "Prawns", category: "Seafood", stock: 1.5, minStock: 4, unit: "kg" },
+    { id: 106, name: "Vegetables", category: "Produce", stock: 18, minStock: 10, unit: "kg" },
+    { id: 107, name: "Eggs", category: "Dairy & Eggs", stock: 30, minStock: 24, unit: "pcs" },
+    { id: 108, name: "Rice Flour", category: "Grains", stock: 4, minStock: 5, unit: "kg" },
+    { id: 109, name: "Cooking Oil", category: "Pantry", stock: 10, minStock: 6, unit: "L" },
+    { id: 110, name: "Spices Mix", category: "Pantry", stock: 5, minStock: 3, unit: "kg" },
+    { id: 111, name: "Onions", category: "Produce", stock: 14, minStock: 8, unit: "kg" },
+    { id: 112, name: "Salt", category: "Pantry", stock: 8, minStock: 2, unit: "kg" },
+    { id: 113, name: "Sugar", category: "Pantry", stock: 15, minStock: 5, unit: "kg" },
+    { id: 114, name: "Tea Bags", category: "Beverages", stock: 400, minStock: 100, unit: "pcs" },
+    { id: 115, name: "Coffee Powder", category: "Beverages", stock: 5, minStock: 2, unit: "kg" },
+    { id: 116, name: "Milk Powder", category: "Beverages", stock: 6, minStock: 2, unit: "kg" },
+    { id: 117, name: "Bottled Water", category: "Beverages", stock: 200, minStock: 80, unit: "pcs" },
+    { id: 118, name: "Soft Drinks", category: "Beverages", stock: 90, minStock: 30, unit: "pcs" },
+    { id: 119, name: "Soap Bars", category: "Toiletries & Amenities", stock: 220, minStock: 80, unit: "pcs" },
+    { id: 120, name: "Shampoo Bottles", category: "Toiletries & Amenities", stock: 130, minStock: 50, unit: "pcs" },
+    { id: 121, name: "Toothbrush Kits", category: "Toiletries & Amenities", stock: 85, minStock: 35, unit: "pcs" },
+    { id: 122, name: "Shower Caps", category: "Toiletries & Amenities", stock: 100, minStock: 40, unit: "pcs" },
+    { id: 123, name: "Slippers (Guest Pairs)", category: "Toiletries & Amenities", stock: 55, minStock: 25, unit: "pcs" },
+    { id: 124, name: "Toilet Paper Rolls", category: "Housekeeping", stock: 260, minStock: 100, unit: "pcs" },
+    { id: 125, name: "Tissue Boxes", category: "Housekeeping", stock: 95, minStock: 40, unit: "pcs" },
+    { id: 126, name: "Laundry Detergent", category: "Housekeeping", stock: 20, minStock: 10, unit: "kg" },
+    { id: 127, name: "Garbage Bags", category: "Housekeeping", stock: 300, minStock: 120, unit: "pcs" },
+    { id: 128, name: "Air Freshener", category: "Housekeeping", stock: 18, minStock: 10, unit: "pcs" },
+    { id: 129, name: "Bedsheet Sets", category: "Linen", stock: 60, minStock: 25, unit: "pcs" },
+    { id: 130, name: "Pillow Covers", category: "Linen", stock: 120, minStock: 50, unit: "pcs" },
+    { id: 131, name: "Bath Towels", category: "Linen", stock: 150, minStock: 60, unit: "pcs" },
+    { id: 132, name: "Hand Towels", category: "Linen", stock: 170, minStock: 60, unit: "pcs" },
+    { id: 133, name: "Bath Mats", category: "Linen", stock: 45, minStock: 20, unit: "pcs" },
+    { id: 134, name: "Floor Cleaner", category: "Cleaning Supplies", stock: 14, minStock: 6, unit: "L" },
+    { id: 135, name: "Glass Cleaner", category: "Cleaning Supplies", stock: 3, minStock: 4, unit: "L" },
+    { id: 136, name: "Disinfectant", category: "Cleaning Supplies", stock: 10, minStock: 5, unit: "L" },
+    { id: 137, name: "Mop Heads", category: "Cleaning Supplies", stock: 3, minStock: 5, unit: "pcs" },
+    { id: 138, name: "Rubber Gloves", category: "Cleaning Supplies", stock: 55, minStock: 25, unit: "pcs" },
+    { id: 139, name: "Light Bulbs", category: "Maintenance & Office", stock: 40, minStock: 20, unit: "pcs" },
+    { id: 140, name: "Batteries (AA)", category: "Maintenance & Office", stock: 65, minStock: 25, unit: "pcs" },
+    { id: 141, name: "Printer Paper", category: "Maintenance & Office", stock: 7, minStock: 3, unit: "pcs" },
+    { id: 142, name: "Receipt Rolls", category: "Maintenance & Office", stock: 10, minStock: 4, unit: "pcs" },
   ],
 };
 
-Object.values(INVENTORY_BY_BRANCH).forEach(items => {
-  items.forEach(item => { item.costPerUnit = COST_PER_UNIT[item.name] || 0; });
-});
+// Find an inventory item by its stable id, across every branch.
+export function findInventoryItemById(itemId) {
+  for (const [branch, items] of Object.entries(INVENTORY_BY_BRANCH)) {
+    const item = items.find(i => i.id === itemId);
+    if (item) return { item, branch };
+  }
+  return null;
+}
 
-// Snapshot of stock levels as of app load, before any restock/adjust/order
-// this session can touch them — this is what "opening" means below. Module
-// top-level code runs once, before any UI interaction, so this is safe.
-const openingStockByKey = {};
-Object.entries(INVENTORY_BY_BRANCH).forEach(([branch, items]) => {
-  items.forEach(item => { openingStockByKey[`${branch}::${item.name}`] = item.stock; });
-});
+// "Opening" stock per item, captured once the dataset is actually ready.
+// Deliberately NOT computed at module-evaluation time: with a backend the
+// arrays are still empty when this module first evaluates, so a top-level
+// snapshot would record nothing. initInventoryDerived() is the explicit
+// hook — called from main.js today, called after the first backend
+// snapshot later.
+let openingStockByItemId = {};
+
+export function initInventoryDerived() {
+  Object.values(INVENTORY_BY_BRANCH).forEach(items => {
+    items.forEach(item => { item.costPerUnit = COST_PER_UNIT[item.name] || 0; });
+  });
+
+  openingStockByItemId = {};
+  Object.values(INVENTORY_BY_BRANCH).forEach(items => {
+    items.forEach(item => { openingStockByItemId[item.id] = item.stock; });
+  });
+
+  // Keep generated ids clear of whatever the dataset already used.
+  const maxItemId = Math.max(0, ...Object.values(INVENTORY_BY_BRANCH).flat().map(i => i.id));
+  nextInventoryId = maxItemId + 1;
+  const maxRestockId = Math.max(0, ...RESTOCK_LOG.map(r => r.id));
+  nextRestockId = maxRestockId + 1;
+}
 
 // Reports' Inventory Usage tab used to read a frozen, hand-written
 // snapshot that never matched live stock once restocks/adjustments/order
@@ -155,9 +177,9 @@ export function getInventoryUsage() {
   const rows = [];
   Object.entries(INVENTORY_BY_BRANCH).forEach(([branch, items]) => {
     items.forEach(item => {
-      const opening = openingStockByKey[`${branch}::${item.name}`] ?? item.stock;
+      const opening = openingStockByItemId[item.id] ?? item.stock;
       const restocked = RESTOCK_LOG
-        .filter(r => r.branch === branch && r.itemName === item.name)
+        .filter(r => r.itemId === item.id)
         .reduce((s, r) => s + r.qty, 0);
       const closing = item.stock;
       const used = Math.max(0, Math.round((opening + restocked - closing) * 100) / 100);
@@ -177,8 +199,12 @@ export function allocateRestockId() {
   return nextRestockId++;
 }
 
+// itemId is the join key; itemName/category/unit are a snapshot of how the
+// item looked at purchase time, so an old purchase still reads correctly
+// after the item is renamed or recategorised.
 function restock(id, branch, itemName, category, unit, qty, unitCost, date) {
-  return { id, branch, itemName, category, unit, qty, unitCost, totalCost: Math.round(qty * unitCost * 100) / 100, date };
+  const item = (INVENTORY_BY_BRANCH[branch] || []).find(i => i.name === itemName);
+  return { id, itemId: item ? item.id : null, branch, itemName, category, unit, qty, unitCost, totalCost: Math.round(qty * unitCost * 100) / 100, date };
 }
 
 export const RESTOCK_LOG = [
@@ -216,4 +242,3 @@ export const RESTOCK_LOG = [
   restock(31, "Arugam Bay", "Soap Bars", "Toiletries & Amenities", "pcs", 100, 78, "2026-07-09"),
   restock(32, "Arugam Bay", "Bedsheet Sets", "Linen", "pcs", 25, 3400, "2026-07-02"),
 ];
-nextRestockId = Math.max(...RESTOCK_LOG.map(r => r.id)) + 1;

@@ -43,6 +43,7 @@ export function updateInventoryBadge() {
 function logRestock(branch, item, qty, unitCost, date) {
   RESTOCK_LOG.push({
     id: allocateRestockId(),
+    itemId: item.id,
     branch,
     itemName: item.name,
     category: item.category,

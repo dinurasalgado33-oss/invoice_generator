@@ -3,9 +3,9 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
-import { resetForm, addItemRow, clearItems, onAfterGenerate } from "./invoice.js";
+import { resetForm, addItemRow, clearItems, onAfterGenerate, setCheckoutContext } from "./invoice.js";
 import { confirmAction } from "./confirm.js";
-import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS } from "./data/reports.js";
+import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId } from "./data/reports.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -26,7 +26,7 @@ export function renderRooms(statusFilter = null, mode = null) {
     return;
   }
 
-  rooms.forEach((room, index) => {
+  rooms.forEach((room) => {
     if (statusFilter && room.status !== statusFilter) return;
     const card = document.createElement("button");
     card.type = "button";
@@ -51,13 +51,13 @@ export function renderRooms(statusFilter = null, mode = null) {
       ${statusBadge}
     `;
 
-    card.addEventListener("click", () => openRoomDetail(appState.selectedBranch, index, mode));
+    card.addEventListener("click", () => openRoomDetail(appState.selectedBranch, room.id, mode));
     grid.appendChild(card);
   });
 }
 
-export function openRoomDetail(branch, index, mode = null) {
-  activeRoomRef = { branch, index, mode };
+export function openRoomDetail(branch, roomId, mode = null) {
+  activeRoomRef = { branch, roomId, mode };
   renderRoomDetailBody();
   document.getElementById("room-detail-overlay").classList.add("open");
 }
@@ -67,7 +67,7 @@ function closeRoomDetail() {
 }
 
 function getActiveRoom() {
-  return ROOMS_BY_BRANCH[activeRoomRef.branch][activeRoomRef.index];
+  return (ROOMS_BY_BRANCH[activeRoomRef.branch] || []).find(r => r.id === activeRoomRef.roomId);
 }
 
 function renderRoomDetailBody() {
@@ -135,16 +135,17 @@ async function cancelCheckIn() {
   });
   if (!ok) return;
 
-  const booking = BOOKINGS.find(b => b.branch === activeRoomRef.branch && b.villa === room.name && b.guest === room.guest && b.checkin === room.checkin && b.status === "Checked In");
+  const booking = BOOKINGS.find(b => b.id === room.bookingId);
   if (booking) booking.status = "Cancelled";
 
-  logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check-In Cancelled");
+  logRoomActivity(activeRoomRef.branch, room, room.guest, "Check-In Cancelled");
   room.status = "available";
   delete room.guest;
   delete room.phone;
   delete room.checkin;
   delete room.checkout;
   delete room.pendingCharges;
+  delete room.bookingId;
 
   showToast(`Check-in cancelled for ${room.name}`);
   closeRoomDetail();
@@ -299,13 +300,14 @@ function chargeActivities() {
     const activity = activities.find(a => a.id === Number(id));
     if (!activity) return;
     chargeRoom(room, activity.name, qty, activity.price);
-    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), name: activity.name, qty, branch, date: today, revenue: activity.price * qty });
+    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), activityId: activity.id, roomId: room.id, name: activity.name, qty, branch, date: today, revenue: activity.price * qty });
     total += activity.price * qty;
   });
 
   customActivityCharges.forEach(c => {
     chargeRoom(room, c.name, 1, c.price);
-    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), name: c.name, qty: 1, branch, date: today, revenue: c.price });
+    // One-off custom charges have no catalogue entry, so activityId is null.
+    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), activityId: null, roomId: room.id, name: c.name, qty: 1, branch, date: today, revenue: c.price });
     total += c.price;
   });
 
@@ -371,8 +373,13 @@ function showNewBookingForm() {
     room.checkin = nbCheckin.value;
     room.checkout = nbCheckout.value;
     room.status = "occupied";
-    BOOKINGS.push({ guest: room.guest, villa: room.name, branch: activeRoomRef.branch, checkin: room.checkin, checkout: room.checkout, status: "Checked In" });
-    logRoomActivity(activeRoomRef.branch, room.name, room.guest, "Check In");
+    // Keep the booking's id on the room so check-out / cancel can close the
+    // exact row this check-in opened, rather than re-finding it by matching
+    // guest + villa + dates.
+    const booking = { id: allocateBookingId(), roomId: room.id, guest: room.guest, villa: room.name, branch: activeRoomRef.branch, checkin: room.checkin, checkout: room.checkout, status: "Checked In" };
+    BOOKINGS.push(booking);
+    room.bookingId = booking.id;
+    logRoomActivity(activeRoomRef.branch, room, room.guest, "Check In");
     showToast(`${room.guest} checked into ${room.name}`);
     renderRoomDetailBody();
     renderRooms();
@@ -381,7 +388,7 @@ function showNewBookingForm() {
 
 function startCheckout() {
   const room = getActiveRoom();
-  checkoutRoomRef = { branch: activeRoomRef.branch, index: activeRoomRef.index };
+  checkoutRoomRef = { branch: activeRoomRef.branch, roomId: room.id };
   closeRoomDetail();
   prefillInvoiceForCheckout(room);
   showScreen("screen-form");
@@ -389,6 +396,7 @@ function startCheckout() {
 
 function prefillInvoiceForCheckout(room) {
   resetForm();
+  setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null });
   document.getElementById("guest-name").value = room.guest || "";
   document.getElementById("guest-phone").value = room.phone || "";
   document.getElementById("checkin-date").value = room.checkin || "";
@@ -409,18 +417,20 @@ function prefillInvoiceForCheckout(room) {
 // If an invoice was generated from a Room Map checkout, the villa is free again.
 onAfterGenerate(() => {
   if (checkoutRoomRef) {
-    const room = ROOMS_BY_BRANCH[checkoutRoomRef.branch][checkoutRoomRef.index];
+    const room = (ROOMS_BY_BRANCH[checkoutRoomRef.branch] || []).find(r => r.id === checkoutRoomRef.roomId);
+    if (!room) { checkoutRoomRef = null; return; }
 
-    const booking = BOOKINGS.find(b => b.branch === checkoutRoomRef.branch && b.villa === room.name && b.guest === room.guest && b.checkin === room.checkin && b.status === "Checked In");
+    const booking = BOOKINGS.find(b => b.id === room.bookingId);
     if (booking) booking.status = "Checked Out";
 
-    logRoomActivity(checkoutRoomRef.branch, room.name, room.guest, "Check Out");
+    logRoomActivity(checkoutRoomRef.branch, room, room.guest, "Check Out");
     room.status = "available";
     delete room.guest;
     delete room.phone;
     delete room.checkin;
     delete room.checkout;
     delete room.pendingCharges;
+    delete room.bookingId;
     checkoutRoomRef = null;
   }
 });
