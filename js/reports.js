@@ -49,8 +49,12 @@ function getActiveRange() {
   return [from, to];
 }
 
+// A record with a missing or unparseable date can't be placed on a
+// timeline, so it falls outside every range rather than throwing.
 function inRange(dateStr, range) {
+  if (!dateStr) return false;
   const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d)) return false;
   return d >= range[0] && d <= range[1];
 }
 
@@ -96,13 +100,13 @@ function getFilteredLoginLog(range) {
   // them regardless of which branch filter is active, alongside whichever
   // staff logins match.
   return LOGIN_LOG
-    .filter(l => inRange(l.datetime.slice(0, 10), range) && (state.branch === "all" || l.branch === state.branch || l.branch === null) && matchesSearch(l.username))
+    .filter(l => inRange(l.datetime?.slice(0, 10), range) && (state.branch === "all" || l.branch === state.branch || l.branch === null) && matchesSearch(l.username))
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
 }
 
 function getFilteredRoomActivity(range) {
   return ROOM_ACTIVITY_LOG
-    .filter(a => inRange(a.datetime.slice(0, 10), range) && matchesBranch(a.branch) && matchesSearch(a.guest + " " + a.villa))
+    .filter(a => inRange(a.datetime?.slice(0, 10), range) && matchesBranch(a.branch) && matchesSearch(a.guest + " " + a.villa))
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
 }
 
@@ -143,7 +147,10 @@ function computeOccupancy(range) {
     const co = new Date(b.checkout + "T00:00:00");
     const start = ci < range[0] ? range[0] : ci;
     const end = co > range[1] ? range[1] : co;
-    bookedNights += Math.max(0, Math.round((end - start) / 86400000));
+    // Math.max(0, NaN) is NaN, not 0 — an unparseable checkin/checkout date
+    // would otherwise poison the running total and render "NaN%".
+    const nights = Math.round((end - start) / 86400000);
+    bookedNights += Number.isFinite(nights) ? Math.max(0, nights) : 0;
   });
 
   return Math.min(100, Math.round((bookedNights / totalRoomNights) * 100));

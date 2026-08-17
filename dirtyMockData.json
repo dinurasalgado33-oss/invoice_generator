@@ -1,0 +1,140 @@
+{
+  "_readme": "QA fixture for stress-testing the UI against hostile data. Not loaded by the app at runtime — inject it manually from the browser console (see dev/injectDirtyData.js) to check for layout breaks, text overflow, NaN renders, Invalid Date, and broken images. Entity shapes mirror js/data/*.js.",
+
+  "_strings": {
+    "ultraLong": "Deluxe Oceanfront Presidential Heritage Suite with Private Infinity Pool Panoramic Sunset Terrace Butler Service Outdoor Rain Shower Handcrafted Teak Furnishings Complimentary Sunrise Yoga Session Daily Turndown Service Artisanal Minibar Selection Locally Sourced Breakfast Hamper Private Beach Cabana Access Guided Nature Walk Inclusive Airport Transfer On Request Twenty Four Hour In Villa Dining Personalised Concierge Curated Excursion Planning Spa Treatment Credit Evening Canapes And Sparkling Wine Reception Extended Late Checkout Subject To Availability Package",
+    "ultraLongNoSpaces": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "empty": "",
+    "whitespaceOnly": "     ",
+    "specialChars": "$%#@!&*()<>{}[]|\\^~`\"'",
+    "htmlInjection": "<script>alert('xss')</script><img src=x onerror=alert(1)>",
+    "quotesAndBreaks": "Mr. \"Tricky\" O'Brien-Smythe\nSecond line\tTabbed",
+    "unicode": "日本語テスト 🏨🔥 Ünïcödé ñ ø å",
+    "rtl": "نزل النمر"
+  },
+
+  "rooms": [
+    {
+      "id": 9001,
+      "name": "Deluxe Oceanfront Presidential Heritage Suite with Private Infinity Pool Panoramic Sunset Terrace Butler Service Outdoor Rain Shower Handcrafted Teak Furnishings Complimentary Sunrise Yoga Session Daily Turndown Service Artisanal Minibar Selection Locally Sourced Breakfast Hamper Private Beach Cabana Access Guided Nature Walk Inclusive Airport Transfer On Request Twenty Four Hour In Villa Dining Personalised Concierge Curated Excursion Planning Spa Treatment Credit Evening Canapes And Sparkling Wine Reception Extended Late Checkout Package",
+      "type": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "rate": 0,
+      "status": "occupied",
+      "bookingId": 9001,
+      "guest": "$%#@!&*()<>{}[]|\\^~`\"'",
+      "phone": "",
+      "checkin": "not-a-date",
+      "checkout": null
+    },
+    {
+      "id": 9002,
+      "name": "",
+      "type": null,
+      "rate": null,
+      "status": "occupied",
+      "bookingId": 9002,
+      "guest": null,
+      "phone": null,
+      "checkin": "2026-08-20",
+      "checkout": "2026-08-18"
+    },
+    {
+      "id": 9003,
+      "name": "日本語 🏨 Ünïcödé Villa",
+      "type": "Test",
+      "rate": -5000,
+      "status": "available"
+    },
+    {
+      "id": 9004,
+      "name": "<script>alert('xss')</script>",
+      "type": "<img src=x onerror=alert(1)>",
+      "rate": 99999999999,
+      "status": "occupied",
+      "bookingId": 9004,
+      "guest": "Mr. \"Tricky\" O'Brien-Smythe",
+      "phone": "+94 000 000 0000",
+      "checkin": "2026-08-16",
+      "checkout": "2026-08-16"
+    }
+  ],
+
+  "menuItems": [
+    {
+      "id": 9101,
+      "number": 999,
+      "name": "Deluxe Oceanfront Presidential Heritage Platter with Hand Dived Scallops Grilled Rock Lobster Tail Butter Poached Jumbo Prawns Chargrilled Reef Fish Fillet Crispy Salt And Pepper Cuttlefish Rings Garlic Herb Flatbread Charred Lemon Wedges Roasted Cherry Tomato Confit Saffron Aioli Chilli Lime Dipping Sauce Steamed Jasmine Rice Seasonal Market Vegetables Fresh Herb Garnish And Toasted Cashew Sprinkle Served Family Style For Two Guests Or More On Request",
+      "category": "Soup",
+      "price": null,
+      "ingredients": [],
+      "branch": "Wilpattu"
+    },
+    { "id": 9102, "number": 998, "name": "", "category": "Soup", "price": 0, "ingredients": [], "branch": "Wilpattu" },
+    { "id": 9103, "number": 997, "name": "$%#@!&*()<>{}[]", "category": "Soup", "price": -250, "ingredients": [], "branch": "Wilpattu" },
+    { "id": 9104, "number": 996, "name": "<script>alert('xss')</script>", "category": "Soup", "price": 12345678901, "ingredients": [], "branch": "Wilpattu" }
+  ],
+
+  "inventoryItems": [
+    {
+      "id": 9201,
+      "name": "Extra Virgin Cold Pressed Single Origin Artisanal Small Batch Organic Unfiltered Coconut Cooking Oil In Reusable Glass Decanter Sourced From Certified Fair Trade Smallholder Cooperatives Along The Southern Coastal Belt With Full Traceability Documentation And Batch Level Quality Assurance Certification Included",
+      "category": "Pantry",
+      "stock": 0,
+      "minStock": 0,
+      "unit": "",
+      "costPerUnit": null
+    },
+    { "id": 9202, "name": "", "category": "Pantry", "stock": null, "minStock": 5, "unit": null, "costPerUnit": 0 },
+    { "id": 9203, "name": "$%#@! Item", "category": "Pantry", "stock": -50, "minStock": -1, "unit": "kg", "costPerUnit": -999 }
+  ],
+
+  "invoices": [
+    {
+      "id": "9301",
+      "guest": "Deluxe Oceanfront Presidential Heritage Guest Name That Simply Refuses To End And Keeps Going Well Past Any Reasonable Column Width Because Someone Pasted Their Entire Postal Address Into The Guest Name Field Including Building Number Street Name Suburb City Province Postal Code And Country Along With A Contact Person And Their Job Title For Good Measure Which Is Exactly The Sort Of Thing Real Staff Do Under Time Pressure At A Busy Front Desk During Checkout",
+      "branch": "Wilpattu",
+      "date": "not-a-date",
+      "total": null,
+      "status": "Active"
+    },
+    { "id": "9302", "guest": "", "branch": "Wilpattu", "date": null, "total": 0, "status": "Active" },
+    { "id": "9303", "guest": "$%#@!&*()", "branch": "Wilpattu", "date": "2026-13-45", "total": -99999, "status": "Void" },
+    { "id": "9304", "guest": null, "branch": "Wilpattu", "date": "2026-08-16", "total": 99999999999, "status": "Active" }
+  ],
+
+  "bookings": [
+    { "id": 9401, "roomId": 9001, "guest": "", "villa": "", "branch": "Wilpattu", "checkin": "not-a-date", "checkout": null, "status": "Checked In" },
+    { "id": 9402, "roomId": 9002, "guest": null, "villa": null, "branch": "Wilpattu", "checkin": "2026-08-20", "checkout": "2026-08-18", "status": "Checked In" }
+  ],
+
+  "foodOrderRecords": [
+    { "id": 9501, "dishId": 9101, "dish": "", "qty": 0, "branch": "Wilpattu", "date": "not-a-date", "revenue": null },
+    { "id": 9502, "dishId": 9102, "dish": null, "qty": -5, "branch": "Wilpattu", "date": null, "revenue": 0 }
+  ],
+
+  "activityRecords": [
+    { "id": 9601, "name": "", "qty": 0, "branch": "Wilpattu", "date": null, "revenue": null }
+  ],
+
+  "restockLog": [
+    { "id": 9701, "itemId": 9201, "branch": "Wilpattu", "itemName": "", "category": null, "unit": null, "qty": 0, "unitCost": null, "totalCost": null, "date": "not-a-date" }
+  ],
+
+  "brandInfo": {
+    "hotelName": "",
+    "address": null,
+    "phone": "",
+    "email": null,
+    "bankAccountName": "$%#@!",
+    "bankAccountNumber": null,
+    "bankName": "",
+    "bankBranch": null
+  },
+
+  "missingImages": {
+    "emptyString": "",
+    "nullValue": null,
+    "brokenPath": "assets/this-file-does-not-exist.png",
+    "notAnImage": "assets/../js/main.js"
+  }
+}

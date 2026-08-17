@@ -86,6 +86,31 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
 .back-btn:hover { text-decoration: underline; }
 .back-btn:active { background: rgba(74, 14, 28, 0.08); transform: scale(0.97); }
 
+/* Text-overflow guards. Guest names, villa names and dish names are all
+   free text typed by staff under time pressure — without a clamp, one
+   pasted address blows a card from ~130px to ~430px and drags every
+   sibling in the grid row with it. `.clamp-N` is the multi-line version
+   (an ellipsis after N lines); `.truncate` is the single-line one.
+   min-width:0 is required for either to work inside a flex/grid child. */
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.clamp-1, .clamp-2, .clamp-3 {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Belt-and-braces for very long unbroken strings, which -webkit-line-clamp
+     alone won't wrap (no spaces to break on). */
+  overflow-wrap: anywhere;
+}
+.clamp-1 { -webkit-line-clamp: 1; line-clamp: 1; }
+.clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+.clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }
+
 .field-error {
   display: none;
   color: var(--danger);

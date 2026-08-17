@@ -8,8 +8,12 @@ import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 let pieChart = null;
 let lineChart = null;
 
+// Returns "" for a missing/short date rather than throwing — a single
+// null-dated invoice used to crash renderDashboard() from inside its
+// setTimeout, which surfaced nowhere and left every KPI showing stale
+// numbers from the previous render.
 function monthKey(dateStr) {
-  return dateStr.slice(0, 7); // "YYYY-MM"
+  return typeof dateStr === "string" ? dateStr.slice(0, 7) : ""; // "YYYY-MM"
 }
 
 // Same occupancy math as Reports (bookings/day-in-range vs total room-nights),
@@ -27,7 +31,10 @@ function computeMonthlyOccupancy(branch, year, month) {
     const co = new Date(b.checkout + "T00:00:00");
     const s = ci < start ? start : ci;
     const e = co > end ? end : co;
-    bookedNights += Math.max(0, Math.round((e - s) / 86400000));
+    // Math.max(0, NaN) is NaN, not 0 — guard so one bad date can't turn the
+    // whole occupancy KPI into "NaN%".
+    const nights = Math.round((e - s) / 86400000);
+    bookedNights += Number.isFinite(nights) ? Math.max(0, nights) : 0;
   });
   return Math.min(100, Math.round((bookedNights / totalRoomNights) * 100));
 }

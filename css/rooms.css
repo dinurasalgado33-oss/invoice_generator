@@ -62,8 +62,16 @@
 .room-card.available .room-card-icon { color: #3f9142; }
 .room-card.occupied .room-card-icon { color: var(--maroon); }
 
-.room-card-name { font-weight: 700; color: var(--text); font-size: 0.78rem; line-height: 1.25; }
-.room-card-guest { font-size: 0.7rem; color: var(--text-muted); line-height: 1.2; }
+.room-card-name {
+  font-weight: 700; color: var(--text); font-size: 0.78rem; line-height: 1.25;
+  min-width: 0; display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
+}
+.room-card-guest {
+  font-size: 0.7rem; color: var(--text-muted); line-height: 1.2;
+  min-width: 0; display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1; line-clamp: 1; overflow: hidden; overflow-wrap: anywhere;
+}
 
 .room-card-status {
   display: inline-flex;
@@ -335,8 +343,14 @@
   margin-bottom: 12px;
 }
 .pending-order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.pending-order-guest { display: block; font-weight: 700; color: var(--text); font-size: 0.92rem; }
-.pending-order-room { display: block; color: var(--text-muted); font-size: 0.78rem; margin-top: 1px; }
+.pending-order-guest {
+  display: block; font-weight: 700; color: var(--text); font-size: 0.92rem;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pending-order-room {
+  display: block; color: var(--text-muted); font-size: 0.78rem; margin-top: 1px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .pending-order-total { font-weight: 700; color: var(--maroon); font-size: 0.95rem; flex-shrink: 0; }
 .pending-order-items { margin: 8px 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
 

@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO } from "./utils.js";
+import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber } from "./utils.js";
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
@@ -80,8 +80,8 @@ function renderInventoryRow(item, hidden, showCategoryTag) {
       <td class="list-td-name">${escapeHtml(item.name)}${showCategoryTag ? `<span class="list-item-tag">${escapeHtml(item.category)}</span>` : ""}</td>
       <td class="inv-td-stock">
         <span class="stock-badge ${isLow ? "low" : ""}">${isLow ? "Low" : "OK"}</span>
-        <strong>${item.stock}${escapeHtml(item.unit)}</strong>
-        <span class="inv-td-min">/ ${item.minStock}${escapeHtml(item.unit)} min</span>
+        <strong>${toFiniteNumber(item.stock)}${escapeHtml(item.unit || "")}</strong>
+        <span class="inv-td-min">/ ${toFiniteNumber(item.minStock)}${escapeHtml(item.unit || "")} min</span>
       </td>
       <td class="inv-td-adjust">
         <button type="button" class="stock-adjust-btn" data-item-id="${item.id}" data-delta="-1" aria-label="Decrease ${escapeHtml(item.name)}">&minus;</button>
@@ -356,7 +356,7 @@ function openRestockSheet(itemId) {
   restockingItemId = itemId;
 
   document.getElementById("restock-sheet-title").textContent = `Restock ${item.name}`;
-  document.getElementById("restock-current-stock").textContent = `Current stock: ${item.stock}${item.unit}`;
+  document.getElementById("restock-current-stock").textContent = `Current stock: ${toFiniteNumber(item.stock)}${item.unit || ""}`;
   document.getElementById("restock-qty").value = "";
   document.getElementById("restock-unit-cost").value = item.costPerUnit || "";
   document.getElementById("restock-total-cost").textContent = fmtLKR(0);

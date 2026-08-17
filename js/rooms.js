@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO } from "./utils.js";
+import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate, setCheckoutContext } from "./invoice.js";
@@ -36,7 +36,7 @@ export function renderRooms(statusFilter = null, mode = null) {
     const ribbon = hasStay
       ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
       : "";
-    const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(room.guest)}</span>` : "";
+    const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(orDash(room.guest))}</span>` : "";
     // When a status filter is active every card shares the same status —
     // showing the badge on each one is just noise, so skip it then.
     const statusBadge = statusFilter
@@ -46,7 +46,7 @@ export function renderRooms(statusFilter = null, mode = null) {
     card.innerHTML = `
       ${ribbon}
       <svg class="room-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-      <span class="room-card-name">${escapeHtml(room.name)}</span>
+      <span class="room-card-name">${escapeHtml(room.name || "Unnamed villa")}</span>
       ${guestLine}
       ${statusBadge}
     `;
