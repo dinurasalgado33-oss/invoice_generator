@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=56" />
-<link rel="stylesheet" href="css/brand-home.css?v=56" />
-<link rel="stylesheet" href="css/rooms.css?v=56" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=56" />
-<link rel="stylesheet" href="css/invoice.css?v=56" />
-<link rel="stylesheet" href="css/dashboard.css?v=56" />
-<link rel="stylesheet" href="css/reports.css?v=56" />
-<link rel="stylesheet" href="css/reservation.css?v=56" />
+<link rel="stylesheet" href="css/base.css?v=57" />
+<link rel="stylesheet" href="css/brand-home.css?v=57" />
+<link rel="stylesheet" href="css/rooms.css?v=57" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=57" />
+<link rel="stylesheet" href="css/invoice.css?v=57" />
+<link rel="stylesheet" href="css/dashboard.css?v=57" />
+<link rel="stylesheet" href="css/reports.css?v=57" />
+<link rel="stylesheet" href="css/reservation.css?v=57" />
 </head>
 <body>
 
@@ -97,15 +97,17 @@
 
     <div class="dash-section">
       <h3 class="dash-section-title">Quick Actions</h3>
-      <div class="quick-actions-grid">
-        <button type="button" class="quick-action-btn" id="qa-checkin-btn" disabled>
+      <div class="qa-tier">
+        <button type="button" class="quick-action-btn qa-primary" id="qa-checkin-btn" disabled>
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg></span>
           <span>Check In</span>
         </button>
-        <button type="button" class="quick-action-btn" id="qa-checkout-btn" disabled>
+        <button type="button" class="quick-action-btn qa-primary" id="qa-checkout-btn" disabled>
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg></span>
           <span>Check Out</span>
         </button>
+      </div>
+      <div class="qa-tier">
         <button type="button" class="quick-action-btn" id="qa-food-order-btn">
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg></span>
           <span>Food Order</span>
@@ -114,15 +116,25 @@
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 18c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /></svg></span>
           <span>Activities</span>
         </button>
-        <button type="button" class="quick-action-btn" id="open-inventory-btn">
-          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg></span>
-          <span>Log Inventory</span>
-          <span class="badge-dot" id="inventory-low-badge" style="display:none">0</span>
-        </button>
-        <button type="button" class="quick-action-btn" id="qa-reservation-btn">
-          <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M9 16l2 2 4-4" /></svg></span>
-          <span>Reservation</span>
-        </button>
+      </div>
+      <div class="settings-list qa-compact">
+      <button type="button" class="settings-row" id="qa-reservation-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M9 16l2 2 4-4" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Reservation</span>
+          <span class="settings-row-sub">Create a confirmation for an upcoming guest</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-inventory-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Log Inventory</span>
+          <span class="settings-row-sub">Restock and adjust stock levels</span>
+        </span>
+        <span class="settings-row-badge" id="inventory-low-badge" style="display:none">0</span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
       </div>
     </div>
 
@@ -1397,6 +1409,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=56"></script>
+<script type="module" src="js/main.js?v=57"></script>
 </body>
 </html>

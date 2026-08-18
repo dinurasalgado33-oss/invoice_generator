@@ -345,11 +345,17 @@
 .dash-section { padding: 0 16px; margin-bottom: 22px; }
 .dash-section-title { color: var(--maroon); font-size: 0.95rem; margin: 0 0 10px; }
 
-.quick-actions-grid {
+/* Quick actions — three tiers of prominence instead of one flat 3x2 grid,
+   where Check In and Log Inventory read as equally important. Tier 1 is the
+   spine of a shift (arrival/departure), tier 2 is charging an in-house guest,
+   tier 3 is occasional work that does not need a chunky tile. */
+.qa-tier {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.qa-tier + .qa-tier { margin-top: 10px; }
+
 .quick-action-btn {
   position: relative;
   display: flex;
@@ -360,13 +366,14 @@
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: 14px;
-  padding: 14px 6px;
+  padding: 15px 8px;
   cursor: pointer;
   font-weight: 600;
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   box-shadow: var(--shadow);
   text-align: center;
+  transition: border-color .15s ease, transform .1s ease;
 }
 .quick-action-btn .qa-icon {
   width: 36px;
@@ -384,13 +391,38 @@
 @media (hover: hover) and (pointer: fine) {
   .quick-action-btn:hover:not(:disabled) { border-color: var(--maroon); }
 }
-.quick-action-btn .badge-dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+
+/* Tier 1 — the two actions that bracket every stay. Filled icon well and a
+   gold hairline so they read first without shouting. */
+.quick-action-btn.qa-primary {
+  padding: 20px 8px;
+  border-color: var(--gold);
+  font-size: 0.9rem;
+}
+.quick-action-btn.qa-primary .qa-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+}
+.quick-action-btn.qa-primary svg { width: 21px; height: 21px; color: var(--gold-light); }
+
+/* Tier 3 — reuses the Configure settings-list rows, so occasional actions
+   look like navigation rather than another pair of tiles. */
+.qa-compact { margin: 10px 0 0; }
+.qa-compact .settings-row:disabled { opacity: 0.5; cursor: not-allowed; }
+.settings-row-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 20px;
   height: 20px;
+  padding: 0 6px;
+  border-radius: 20px;
+  background: var(--danger);
+  color: var(--white);
   font-size: 0.65rem;
+  font-weight: 700;
 }
 
 /* Today's Checkouts */
