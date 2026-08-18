@@ -82,7 +82,6 @@ function renderRoomDetailBody() {
 
   if (room.status === "available") {
     body.innerHTML = `
-      <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
       <div class="room-detail-row"><span>Rate</span><span>LKR ${room.rate.toLocaleString("en-US")} / night</span></div>
       <p class="room-detail-empty">This villa is free right now.</p>
       <button type="button" class="primary-btn big" id="new-booking-btn">
@@ -104,7 +103,6 @@ function renderRoomDetailBody() {
       wireActivitiesPanel();
     } else {
       body.innerHTML = `
-        <div class="room-detail-row"><span>Type</span><span>${escapeHtml(room.type)}</span></div>
         <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
         <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
         <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>

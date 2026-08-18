@@ -19,10 +19,10 @@ function renderVillaList() {
 
   list.innerHTML = rooms.map(room => `
     <tr class="list-item-row">
-      <td class="list-td-name">${escapeHtml(room.name)}<span class="list-item-tag">${escapeHtml(room.type)}</span></td>
+      <td class="list-td-name">${escapeHtml(room.name || "Unnamed villa")}</td>
       <td class="list-td-price">${fmtLKR(room.rate)}</td>
       <td>
-        <button type="button" class="list-edit-btn" data-room-id="${room.id}" aria-label="Edit rate for ${escapeHtml(room.name)}">
+        <button type="button" class="list-edit-btn" data-room-id="${room.id}" aria-label="Edit ${escapeHtml(room.name)}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
         </button>
       </td>
@@ -39,9 +39,10 @@ function openVillaRateSheet(roomId) {
   if (!room) return;
   editingVillaId = roomId;
 
-  document.getElementById("villa-rate-sheet-title").textContent = room.name;
-  document.getElementById("villa-rate-sheet-type").textContent = room.type;
+  document.getElementById("cfg-villa-name").value = room.name || "";
   document.getElementById("villa-rate-input").value = room.rate;
+  document.getElementById("cfg-villa-name-error").classList.remove("show");
+  document.getElementById("cfg-villa-name").classList.remove("invalid");
 
   document.getElementById("villa-rate-sheet-overlay").classList.add("open");
 }
@@ -50,6 +51,11 @@ function closeVillaRateSheet() {
   document.getElementById("villa-rate-sheet-overlay").classList.remove("open");
   editingVillaId = null;
 }
+
+document.getElementById("cfg-villa-name").addEventListener("input", () => {
+  document.getElementById("cfg-villa-name-error").classList.remove("show");
+  document.getElementById("cfg-villa-name").classList.remove("invalid");
+});
 
 document.getElementById("villa-rate-sheet-close").addEventListener("click", closeVillaRateSheet);
 document.getElementById("villa-rate-sheet-overlay").addEventListener("click", (e) => {
@@ -60,17 +66,33 @@ document.getElementById("villa-rate-form").addEventListener("submit", (e) => {
   e.preventDefault();
   if (editingVillaId === null) return;
 
-  // required + min="1" on the input itself blocks a zero/blank submit
-  // before this handler ever runs — same pattern as the other plain
-  // numeric fields in the app (dish price, item stock).
+  // required + min="1" on the inputs blocks a zero/blank submit before
+  // this handler runs — same pattern as the other plain fields in the app.
+  const nameInput = document.getElementById("cfg-villa-name");
+  const name = nameInput.value.trim();
   const rate = parseFloat(document.getElementById("villa-rate-input").value);
   const room = (ROOMS_BY_BRANCH[appState.selectedBranch] || []).find(r => r.id === editingVillaId);
-  if (!room) return;
+  if (!room || !name) return;
+
+  // Scoped to this branch — the same villa name at the other property is
+  // a different villa, not a duplicate.
+  const duplicate = (ROOMS_BY_BRANCH[appState.selectedBranch] || [])
+    .some(r => r.id !== editingVillaId && (r.name || "").trim().toLowerCase() === name.toLowerCase());
+  if (duplicate) {
+    document.getElementById("cfg-villa-name-error").classList.add("show");
+    nameInput.classList.add("invalid");
+    nameInput.focus();
+    return;
+  }
+
+  // Renaming is safe: every historical record joins on the villa's id and
+  // keeps its own name snapshot, so past bookings/invoices are untouched.
+  room.name = name;
   room.rate = rate;
 
   closeVillaRateSheet();
   renderVillaList();
-  showToast(`${room.name} rate updated to ${fmtLKR(rate)} / night`);
+  showToast(`${name} updated — ${fmtLKR(rate)} / night`);
 });
 
 document.getElementById("open-configure-btn").addEventListener("click", () => {

@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=60" />
-<link rel="stylesheet" href="css/brand-home.css?v=60" />
-<link rel="stylesheet" href="css/rooms.css?v=60" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=60" />
-<link rel="stylesheet" href="css/invoice.css?v=60" />
-<link rel="stylesheet" href="css/dashboard.css?v=60" />
-<link rel="stylesheet" href="css/reports.css?v=60" />
-<link rel="stylesheet" href="css/reservation.css?v=60" />
+<link rel="stylesheet" href="css/base.css?v=61" />
+<link rel="stylesheet" href="css/brand-home.css?v=61" />
+<link rel="stylesheet" href="css/rooms.css?v=61" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=61" />
+<link rel="stylesheet" href="css/invoice.css?v=61" />
+<link rel="stylesheet" href="css/dashboard.css?v=61" />
+<link rel="stylesheet" href="css/reports.css?v=61" />
+<link rel="stylesheet" href="css/reservation.css?v=61" />
 </head>
 <body>
 
@@ -495,21 +495,25 @@
     <div class="room-detail-sheet" id="villa-rate-sheet" role="dialog" aria-modal="true">
       <div class="room-detail-handle"></div>
       <div class="room-detail-header">
-        <h3 id="villa-rate-sheet-title">Villa</h3>
+        <h3 id="villa-rate-sheet-title">Edit Villa</h3>
         <button type="button" class="sheet-icon-btn" id="villa-rate-sheet-close" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
       <div class="room-detail-body">
         <form id="villa-rate-form">
-          <p class="step-subtext" id="villa-rate-sheet-type"></p>
+          <div class="field">
+            <label>Villa Name</label>
+            <input type="text" id="cfg-villa-name" required autocapitalize="words" enterkeyhint="next" />
+            <p class="field-error" id="cfg-villa-name-error">A villa with this name already exists</p>
+          </div>
           <div class="field">
             <label>Rate per Night (LKR)</label>
             <input type="number" id="villa-rate-input" min="1" step="1" inputmode="decimal" required enterkeyhint="done" />
           </div>
           <button type="submit" class="primary-btn big">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
-            Save Rate
+            Save Villa
           </button>
         </form>
       </div>
@@ -1407,6 +1411,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=60"></script>
+<script type="module" src="js/main.js?v=61"></script>
 </body>
 </html>

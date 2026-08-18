@@ -15,18 +15,18 @@
 // checkout.
 export const ROOMS_BY_BRANCH = {
   "Arugam Bay": [
-    { id: 1, name: "Zenith Villa", type: "Pool Villa", rate: 11500, status: "occupied", bookingId: 1, guest: "Kasun Perera", phone: "077 221 8511", checkin: "2026-08-10", checkout: "2026-08-13" },
-    { id: 2, name: "Swell Villa", type: "Pool Villa", rate: 11500, status: "available" },
-    { id: 3, name: "Tide Villa", type: "Garden Villa", rate: 8500, status: "occupied", bookingId: 3, guest: "Mr. & Mrs. Silva", phone: "070 333 2211", checkin: "2026-08-09", checkout: "2026-08-12" },
-    { id: 4, name: "Barrel Villa", type: "Garden Villa", rate: 8500, status: "available" },
-    { id: 5, name: "Flow Villa", type: "Beachfront Villa", rate: 15000, status: "occupied", bookingId: 5, guest: "Nadeesha Fernando", phone: "076 812 4499", checkin: "2026-08-10", checkout: "2026-08-15" },
-    { id: 6, name: "Break Villa", type: "Beachfront Villa", rate: 15000, status: "available" },
+    { id: 1, name: "Zenith Villa", rate: 11500, status: "occupied", bookingId: 1, guest: "Kasun Perera", phone: "077 221 8511", checkin: "2026-08-10", checkout: "2026-08-13" },
+    { id: 2, name: "Swell Villa", rate: 11500, status: "available" },
+    { id: 3, name: "Tide Villa", rate: 8500, status: "occupied", bookingId: 3, guest: "Mr. & Mrs. Silva", phone: "070 333 2211", checkin: "2026-08-09", checkout: "2026-08-12" },
+    { id: 4, name: "Barrel Villa", rate: 8500, status: "available" },
+    { id: 5, name: "Flow Villa", rate: 15000, status: "occupied", bookingId: 5, guest: "Nadeesha Fernando", phone: "076 812 4499", checkin: "2026-08-10", checkout: "2026-08-15" },
+    { id: 6, name: "Break Villa", rate: 15000, status: "available" },
   ],
   "Wilpattu": [
-    { id: 7, name: "Balcony Villa", type: "Forest Chalet", rate: 9500, status: "occupied", bookingId: 9, guest: "Ruwan Jayasuriya", phone: "077 654 3210", checkin: "2026-08-10", checkout: "2026-08-12" },
-    { id: 8, name: "Pool Villa 1", type: "Forest Chalet", rate: 9500, status: "available" },
-    { id: 9, name: "Pool Villa 2", type: "Safari Chalet", rate: 10500, status: "occupied", bookingId: 11, guest: "Mr. & Mrs. Bandara", phone: "070 222 4455", checkin: "2026-08-11", checkout: "2026-08-13" },
-    { id: 10, name: "A Type Villa", type: "Riverside Chalet", rate: 12000, status: "occupied", bookingId: 13, guest: "Ishara Wickramasinghe", phone: "076 345 6789", checkin: "2026-08-10", checkout: "2026-08-15" },
+    { id: 7, name: "Balcony Villa", rate: 9500, status: "occupied", bookingId: 9, guest: "Ruwan Jayasuriya", phone: "077 654 3210", checkin: "2026-08-10", checkout: "2026-08-12" },
+    { id: 8, name: "Pool Villa 1", rate: 9500, status: "available" },
+    { id: 9, name: "Pool Villa 2", rate: 10500, status: "occupied", bookingId: 11, guest: "Mr. & Mrs. Bandara", phone: "070 222 4455", checkin: "2026-08-11", checkout: "2026-08-13" },
+    { id: 10, name: "A Type Villa", rate: 12000, status: "occupied", bookingId: 13, guest: "Ishara Wickramasinghe", phone: "076 345 6789", checkin: "2026-08-10", checkout: "2026-08-15" },
   ],
 };
 
