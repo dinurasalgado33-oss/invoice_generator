@@ -479,9 +479,14 @@ lowFilterBtn.addEventListener("click", () => {
   renderInventoryScreen();
 });
 
-document.getElementById("open-inventory-btn").addEventListener("click", () => {
+// Reachable from two places — the Log Inventory quick action (daily stock
+// work) and the manager’s Configure hub (catalogue setup). Both land on the
+// same screen; the caller says where Back should return to, since a static
+// data-back would strand whoever came in the other way.
+export function openInventoryScreen(backTarget = "screen-home") {
   document.getElementById("inventory-branch-label").textContent = appState.selectedBranchLabel;
   setLogoSrc("inventory-logo", appState.selectedBranchLogo);
+  document.querySelector("#screen-inventory .back-btn").dataset.back = backTarget;
 
   // Fresh screen, fresh filters — avoid reopening into a stale search.
   searchQuery = "";
@@ -496,4 +501,6 @@ document.getElementById("open-inventory-btn").addEventListener("click", () => {
 
   renderInventoryScreen();
   showScreen("screen-inventory");
-});
+}
+
+document.getElementById("open-inventory-btn").addEventListener("click", () => openInventoryScreen("screen-home"));

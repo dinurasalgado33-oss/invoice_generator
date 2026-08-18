@@ -5,6 +5,7 @@ import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, allocateActivityId } from "./data/activities.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId } from "./data/branches.js";
 import { confirmAction } from "./confirm.js";
+import { openInventoryScreen } from "./inventory.js";
 
 // Manager-only settings hub — a hub + cards (not one big screen) so each
 // new configurable area lands as its own card without a redesign.
@@ -349,4 +350,12 @@ document.getElementById("open-configure-conditions-btn").addEventListener("click
   setLogoSrc("configure-conditions-logo", appState.selectedBranchLogo);
   renderConditionList();
   showScreen("screen-configure-conditions");
+});
+
+// ---- Inventory (shared screen) ----
+// Opens the same Inventory screen the Log Inventory quick action uses —
+// this is just the manager's entry point from the settings hub, so Back
+// returns here rather than to Home.
+document.getElementById("open-configure-inventory-btn").addEventListener("click", () => {
+  openInventoryScreen("screen-configure");
 });
