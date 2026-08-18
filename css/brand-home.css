@@ -345,66 +345,47 @@
 .dash-section { padding: 0 16px; margin-bottom: 22px; }
 .dash-section-title { color: var(--maroon); font-size: 0.95rem; margin: 0 0 10px; }
 
-/* Quick actions — three tiers of prominence instead of one flat 3x2 grid,
-   where Check In and Log Inventory read as equally important. Tier 1 is the
-   spine of a shift (arrival/departure), tier 2 is charging an in-house guest,
-   tier 3 is occasional work that does not need a chunky tile. */
-.qa-tier {
+/* Quick actions — one uniform 2-column grid. The pairs fall on their own
+   rows naturally (arrival/departure, then in-stay charges), so grouping
+   comes from position rather than from four different tile treatments.
+   Icon sits left of the label, matching the compact rows underneath, so
+   the whole section reads on one alignment. */
+.qa-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  /* minmax(0,1fr) not 1fr — a long label would otherwise widen its own
+     column and make the pair uneven. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
 }
-.qa-tier + .qa-tier { margin-top: 10px; }
 
 .quick-action-btn {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--white);
   border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 15px 8px;
+  border-radius: 12px;
+  padding: 13px 14px;
   cursor: pointer;
   font-weight: 600;
   color: var(--text);
-  font-size: 0.8rem;
-  box-shadow: var(--shadow);
-  text-align: center;
-  transition: border-color .15s ease, transform .1s ease;
+  font-size: 0.86rem;
+  text-align: left;
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
 }
 .quick-action-btn .qa-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--bg);
   display: flex;
   align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 .quick-action-btn svg { width: 19px; height: 19px; color: var(--maroon); }
-.quick-action-btn:active { transform: scale(0.97); }
-.quick-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.quick-action-btn > span:not(.qa-icon) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quick-action-btn:active:not(:disabled) { transform: scale(0.97); }
+.quick-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (hover: hover) and (pointer: fine) {
-  .quick-action-btn:hover:not(:disabled) { border-color: var(--maroon); }
+  .quick-action-btn:hover:not(:disabled) { border-color: var(--maroon); background: var(--bg-alt); }
 }
-
-/* Tier 1 — the two actions that bracket every stay. Filled icon well and a
-   gold hairline so they read first without shouting. */
-.quick-action-btn.qa-primary {
-  padding: 20px 8px;
-  border-color: var(--gold);
-  font-size: 0.9rem;
-}
-.quick-action-btn.qa-primary .qa-icon {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-}
-.quick-action-btn.qa-primary svg { width: 21px; height: 21px; color: var(--gold-light); }
 
 /* Tier 3 — reuses the Configure settings-list rows, so occasional actions
    look like navigation rather than another pair of tiles. */
