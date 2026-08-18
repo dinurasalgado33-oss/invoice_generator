@@ -8,6 +8,8 @@ export const screens = {
   configure: document.getElementById("screen-configure"),
   configureVillas: document.getElementById("screen-configure-villas"),
   configureActivities: document.getElementById("screen-configure-activities"),
+  configureBranch: document.getElementById("screen-configure-branch"),
+  configureConditions: document.getElementById("screen-configure-conditions"),
   inventory: document.getElementById("screen-inventory"),
   dashboard: document.getElementById("screen-dashboard"),
   reports: document.getElementById("screen-reports"),
@@ -20,6 +22,7 @@ export const screens = {
 const screenOrder = [
   "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-orders",
   "screen-configure", "screen-menu", "screen-configure-villas", "screen-configure-activities",
+  "screen-configure-branch", "screen-configure-conditions",
   "screen-inventory", "screen-dashboard", "screen-reports", "screen-form", "screen-preview",
   "screen-reservation-form", "screen-reservation-preview",
 ];

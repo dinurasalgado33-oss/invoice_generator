@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO } from "./utils.js";
-import { BRANCH_INFO } from "./data/branches.js";
+import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 
 const villaList = document.getElementById("resv-villa-list");
 
@@ -143,6 +143,12 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   document.getElementById("resv-prev-bank-account-no").textContent = branchInfo.bankAccountNumber || "-";
   document.getElementById("resv-prev-bank").textContent = branchInfo.bankName || "-";
   document.getElementById("resv-prev-bank-branch").textContent = branchInfo.bankBranch || "-";
+
+  // Conditions — manager-editable per branch (Configure > Reservation Conditions)
+  const conditions = RESERVATION_CONDITIONS[appState.selectedBranch] || [];
+  document.getElementById("resv-prev-conditions").innerHTML = conditions
+    .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
+    `<p class="room-detail-empty">No conditions set.</p>`;
 
   showToast("Reservation confirmation generated");
   showScreen("screen-reservation-preview");

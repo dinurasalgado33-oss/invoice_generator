@@ -3,6 +3,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, allocateActivityId } from "./data/activities.js";
+import { BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId } from "./data/branches.js";
 import { confirmAction } from "./confirm.js";
 
 // Manager-only settings hub — a hub + cards (not one big screen) so each
@@ -197,4 +198,155 @@ document.getElementById("open-configure-activities-btn").addEventListener("click
   setLogoSrc("configure-activities-logo", appState.selectedBranchLogo);
   renderActivityList();
   showScreen("screen-configure-activities");
+});
+
+// ---- Branch & bank details ----
+// One record per branch rather than a list, so this screen is a plain form.
+// Both guest-facing documents read BRANCH_INFO live at render time, so a
+// save here shows up on the very next invoice or confirmation.
+const BRANCH_FIELDS = {
+  "cfg-hotel-name": "hotelName",
+  "cfg-address": "address",
+  "cfg-phone": "phone",
+  "cfg-email": "email",
+  "cfg-bank-account-name": "bankAccountName",
+  "cfg-bank-account-no": "bankAccountNumber",
+  "cfg-bank-name": "bankName",
+  "cfg-bank-branch": "bankBranch",
+};
+
+function loadBranchDetailsForm() {
+  const info = BRANCH_INFO[appState.selectedBranch] || {};
+  Object.entries(BRANCH_FIELDS).forEach(([inputId, key]) => {
+    document.getElementById(inputId).value = info[key] || "";
+  });
+}
+
+document.getElementById("branch-details-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const branch = appState.selectedBranch;
+  if (!BRANCH_INFO[branch]) BRANCH_INFO[branch] = {};
+
+  Object.entries(BRANCH_FIELDS).forEach(([inputId, key]) => {
+    BRANCH_INFO[branch][key] = document.getElementById(inputId).value.trim();
+  });
+
+  showToast("Branch details saved");
+});
+
+document.getElementById("open-configure-branch-btn").addEventListener("click", () => {
+  document.getElementById("configure-branch-branch-label").textContent = appState.selectedBranchLabel;
+  setLogoSrc("configure-branch-logo", appState.selectedBranchLogo);
+  loadBranchDetailsForm();
+  showScreen("screen-configure-branch");
+});
+
+// ---- Reservation conditions ----
+let editingConditionId = null;
+
+function branchConditions() {
+  return RESERVATION_CONDITIONS[appState.selectedBranch] || [];
+}
+
+function renderConditionList() {
+  const list = document.getElementById("configure-conditions-list");
+  const conditions = branchConditions();
+
+  list.innerHTML = conditions.map(c => `
+    <div class="report-row">
+      <div class="report-row-top">
+        <div>
+          <span class="report-row-sub">${escapeHtml(c.text || "")}</span>
+        </div>
+        <div class="report-row-end">
+          <button type="button" class="list-edit-btn" data-condition-id="${c.id}" aria-label="Edit condition">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join("") || `<p class="room-detail-empty">No conditions yet — tap "+" to add one.</p>`;
+
+  list.querySelectorAll(".list-edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => openConditionSheet(Number(btn.dataset.conditionId)));
+  });
+}
+
+function openConditionSheet(conditionId = null) {
+  editingConditionId = conditionId;
+  const condition = conditionId ? branchConditions().find(c => c.id === conditionId) : null;
+
+  document.getElementById("condition-sheet-title").textContent = condition ? "Edit Condition" : "Add Condition";
+  document.getElementById("condition-text").value = condition ? condition.text : "";
+  document.getElementById("condition-delete-btn").style.display = condition ? "" : "none";
+  document.getElementById("condition-text-error").classList.remove("show");
+  document.getElementById("condition-text").classList.remove("invalid");
+
+  document.getElementById("condition-sheet-overlay").classList.add("open");
+}
+
+function closeConditionSheet() {
+  document.getElementById("condition-sheet-overlay").classList.remove("open");
+  editingConditionId = null;
+}
+
+document.getElementById("add-condition-btn").addEventListener("click", () => openConditionSheet(null));
+document.getElementById("condition-sheet-close").addEventListener("click", closeConditionSheet);
+document.getElementById("condition-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "condition-sheet-overlay") closeConditionSheet();
+});
+document.getElementById("condition-text").addEventListener("input", () => {
+  document.getElementById("condition-text-error").classList.remove("show");
+  document.getElementById("condition-text").classList.remove("invalid");
+});
+
+document.getElementById("condition-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("condition-text");
+  const text = input.value.trim();
+  if (!text) {
+    document.getElementById("condition-text-error").classList.add("show");
+    input.classList.add("invalid");
+    input.focus();
+    return;
+  }
+
+  if (editingConditionId) {
+    const condition = branchConditions().find(c => c.id === editingConditionId);
+    if (condition) condition.text = text;
+    showToast("Condition updated");
+  } else {
+    branchConditions().push({ id: allocateConditionId(), text });
+    showToast("Condition added");
+  }
+
+  closeConditionSheet();
+  renderConditionList();
+});
+
+document.getElementById("condition-delete-btn").addEventListener("click", async () => {
+  if (!editingConditionId) return;
+  const conditions = branchConditions();
+  const condition = conditions.find(c => c.id === editingConditionId);
+  if (!condition) return;
+
+  const ok = await confirmAction({
+    title: "Remove this condition?",
+    message: "It will stop printing on new Reservation Confirmations. Confirmations already given to guests are unaffected.",
+    confirmLabel: "Remove Condition",
+    tone: "danger",
+  });
+  if (!ok) return;
+
+  conditions.splice(conditions.findIndex(c => c.id === editingConditionId), 1);
+  closeConditionSheet();
+  renderConditionList();
+  showToast("Condition removed");
+});
+
+document.getElementById("open-configure-conditions-btn").addEventListener("click", () => {
+  document.getElementById("configure-conditions-branch-label").textContent = appState.selectedBranchLabel;
+  setLogoSrc("configure-conditions-logo", appState.selectedBranchLogo);
+  renderConditionList();
+  showScreen("screen-configure-conditions");
 });

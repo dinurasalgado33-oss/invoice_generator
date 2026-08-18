@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=53" />
-<link rel="stylesheet" href="css/brand-home.css?v=53" />
-<link rel="stylesheet" href="css/rooms.css?v=53" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=53" />
-<link rel="stylesheet" href="css/invoice.css?v=53" />
-<link rel="stylesheet" href="css/dashboard.css?v=53" />
-<link rel="stylesheet" href="css/reports.css?v=53" />
-<link rel="stylesheet" href="css/reservation.css?v=53" />
+<link rel="stylesheet" href="css/base.css?v=54" />
+<link rel="stylesheet" href="css/brand-home.css?v=54" />
+<link rel="stylesheet" href="css/rooms.css?v=54" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=54" />
+<link rel="stylesheet" href="css/invoice.css?v=54" />
+<link rel="stylesheet" href="css/dashboard.css?v=54" />
+<link rel="stylesheet" href="css/reports.css?v=54" />
+<link rel="stylesheet" href="css/reservation.css?v=54" />
 </head>
 <body>
 
@@ -259,6 +259,26 @@
         </span>
         <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
+      <button type="button" class="launch-card" id="open-configure-branch-btn">
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-6h6v6" /><path d="M9 10h.01M15 10h.01" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>Branch &amp; Bank Details</strong>
+          <small>Hotel name, contact and payment info on guest documents</small>
+        </span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="launch-card" id="open-configure-conditions-btn">
+        <span class="launch-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></svg>
+        </span>
+        <span class="launch-card-text">
+          <strong>Reservation Conditions</strong>
+          <small>Terms printed on the Reservation Confirmation</small>
+        </span>
+        <svg class="launch-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
       <button type="button" class="launch-card" id="open-configure-activities-btn">
         <span class="launch-card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M12 2v6" /><path d="M9 5l3-3 3 3" /></svg>
@@ -271,6 +291,110 @@
       </button>
     </div>
   </section>
+
+  <!-- SCREEN: Configure branch & bank details (manager only) -->
+  <section id="screen-configure-branch" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-branch-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Branch Details — <span id="configure-branch-branch-label"></span></h2>
+    </div>
+
+    <form id="branch-details-form" class="list-wrap">
+      <p class="step-subtext">These appear on the Reservation Confirmation and the checkout Invoice.</p>
+      <div class="field">
+        <label>Hotel Name</label>
+        <input type="text" id="cfg-hotel-name" required autocapitalize="words" enterkeyhint="next" />
+      </div>
+      <div class="field">
+        <label>Address</label>
+        <input type="text" id="cfg-address" autocapitalize="words" enterkeyhint="next" />
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" id="cfg-phone" inputmode="tel" enterkeyhint="next" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="cfg-email" inputmode="email" autocapitalize="off" enterkeyhint="next" />
+        </div>
+      </div>
+
+      <h3 class="section-title">Bank Details</h3>
+      <p class="step-subtext">Printed in the Payment Details box guests pay into.</p>
+      <div class="field">
+        <label>Account Name</label>
+        <input type="text" id="cfg-bank-account-name" autocapitalize="characters" enterkeyhint="next" />
+      </div>
+      <div class="field">
+        <label>Account Number</label>
+        <input type="text" id="cfg-bank-account-no" autocomplete="off" autocapitalize="off" enterkeyhint="next" />
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Bank</label>
+          <input type="text" id="cfg-bank-name" autocapitalize="words" enterkeyhint="next" />
+        </div>
+        <div class="field">
+          <label>Bank Branch</label>
+          <input type="text" id="cfg-bank-branch" autocapitalize="words" enterkeyhint="done" />
+        </div>
+      </div>
+
+      <button type="submit" class="primary-btn big">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+        Save Details
+      </button>
+    </form>
+  </section>
+
+  <!-- SCREEN: Configure reservation conditions (manager only) -->
+  <section id="screen-configure-conditions" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-conditions-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Conditions — <span id="configure-conditions-branch-label"></span></h2>
+      <button type="button" class="brand-header-action" id="add-condition-btn" aria-label="Add condition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+      </button>
+    </div>
+    <div class="list-wrap">
+      <p class="step-subtext">Printed at the bottom of every Reservation Confirmation, in this order.</p>
+      <div id="configure-conditions-list"><!-- condition rows injected by JS --></div>
+    </div>
+  </section>
+
+  <!-- Condition add/edit sheet -->
+  <div class="room-detail-overlay" id="condition-sheet-overlay">
+    <div class="room-detail-sheet" id="condition-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="condition-sheet-title">Add Condition</h3>
+        <div class="sheet-header-actions">
+          <button type="button" class="sheet-icon-btn sheet-icon-btn-danger" id="condition-delete-btn" aria-label="Delete condition" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+          </button>
+          <button type="button" class="sheet-icon-btn" id="condition-sheet-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div class="room-detail-body">
+        <form id="condition-form">
+          <div class="field">
+            <label>Condition Text</label>
+            <textarea id="condition-text" rows="4" required enterkeyhint="done"></textarea>
+            <p class="field-error" id="condition-text-error">Enter the condition text</p>
+          </div>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+            Save Condition
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- SCREEN: Configure activities — add/edit/delete per branch (manager only) -->
   <section id="screen-configure-activities" class="screen">
@@ -1235,11 +1359,7 @@
 
           <section class="reservation-section reservation-conditions">
             <h3>Conditions</h3>
-            <p>* Required LKR 5,000 of advance payment to confirm the booking</p>
-            <p>* Up to 11 Years: Infant / Child sharing parent's room would be 100% complimentary for first 2 children and 25% of the Double room rate applicable per additional child.</p>
-            <p>* The reservation is valid only for 1 days after issuing.</p>
-            <p>* Once payment is made, kindly share the slip or confirmation for our records.</p>
-            <p>* Please note that a 10% service charge will be added to all BB (Bed &amp; Breakfast), HB (Half Board), and FB (Full Board) bookings.</p>
+            <div id="resv-prev-conditions"><!-- condition lines injected by JS --></div>
           </section>
         </div>
       </div>
@@ -1279,6 +1399,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=53"></script>
+<script type="module" src="js/main.js?v=54"></script>
 </body>
 </html>
