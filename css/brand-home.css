@@ -167,15 +167,52 @@
   padding: 0 16px;
 }
 
-/* Configure hub — same launch-card visual language, stacked as a list
-   of settings entry points rather than centered branch-home actions. */
-.launch-card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 16px 24px;
+/* Settings list — Configure hub. Deliberately quieter than the branch-home
+   launch cards: these are frequent, utilitarian destinations, so they read
+   as one grouped list of rows rather than six competing hero cards. */
+.settings-list {
+  margin: 0 16px 24px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
 }
-.launch-card-list .launch-card { max-width: none; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: background .15s ease;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-icon {
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
+  color: var(--maroon);
+}
+.settings-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.settings-row-title { font-weight: 600; font-size: 0.94rem; color: var(--text); }
+.settings-row-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.settings-row-arrow { flex-shrink: 0; width: 15px; height: 15px; color: var(--text-muted); }
+.settings-row:active { background: var(--bg-alt); }
+@media (hover: hover) and (pointer: fine) {
+  .settings-row:hover { background: var(--bg-alt); }
+  .settings-row:hover .settings-row-arrow { color: var(--maroon); }
+}
 
 .launch-card {
   position: relative;
