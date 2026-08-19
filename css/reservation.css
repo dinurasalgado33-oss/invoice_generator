@@ -102,7 +102,17 @@
   color: #1a1a1a;
 }
 .reservation-row span::after { content: ":"; margin-left: 8px; }
-.reservation-row strong { font-weight: 600; color: #1a1a1a; }
+/* min-width:0 lets the value shrink inside its flex row, and
+   overflow-wrap:anywhere breaks an unbroken string (a very long guest
+   name with no spaces) instead of letting it run off the paper and get
+   clipped by the document. Guest names must print in full, wrapped —
+   never truncated — since these are given to the guest. */
+.reservation-row strong {
+  font-weight: 600;
+  color: #1a1a1a;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 .reservation-row-split {
   display: grid;
