@@ -4,6 +4,7 @@ import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber } f
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
+  USAGE_LOG, USAGE_REASONS, allocateUsageId,
 } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
 
@@ -88,6 +89,9 @@ function renderInventoryRow(item, hidden, showCategoryTag) {
         <button type="button" class="stock-adjust-btn" data-item-id="${item.id}" data-delta="1" aria-label="Increase ${escapeHtml(item.name)}">+</button>
       </td>
       <td class="inv-td-actions">
+        <button type="button" class="list-usage-btn" data-item-id="${item.id}" aria-label="Log usage for ${escapeHtml(item.name)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9" /><path d="m7 14 5-5 5 5" /><path d="M5 3h14" /></svg>
+        </button>
         <button type="button" class="list-restock-btn" data-item-id="${item.id}" aria-label="Restock ${escapeHtml(item.name)}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
         </button>
@@ -237,7 +241,83 @@ function renderInventoryScreen() {
   list.querySelectorAll(".list-restock-btn").forEach(btn => {
     btn.addEventListener("click", () => openRestockSheet(Number(btn.dataset.itemId)));
   });
+  list.querySelectorAll(".list-usage-btn").forEach(btn => {
+    btn.addEventListener("click", () => openUsageSheet(Number(btn.dataset.itemId)));
+  });
 }
+
+// ---- Log usage (stock going out by hand) ----
+// The mirror image of restock. Needed because recipe-based deduction only
+// fires for dishes that have an ingredient list, and almost none do — so
+// without this there is no way to record stock leaving the store at all.
+let usageItemId = null;
+
+function openUsageSheet(itemId) {
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const item = inventory.find(i => i.id === itemId);
+  if (!item) return;
+  usageItemId = itemId;
+  document.getElementById("usage-sheet-title").textContent = `Log Usage — ${item.name}`;
+  document.getElementById("usage-current-stock").textContent = `Current stock: ${toFiniteNumber(item.stock)}${item.unit || ""}`;
+  document.getElementById("usage-qty").value = "";
+  // Deliberately no `max` attribute — it would trip native validation and
+  // raise the browser's own popup before submit fires, bypassing the
+  // styled inline error every other form in the app uses.
+  document.getElementById("usage-reason").innerHTML = USAGE_REASONS.map(r => `<option value="${r}">${r}</option>`).join("");
+  document.getElementById("usage-qty-error").classList.remove("show");
+  document.getElementById("usage-sheet-overlay").classList.add("open");
+}
+
+function closeUsageSheet() {
+  document.getElementById("usage-sheet-overlay").classList.remove("open");
+  usageItemId = null;
+}
+
+document.getElementById("usage-sheet-close").addEventListener("click", closeUsageSheet);
+document.getElementById("usage-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "usage-sheet-overlay") closeUsageSheet();
+});
+document.getElementById("usage-qty").addEventListener("input", () => {
+  document.getElementById("usage-qty-error").classList.remove("show");
+});
+
+document.getElementById("usage-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!usageItemId) return;
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const item = inventory.find(i => i.id === usageItemId);
+  if (!item) return;
+
+  const qty = parseFloat(document.getElementById("usage-qty").value) || 0;
+  // Issuing more than exists means somebody typed the wrong number — the
+  // stock figure is the thing being corrected here, so refuse rather than
+  // silently clamping to zero and hiding the discrepancy.
+  if (qty <= 0) return;
+  if (qty > item.stock) {
+    document.getElementById("usage-qty-error").classList.add("show");
+    document.getElementById("usage-qty").focus();
+    return;
+  }
+
+  const reason = document.getElementById("usage-reason").value;
+  item.stock = Math.max(0, Math.round((item.stock - qty) * 100) / 100);
+  USAGE_LOG.push({
+    id: allocateUsageId(),
+    itemId: item.id,
+    branch: appState.selectedBranch,
+    itemName: item.name,
+    category: item.category,
+    unit: item.unit,
+    qty,
+    reason,
+    date: todayISO(),
+  });
+
+  closeUsageSheet();
+  renderInventoryScreen();
+  updateInventoryBadge();
+  showToast(`${qty}${item.unit || ""} of ${item.name} logged as used`);
+});
 
 function adjustInventoryStock(itemId, delta) {
   const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];

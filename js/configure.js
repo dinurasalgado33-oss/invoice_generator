@@ -2,7 +2,8 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { ACTIVITIES_BY_BRANCH, allocateActivityId } from "./data/activities.js";
+import { ACTIVITIES_BY_BRANCH, allocateActivityId, clampHotelIncome } from "./data/activities.js";
+import { CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel } from "./data/charges.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId } from "./data/branches.js";
 import { confirmAction } from "./confirm.js";
 import { openInventoryScreen } from "./inventory.js";
@@ -119,9 +120,16 @@ function renderActivityList() {
   const list = document.getElementById("configure-activities-list");
   const activities = branchActivities();
 
-  list.innerHTML = activities.map(a => `
+  list.innerHTML = activities.map(a => {
+    const income = clampHotelIncome(a.price, a.hotelIncome ?? a.price);
+    const payout = (Number(a.price) || 0) - income;
+    return `
     <tr class="list-item-row">
-      <td class="list-td-name">${escapeHtml(a.name || "Unnamed activity")}</td>
+      <td class="list-td-name">
+        ${escapeHtml(a.name || "Unnamed activity")}
+        <span class="list-item-tag">${escapeHtml(chargeCategoryLabel(a.category))}</span>
+        ${payout > 0 ? `<span class="list-item-sub">keeps ${fmtLKR(income)}</span>` : ""}
+      </td>
       <td class="list-td-price">${fmtLKR(a.price)}</td>
       <td>
         <button type="button" class="list-edit-btn" data-activity-id="${a.id}" aria-label="Edit ${escapeHtml(a.name)}">
@@ -129,7 +137,8 @@ function renderActivityList() {
         </button>
       </td>
     </tr>
-  `).join("") || `<tr><td colspan="3" class="room-detail-empty">No activities yet — tap "+" to add one.</td></tr>`;
+  `;
+  }).join("") || `<tr><td colspan="3" class="room-detail-empty">No activities yet — tap "+" to add one.</td></tr>`;
 
   list.querySelectorAll(".list-edit-btn").forEach(btn => {
     btn.addEventListener("click", () => openActivitySheet(Number(btn.dataset.activityId)));
@@ -143,6 +152,16 @@ function openActivitySheet(activityId = null) {
   document.getElementById("activity-sheet-title").textContent = activity ? "Edit Activity" : "Add Activity";
   document.getElementById("activity-name").value = activity ? activity.name : "";
   document.getElementById("activity-price").value = activity ? activity.price : "";
+  // Default a new activity to "hotel keeps everything" — that's true of
+  // anything run in-house, and it's the safe direction to be wrong in
+  // (understating a payout inflates profit; this way it can't).
+  document.getElementById("activity-income").value = activity
+    ? clampHotelIncome(activity.price, activity.hotelIncome ?? activity.price)
+    : "";
+  document.getElementById("activity-category").innerHTML = CHARGE_CATEGORIES.map(c =>
+    `<option value="${c}" ${activity && activity.category === c ? "selected" : ""}>${CHARGE_CATEGORY_LABELS[c]}</option>`
+  ).join("");
+  updateActivityPayoutHint();
   document.getElementById("activity-delete-btn").style.display = activity ? "" : "none";
   document.getElementById("activity-name-error").classList.remove("show");
   document.getElementById("activity-name").classList.remove("invalid");
@@ -165,6 +184,23 @@ document.getElementById("activity-name").addEventListener("input", () => {
   document.getElementById("activity-name").classList.remove("invalid");
 });
 
+// Spells out the split in words as it's typed — "hotel keeps X, provider
+// gets Y" is the thing the manager actually needs to get right, and it's
+// easy to mis-read two bare number fields.
+function updateActivityPayoutHint() {
+  const price = parseFloat(document.getElementById("activity-price").value) || 0;
+  const raw = document.getElementById("activity-income").value;
+  const income = raw === "" ? price : clampHotelIncome(price, parseFloat(raw) || 0);
+  const payout = price - income;
+  const hint = document.getElementById("activity-payout-hint");
+  hint.textContent = payout > 0
+    ? `Hotel keeps ${fmtLKR(income)} — ${fmtLKR(payout)} goes to the provider.`
+    : "Hotel keeps the full amount — nothing is paid out.";
+}
+["activity-price", "activity-income"].forEach(id => {
+  document.getElementById(id).addEventListener("input", updateActivityPayoutHint);
+});
+
 document.getElementById("activity-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const nameInput = document.getElementById("activity-name");
@@ -183,12 +219,17 @@ document.getElementById("activity-form").addEventListener("submit", (e) => {
     return;
   }
 
+  const category = document.getElementById("activity-category").value;
+  const incomeRaw = document.getElementById("activity-income").value;
+  // Blank means "no payout arrangement", which is the whole price.
+  const hotelIncome = incomeRaw === "" ? price : clampHotelIncome(price, parseFloat(incomeRaw) || 0);
+
   if (editingActivityId) {
     const activity = branchActivities().find(a => a.id === editingActivityId);
-    if (activity) Object.assign(activity, { name, price });
+    if (activity) Object.assign(activity, { name, price, hotelIncome, category });
     showToast(`${name} updated`);
   } else {
-    branchActivities().push({ id: allocateActivityId(), name, price });
+    branchActivities().push({ id: allocateActivityId(), name, price, hotelIncome, category });
     showToast(`${name} added`);
   }
 

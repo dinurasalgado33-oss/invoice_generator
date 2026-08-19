@@ -4,6 +4,7 @@ import { escapeHtml, fmtLKR, setLogoSrc, toDateISO } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
 import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
+import { CHARGE_CATEGORY_LABELS } from "./data/charges.js";
 
 let pieChart = null;
 let lineChart = null;
@@ -55,25 +56,60 @@ function renderDashboard(branch) {
   document.getElementById("kpi-occupancy").textContent = occupancy + "%";
   document.getElementById("dashboard-report-date").textContent = "Generated " + now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
-  // Revenue split — invoice totals already fold in any food/activity
-  // charges billed at checkout (they're line items on the same bill), so
-  // food/activity revenue would be double-counted if added to the
-  // invoice total as separate slices. Subtract both back out to get a
-  // true room-only figure; all three slices then sum to actual revenue.
-  const allInvoiceRevenue = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active").reduce((s, inv) => s + inv.total, 0);
-  const allTimeFoodRevenue = FOOD_ORDER_RECORDS.filter(r => r.branch === branch).reduce((s, r) => s + r.revenue, 0);
-  const allTimeActivityRevenue = ACTIVITY_RECORDS.filter(r => r.branch === branch).reduce((s, r) => s + r.revenue, 0);
-  const allTimeRoomRevenue = Math.max(0, allInvoiceRevenue - allTimeFoodRevenue - allTimeActivityRevenue);
-  const categoryLabels = ["Room & Checkout Billing", "Food & Beverage", "Activities"];
-  const categoryValues = [allTimeRoomRevenue, allTimeFoodRevenue, allTimeActivityRevenue];
-  const palette = [CHART_COLORS.maroon, CHART_COLORS.gold, CHART_COLORS.teal];
+  // Revenue split now reads the category totals stamped on each invoice
+  // when it was generated, rather than inferring "room revenue" by
+  // subtracting food and activity records from the invoice total. The old
+  // subtraction quietly mis-attributed anything that belonged to neither
+  // set, and went negative if a record outlived its invoice.
+  const branchInvoices = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active");
+  const splitKeys = ["villa", "food", "safari", "transport", "ticket", "other"];
+  const split = {};
+  splitKeys.forEach(k => { split[k] = 0; });
+  // Seeded rows predate category totals; without a breakdown the only
+  // honest place for them is the villa bucket, which is what they were.
+  let uncategorised = 0;
+  branchInvoices.forEach(inv => {
+    if (inv.categoryTotals) {
+      splitKeys.forEach(k => { split[k] += inv.categoryTotals[k] || 0; });
+    } else {
+      uncategorised += inv.total;
+    }
+  });
+  split.villa += uncategorised;
+
+  const categoryLabels = splitKeys.map(k => CHARGE_CATEGORY_LABELS[k]);
+  const categoryValues = splitKeys.map(k => split[k]);
+  const palette = [CHART_COLORS.maroon, CHART_COLORS.gold, CHART_COLORS.teal, "#6b8e9e", "#a4785c", "#9aa0a6"];
+
+  // What the hotel actually keeps. Safaris, transport and tickets are sold
+  // on behalf of third parties, so a large slice of what the guest paid is
+  // handed straight back out — reporting the gross as revenue overstates
+  // the month badly (the staff's own books show safaris grossing 378k with
+  // 57k kept).
+  const branchActivities = ACTIVITY_RECORDS.filter(r => r.branch === branch);
+  const activityGross = branchActivities.reduce((s, r) => s + r.revenue, 0);
+  const activityPayout = branchActivities.reduce((s, r) => s + (r.payout || 0), 0);
+  const payoutEl = document.getElementById("kpi-payout");
+  if (payoutEl) {
+    payoutEl.textContent = fmtLKR(activityPayout);
+    document.getElementById("kpi-payout-note").textContent = activityGross
+      ? `of ${fmtLKR(activityGross)} sold`
+      : "nothing sold yet";
+  }
+
+  // Six fixed categories, but most branches only ever use three or four —
+  // empty slices add nothing to a doughnut and clutter the legend, so only
+  // categories with money in them are charted.
+  const usedSlices = categoryLabels
+    .map((label, i) => ({ label, value: categoryValues[i], color: palette[i] }))
+    .filter(s => s.value > 0);
 
   if (pieChart) pieChart.destroy();
   pieChart = new Chart(document.getElementById("revenue-pie-chart"), {
     type: "doughnut",
     data: {
-      labels: categoryLabels,
-      datasets: [{ data: categoryValues, backgroundColor: palette, borderColor: "#fff", borderWidth: 2 }],
+      labels: usedSlices.map(s => s.label),
+      datasets: [{ data: usedSlices.map(s => s.value), backgroundColor: usedSlices.map(s => s.color), borderColor: "#fff", borderWidth: 2 }],
     },
     options: {
       responsive: true,
@@ -84,8 +120,8 @@ function renderDashboard(branch) {
   });
 
   const legendEl = document.getElementById("pie-legend");
-  legendEl.innerHTML = categoryLabels.map((label, i) => `
-    <li><span class="legend-swatch" style="background:${palette[i]}"></span>${escapeHtml(label)}</li>
+  legendEl.innerHTML = usedSlices.map(s => `
+    <li><span class="legend-swatch" style="background:${s.color}"></span>${escapeHtml(s.label)}</li>
   `).join("");
 
   // Trailing 6 calendar months of real invoice revenue.

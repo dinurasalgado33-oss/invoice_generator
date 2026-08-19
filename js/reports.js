@@ -552,8 +552,22 @@ function getExportRows() {
   const range = getActiveRange();
   if (state.tab === "invoices") {
     return {
-      headers: ["Invoice #", "Guest", "Branch", "Date", "Total (LKR)", "Status", "Void Reason"],
-      rows: getFilteredInvoices(range).map(r => [r.id, r.guest, r.branch, r.date, r.total, r.status, r.voidReason || ""]),
+      // Category columns mirror the money columns the manager already
+      // keeps by hand, so an exported month can be reconciled against
+      // their spreadsheet line for line.
+      headers: [
+        "Invoice #", "Guest", "Branch", "Date", "Source", "Total (LKR)",
+        "Villa", "Food", "Safari", "Transport", "Ticket", "Other",
+        "Service Charge", "Status", "Void Reason",
+      ],
+      rows: getFilteredInvoices(range).map(r => {
+        const c = r.categoryTotals || {};
+        return [
+          r.id, r.guest, r.branch, r.date, r.source || "", r.total,
+          c.villa || 0, c.food || 0, c.safari || 0, c.transport || 0, c.ticket || 0, c.other || 0,
+          r.serviceCharge || 0, r.status, r.voidReason || "",
+        ];
+      }),
     };
   }
   if (state.tab === "food") {

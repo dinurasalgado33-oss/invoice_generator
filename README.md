@@ -51,6 +51,52 @@ None of this is wired to a backend yet — everything lives in-memory in `js/dat
 
 Swap these for a real data source later without touching the rendering/chart code.
 
+## Charge categories, payouts and booking source
+
+Modelled on how the staff actually keep their books (two spreadsheets they
+used before this app: a per-invoice bill ledger and a monthly stock sheet).
+
+**Every charge line carries a category** — `villa`, `food`, `safari`,
+`transport`, `ticket`, `other` (`js/data/charges.js`). It's set where the
+charge is created (checkout → `villa`, Orders → `food`, an activity → its
+own category) and is editable per line on the invoice form. Two things
+depend on it:
+
+- **Service charge is 10% of food only**, never villa or safari. It's
+  derived, with an "Auto" toggle that hands the field back for a manual
+  override. Their own bills show this applied inconsistently by hand.
+- **Invoice records store a `categoryTotals` breakdown**, so the dashboard
+  reads its revenue split directly instead of inferring room revenue by
+  subtracting food/activity records from the total (which mis-attributed
+  anything belonging to neither, and could go negative).
+
+**Activities carry `price` and `hotelIncome`.** Safaris, boat rides and
+transport are sold on behalf of third parties — the guest pays the price,
+the hotel keeps only `hotelIncome`, and the rest is paid out to the driver
+or operator. Reporting the gross as revenue overstates a month badly: their
+February ledger shows LKR 378,000 of safaris sold with 57,000 kept. The
+dashboard shows a **Payable to Providers** figure alongside revenue, and
+a one-off custom charge can carry its own split too.
+
+**Bookings record a source** (Direct / Booking.com / Walk-in / Agent), set
+at check-in and carried onto the invoice — commission tracking they were
+doing by hand.
+
+Related behaviours built on the same model:
+
+- **Interim invoices** — an occupied villa shows its running tab and can be
+  billed without ending the stay, so one guest can span several invoice
+  numbers (routine in their books; food often went onto its own bill).
+- **Walk-in sales** — a food order with no villa, billed on the spot. Their
+  ledger has these as "Lunch" rows with villa `N/A`.
+- **Manual stock usage** (`USAGE_LOG` in `js/data/inventory.js`) — the
+  mirror of restock. Recipe-based deduction only fires for dishes with an
+  ingredient list, and almost none have one yet, so this is the primary way
+  stock goes out. It also covers waste, spoilage and staff meals, which no
+  recipe can explain.
+- **CSV export** carries the category columns, so an exported month
+  reconciles against their old spreadsheet line for line.
+
 ## Offline-first requirements (for the backend build)
 
 Both properties are in remote areas with poor, intermittent connectivity. That is a

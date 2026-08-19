@@ -189,6 +189,24 @@ export function getInventoryUsage() {
   return rows;
 }
 
+// Stock issued/consumed and entered by hand, rather than derived from a
+// dish's recipe. This is the primary way stock goes out today: recipe-based
+// deduction only fires for dishes that have an ingredient list, and almost
+// none do yet. It also covers everything a recipe can never explain —
+// waste, spoilage, staff meals, a bottle taken for the office.
+//
+// getInventoryUsage() picks these up for free, since it derives usage from
+// opening + restocked − closing rather than from any one cause. The log
+// exists so the manager can see *why* stock moved, not just that it did.
+let nextUsageId = 1;
+export function allocateUsageId() {
+  return nextUsageId++;
+}
+
+export const USAGE_REASONS = ["Kitchen use", "Waste / spoilage", "Staff meal", "Other"];
+
+export const USAGE_LOG = [];
+
 // Restock purchase history — every logged restock (single or bulk) appends
 // here with its cost, so Reports can total spend, rank costliest items,
 // and show price trends. Seeded with a spread of past purchases: frequent

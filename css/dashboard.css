@@ -22,6 +22,10 @@
 .kpi-label { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
 .kpi-value { font-size: 1.35rem; font-weight: 700; color: var(--maroon); font-family: Georgia, 'Times New Roman', serif; }
 .kpi-value-negative { color: var(--danger); }
+/* Odd card out in a 2-up grid — spanning both columns beats leaving a
+   visible hole next to it. */
+.kpi-card-wide { grid-column: 1 / -1; }
+.kpi-note { font-size: 0.75rem; color: var(--text-muted); margin-top: -2px; }
 
 .chart-card {
   background: var(--white);
@@ -64,6 +68,10 @@
 
 @media (min-width: 640px) {
   .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+  /* Full-bleed is right in the 2-up phone layout, but stretched across all
+     four desktop columns the card reads as a banner rather than a KPI —
+     half the row keeps it the same shape as its neighbours. */
+  .kpi-card-wide { grid-column: span 2; }
 }
 
 @media print {

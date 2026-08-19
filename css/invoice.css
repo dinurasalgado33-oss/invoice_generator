@@ -125,6 +125,28 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .col-no { width: 34px; color: var(--text-muted); font-size: 0.85rem; }
 .col-qty input, .col-price input, .col-total input { text-align: right; }
 .col-del { width: 34px; }
+.col-cat { width: 120px; }
+.col-cat select {
+  width: 100%;
+  padding: 8px 6px;
+  font-size: 0.9rem;
+}
+
+/* Checkbox sitting under a field's input (e.g. the service-charge auto
+   toggle) — reads as a modifier of that field rather than its own row. */
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.inline-check input { width: 15px; height: 15px; accent-color: var(--maroon); flex: none; }
+/* An auto-filled service charge is derived, not typed — make it read that
+   way instead of looking like an editable field the staff left alone. */
+#service-charge[readonly] { background: var(--bg-subtle, #f4f2ef); color: var(--text-muted); }
 .row-del-btn {
   background: none;
   border: none;
@@ -355,6 +377,9 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   }
   #items-table td.col-no { display: none; }
   #items-table td.col-desc { margin-top: 26px; }
+  /* The fixed 120px column width is a table-layout concern; stacked as a
+     card the select should fill the row like every other field. */
+  #items-table td.col-cat { width: auto; }
   #items-table td::before {
     content: attr(data-label);
     display: block;

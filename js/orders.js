@@ -9,6 +9,7 @@ import { FOOD_ORDERS, allocateOrderId } from "./data/orders.js";
 import { chargeRoom } from "./rooms.js";
 import { updateInventoryBadge } from "./inventory.js";
 import { confirmAction } from "./confirm.js";
+import { resetForm, addItemRow, clearItems, setCheckoutContext } from "./invoice.js";
 
 let currentOrderSelection = {}; // dishId -> qty, for the Create/Edit view
 let orderSearchQuery = "";
@@ -53,13 +54,21 @@ function getOccupiedRooms() {
   return rooms.filter(room => room.status === "occupied");
 }
 
+// A walk-in has no villa to bill, so it can't ride to a checkout invoice
+// the way a resident's order does — it's billed on the spot instead. The
+// staff's own books show these as "Lunch" rows with villa "N/A", so the
+// restaurant genuinely serves non-residents and those sales were
+// previously impossible to record here.
+const WALKIN_ROOM_VALUE = "walkin";
+
 function populateRoomSelect() {
   const select = document.getElementById("order-room-select");
   const occupied = getOccupiedRooms();
+  const walkinOption = `<option value="${WALKIN_ROOM_VALUE}">Walk-in — no villa (bill now)</option>`;
   select.innerHTML = occupied.length
-    ? occupied.map(room => `<option value="${room.id}">${escapeHtml(room.name)} — ${escapeHtml(room.guest)}</option>`).join("")
-    : `<option value="">No occupied villas</option>`;
-  select.disabled = !occupied.length;
+    ? occupied.map(room => `<option value="${room.id}">${escapeHtml(room.name)} — ${escapeHtml(room.guest)}</option>`).join("") + walkinOption
+    : walkinOption;
+  select.disabled = false;
 }
 
 // ---- Dish list (Create/Edit view) ----
@@ -177,9 +186,11 @@ document.getElementById("order-edit-cancel-btn").addEventListener("click", () =>
 });
 
 document.getElementById("order-submit-btn").addEventListener("click", () => {
-  const roomId = Number(document.getElementById("order-room-select").value);
-  const room = (ROOMS_BY_BRANCH[appState.selectedBranch] || []).find(r => r.id === roomId);
-  if (!room) return;
+  const rawRoom = document.getElementById("order-room-select").value;
+  const isWalkin = rawRoom === WALKIN_ROOM_VALUE;
+  const roomId = isWalkin ? null : Number(rawRoom);
+  const room = isWalkin ? null : (ROOMS_BY_BRANCH[appState.selectedBranch] || []).find(r => r.id === roomId);
+  if (!isWalkin && !room) return;
 
   const items = Object.keys(currentOrderSelection)
     .map(id => ({ dishId: Number(id), qty: currentOrderSelection[id] }))
@@ -217,16 +228,18 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
       id: allocateOrderId(),
       branch: appState.selectedBranch,
       roomId,
-      roomName: room.name,
-      guestName: room.guest,
+      walkin: isWalkin,
+      roomName: isWalkin ? "Walk-in" : room.name,
+      guestName: isWalkin ? "Walk-in customer" : room.guest,
       items,
       total,
       status: "pending",
       createdAt: new Date().toISOString(),
     });
+    const label = isWalkin ? "walk-in" : room.name;
     showToast(shortages.size
-      ? `Order placed for ${room.name} — ${fmtLKR(total)} (ran out of ${[...shortages].join(", ")})`
-      : `Order placed for ${room.name} — ${fmtLKR(total)}`);
+      ? `Order placed for ${label} — ${fmtLKR(total)} (ran out of ${[...shortages].join(", ")})`
+      : `Order placed for ${label} — ${fmtLKR(total)}`);
   }
 
   updateInventoryBadge();
@@ -316,21 +329,26 @@ async function completeOrder(orderId) {
   if (!order) return;
   const ok = await confirmAction({
     title: "Complete this order?",
-    message: `Bill ${fmtLKR(order.total)} to ${order.roomName} and complete this order?`,
+    message: order.walkin
+      ? `Bill ${fmtLKR(order.total)} as a walk-in sale? This opens an invoice for the customer.`
+      : `Bill ${fmtLKR(order.total)} to ${order.roomName} and complete this order?`,
     confirmLabel: "Complete Order",
     tone: "safe",
   });
   if (!ok) return;
 
-  const room = (ROOMS_BY_BRANCH[order.branch] || []).find(r => r.id === order.roomId);
-  if (!room || room.status !== "occupied" || room.guest !== order.guestName) {
+  // A resident's order rides to their checkout invoice, so the villa must
+  // still be occupied by the same guest. A walk-in has no villa at all and
+  // is billed immediately instead.
+  const room = order.walkin ? null : (ROOMS_BY_BRANCH[order.branch] || []).find(r => r.id === order.roomId);
+  if (!order.walkin && (!room || room.status !== "occupied" || room.guest !== order.guestName)) {
     showToast(`Can't complete — ${order.guestName} already checked out of ${order.roomName}`);
     return;
   }
   const today = todayISO();
 
   order.items.forEach(item => {
-    chargeRoom(room, item.name, item.qty, item.price);
+    if (room) chargeRoom(room, item.name, item.qty, item.price, "food");
     FOOD_ORDER_RECORDS.push({
       id: allocateFoodOrderRecordId(),
       dishId: item.dishId,
@@ -338,6 +356,8 @@ async function completeOrder(orderId) {
       qty: item.qty,
       branch: order.branch,
       date: today,
+      category: "food",
+      walkin: Boolean(order.walkin),
       revenue: item.qty * item.price,
     });
   });
@@ -345,8 +365,27 @@ async function completeOrder(orderId) {
   const idx = FOOD_ORDERS.findIndex(o => o.id === orderId);
   FOOD_ORDERS.splice(idx, 1);
 
+  if (order.walkin) {
+    startWalkinInvoice(order);
+    return;
+  }
+
   showToast(`Order completed — ${fmtLKR(order.total)} billed to ${order.roomName}`);
   renderPendingOrdersList();
+}
+
+// Walk-ins are billed on the spot, so completing one drops straight into
+// the invoice form pre-loaded with the dishes — there's no stay to attach
+// them to and no checkout that would otherwise pick them up.
+function startWalkinInvoice(order) {
+  resetForm();
+  setCheckoutContext({ roomId: null, bookingId: null, source: "Walk-in", walkin: true });
+  clearItems();
+  order.items.forEach(item => {
+    addItemRow(item.name, String(item.qty), String(item.price), String(item.qty * item.price), "food");
+  });
+  showToast(`Walk-in order ready to bill — ${fmtLKR(order.total)}`);
+  showScreen("screen-form");
 }
 
 // ---- Nav (Create Order / Orders) ----

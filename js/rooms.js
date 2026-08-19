@@ -2,10 +2,14 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash, toDateISO } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
-import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
+import { ACTIVITIES_BY_BRANCH, clampHotelIncome } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate, setCheckoutContext } from "./invoice.js";
 import { confirmAction } from "./confirm.js";
 import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId } from "./data/reports.js";
+import {
+  CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
+  isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
+} from "./data/charges.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -105,8 +109,10 @@ function renderRoomDetailBody() {
       body.innerHTML = `
         <div class="room-detail-row"><span>Guest</span><span>${escapeHtml(room.guest)}</span></div>
         <div class="room-detail-row"><span>Contact</span><span>${escapeHtml(room.phone || "-")}</span></div>
+        <div class="room-detail-row"><span>Booked via</span><span>${escapeHtml(room.source || "-")}</span></div>
         <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
         <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
+        ${renderRunningTab(room)}
         <button type="button" class="primary-btn big" id="check-out-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
@@ -115,8 +121,76 @@ function renderRoomDetailBody() {
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
       document.getElementById("cancel-checkin-btn").addEventListener("click", cancelCheckIn);
+      const interimBtn = document.getElementById("interim-invoice-btn");
+      if (interimBtn) interimBtn.addEventListener("click", startInterimInvoice);
     }
   }
+}
+
+// The stay's running tab — food orders and activity charges run up so far.
+// Shown on the occupied villa sheet so staff can see what's accumulated
+// without waiting for checkout, and bill part of it early if the guest
+// wants to settle (their paper records routinely split one stay across
+// several invoice numbers, usually food onto its own bill).
+function renderRunningTab(room) {
+  const charges = room.pendingCharges || [];
+  if (!charges.length) return "";
+  const total = charges.reduce((sum, c) => sum + c.value, 0);
+  return `
+    <div class="running-tab">
+      <div class="running-tab-head">
+        <span>Running tab</span>
+        <span class="running-tab-total">${fmtLKR(total)}</span>
+      </div>
+      <ul class="running-tab-list">
+        ${charges.map(c => `
+          <li>
+            <span class="running-tab-desc">${escapeHtml(c.qty)}× ${escapeHtml(c.desc)}</span>
+            <span class="running-tab-value">${fmtLKR(c.value)}</span>
+          </li>
+        `).join("")}
+      </ul>
+      <button type="button" class="secondary-btn" id="interim-invoice-btn">Bill this now (keep stay open)</button>
+    </div>
+  `;
+}
+
+// Bills whatever is on the tab right now without ending the stay — the
+// villa stays occupied and the tab resets, so later charges land on a
+// second invoice. This is the "one guest, invoices 60/61/62" pattern from
+// the staff's own books, which a single checkout invoice can't express.
+async function startInterimInvoice() {
+  const room = getActiveRoom();
+  const charges = room.pendingCharges || [];
+  if (!charges.length) return;
+  const total = charges.reduce((sum, c) => sum + c.value, 0);
+
+  const ok = await confirmAction({
+    title: "Bill the running tab?",
+    // No escapeHtml here — confirmAction sets this via textContent, so
+    // escaping would render a guest like "Mr. & Mrs. Silva" as "&amp;".
+    message: `Invoice ${fmtLKR(total)} to ${room.guest} now? ${room.name} stays occupied and the tab starts fresh — the room charge is still billed at checkout.`,
+    confirmLabel: "Create Invoice",
+    tone: "safe",
+  });
+  if (!ok) return;
+
+  checkoutRoomRef = null; // an interim bill must NOT free the villa
+  closeRoomDetail();
+  resetForm();
+  setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null, source: room.source ?? null, interim: true });
+  document.getElementById("guest-name").value = room.guest || "";
+  document.getElementById("guest-phone").value = room.phone || "";
+  document.getElementById("checkin-date").value = room.checkin || "";
+  document.getElementById("checkout-date").value = room.checkout || "";
+
+  clearItems();
+  charges.forEach(c => addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category));
+  // Cleared up front: these charges are now on an invoice, so leaving them
+  // on the tab would bill them a second time at checkout.
+  delete room.pendingCharges;
+
+  showScreen("screen-form");
 }
 
 // Undo a mistaken check-in — clears the room back to available without
@@ -142,6 +216,7 @@ async function cancelCheckIn() {
   delete room.phone;
   delete room.checkin;
   delete room.checkout;
+  delete room.source;
   delete room.pendingCharges;
   delete room.bookingId;
 
@@ -155,9 +230,19 @@ async function cancelCheckIn() {
 // whatever was ordered/charged during the stay lands on the invoice.
 // Exported for orders.js — a completed food order bills the room the
 // same way an activity charge does.
-export function chargeRoom(room, desc, qty, rate) {
+//
+// `category` decides which money column the charge lands in and whether
+// service charge applies to it (food only), so it travels with the line
+// from the moment it's created rather than being guessed at billing time.
+export function chargeRoom(room, desc, qty, rate, category = DEFAULT_CHARGE_CATEGORY) {
   if (!room.pendingCharges) room.pendingCharges = [];
-  room.pendingCharges.push({ desc, qty: String(qty), rate, value: qty * rate });
+  room.pendingCharges.push({
+    desc,
+    qty: String(qty),
+    rate,
+    value: qty * rate,
+    category: isChargeCategory(category) ? category : DEFAULT_CHARGE_CATEGORY,
+  });
 }
 
 // ---- Activity charges (inside an occupied villa's detail sheet) ----
@@ -189,11 +274,24 @@ function renderActivitiesPanel() {
       <div class="food-order-selected" id="activity-selected" style="display:none"></div>
       <div class="food-order-list">${rows}</div>
       <div class="activity-custom-row">
-        <input type="text" id="activity-custom-name" placeholder="Other activity" autocapitalize="words" />
+        <input type="text" id="activity-custom-name" placeholder="Other charge" autocapitalize="words" />
         <input type="number" id="activity-custom-price" placeholder="Price" min="0" step="1" inputmode="decimal" />
-        <button type="button" class="stepper-input-btn" id="activity-custom-add" aria-label="Add custom activity">+</button>
+        <button type="button" class="stepper-input-btn" id="activity-custom-add" aria-label="Add custom charge">+</button>
+      </div>
+      <div class="activity-custom-row secondary">
+        <select id="activity-custom-category" aria-label="Charge type">
+          ${CHARGE_CATEGORIES.map(c => `<option value="${c}" ${c === DEFAULT_CHARGE_CATEGORY ? "selected" : ""}>${CHARGE_CATEGORY_LABELS[c]}</option>`).join("")}
+        </select>
+        <input type="number" id="activity-custom-income" placeholder="Hotel keeps" min="0" step="1" inputmode="decimal" />
+      </div>
+      <div class="field activity-guide-field">
+        <label for="activity-guide">Guide / Driver <span class="label-optional">(optional)</span></label>
+        <input type="text" id="activity-guide" placeholder="Who is running it" autocapitalize="words" />
       </div>
       <div class="food-order-total-row"><span>Total</span><span id="activity-total">${fmtLKR(0)}</span></div>
+      <div class="food-order-total-row subtle" id="activity-payout-row" style="display:none">
+        <span>Payable to provider</span><span id="activity-payout">${fmtLKR(0)}</span>
+      </div>
       <button type="button" class="primary-btn big" id="charge-activity-btn" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
         Charge to Room Bill
@@ -242,16 +340,29 @@ function renderActivitySelected() {
 function updateActivityTotal() {
   const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
   let total = 0;
+  let payout = 0;
   Object.keys(currentActivitySelection).forEach(id => {
     const qty = currentActivitySelection[id];
     if (qty > 0) {
       const activity = activities.find(a => a.id === Number(id));
-      if (activity) total += activity.price * qty;
+      if (activity) {
+        total += activity.price * qty;
+        const income = clampHotelIncome(activity.price, activity.hotelIncome ?? activity.price);
+        payout += (activity.price - income) * qty;
+      }
     }
   });
-  customActivityCharges.forEach(c => { total += c.price; });
+  customActivityCharges.forEach(c => {
+    total += c.price;
+    payout += c.price - clampHotelIncome(c.price, c.hotelIncome ?? c.price);
+  });
 
   document.getElementById("activity-total").textContent = fmtLKR(total);
+  // Only worth showing when money actually leaves the hotel — for in-house
+  // activities a permanent "LKR 0.00" line is just noise.
+  const payoutRow = document.getElementById("activity-payout-row");
+  payoutRow.style.display = payout > 0 ? "" : "none";
+  document.getElementById("activity-payout").textContent = fmtLKR(payout);
   document.getElementById("charge-activity-btn").disabled = total <= 0;
   renderActivitySelected();
 }
@@ -274,12 +385,21 @@ function wireActivitiesPanel() {
   document.getElementById("activity-custom-add").addEventListener("click", () => {
     const nameInput = document.getElementById("activity-custom-name");
     const priceInput = document.getElementById("activity-custom-price");
+    const incomeInput = document.getElementById("activity-custom-income");
+    const categorySelect = document.getElementById("activity-custom-category");
     const name = nameInput.value.trim();
     const price = parseFloat(priceInput.value) || 0;
     if (!name || price <= 0) return;
-    customActivityCharges.push({ name, price });
+    // Blank income means the hotel keeps all of it — the common case for a
+    // one-off. A hired car or outside guide is where it gets filled in.
+    const hotelIncome = incomeInput.value === ""
+      ? price
+      : clampHotelIncome(price, parseFloat(incomeInput.value) || 0);
+    customActivityCharges.push({ name, price, hotelIncome, category: categorySelect.value });
     nameInput.value = "";
     priceInput.value = "";
+    incomeInput.value = "";
+    categorySelect.value = DEFAULT_CHARGE_CATEGORY;
     updateActivityTotal();
   });
   document.getElementById("charge-activity-btn").addEventListener("click", chargeActivities);
@@ -290,6 +410,7 @@ function chargeActivities() {
   const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
   const branch = activeRoomRef.branch;
   const today = todayISO();
+  const guide = (document.getElementById("activity-guide").value || "").trim();
   let total = 0;
 
   Object.keys(currentActivitySelection).forEach(id => {
@@ -297,15 +418,49 @@ function chargeActivities() {
     if (qty <= 0) return;
     const activity = activities.find(a => a.id === Number(id));
     if (!activity) return;
-    chargeRoom(room, activity.name, qty, activity.price);
-    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), activityId: activity.id, roomId: room.id, name: activity.name, qty, branch, date: today, revenue: activity.price * qty });
+    const category = isChargeCategory(activity.category) ? activity.category : DEFAULT_CHARGE_CATEGORY;
+    const income = clampHotelIncome(activity.price, activity.hotelIncome ?? activity.price);
+    chargeRoom(room, activity.name, qty, activity.price, category);
+    // `revenue` stays the gross billed to the guest (it has to reconcile
+    // with the invoice line), while `income`/`payout` carry the split so
+    // the dashboard can report what the hotel actually kept.
+    ACTIVITY_RECORDS.push({
+      id: allocateActivityRecordId(),
+      activityId: activity.id,
+      roomId: room.id,
+      name: activity.name,
+      qty,
+      branch,
+      date: today,
+      category,
+      revenue: activity.price * qty,
+      income: income * qty,
+      payout: (activity.price - income) * qty,
+      guide: guide || null,
+    });
     total += activity.price * qty;
   });
 
   customActivityCharges.forEach(c => {
-    chargeRoom(room, c.name, 1, c.price);
-    // One-off custom charges have no catalogue entry, so activityId is null.
-    ACTIVITY_RECORDS.push({ id: allocateActivityRecordId(), activityId: null, roomId: room.id, name: c.name, qty: 1, branch, date: today, revenue: c.price });
+    const category = isChargeCategory(c.category) ? c.category : DEFAULT_CHARGE_CATEGORY;
+    const income = clampHotelIncome(c.price, c.hotelIncome ?? c.price);
+    chargeRoom(room, c.name, 1, c.price, category);
+    // One-off charges have no catalogue entry, so activityId is null — but
+    // they can still carry a payout (a hired car, an outside guide).
+    ACTIVITY_RECORDS.push({
+      id: allocateActivityRecordId(),
+      activityId: null,
+      roomId: room.id,
+      name: c.name,
+      qty: 1,
+      branch,
+      date: today,
+      category,
+      revenue: c.price,
+      income,
+      payout: c.price - income,
+      guide: guide || null,
+    });
     total += c.price;
   });
 
@@ -328,6 +483,12 @@ function showNewBookingForm() {
       <div class="field">
         <label>Phone Number</label>
         <input type="tel" id="nb-phone" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
+      </div>
+      <div class="field">
+        <label for="nb-source">Booking Source</label>
+        <select id="nb-source">
+          ${BOOKING_SOURCES.map(s => `<option value="${s}" ${s === DEFAULT_BOOKING_SOURCE ? "selected" : ""}>${s}</option>`).join("")}
+        </select>
       </div>
       <div class="form-grid">
         <div class="field">
@@ -370,11 +531,12 @@ function showNewBookingForm() {
     room.phone = document.getElementById("nb-phone").value.trim();
     room.checkin = nbCheckin.value;
     room.checkout = nbCheckout.value;
+    room.source = document.getElementById("nb-source").value || DEFAULT_BOOKING_SOURCE;
     room.status = "occupied";
     // Keep the booking's id on the room so check-out / cancel can close the
     // exact row this check-in opened, rather than re-finding it by matching
     // guest + villa + dates.
-    const booking = { id: allocateBookingId(), roomId: room.id, guest: room.guest, villa: room.name, branch: activeRoomRef.branch, checkin: room.checkin, checkout: room.checkout, status: "Checked In" };
+    const booking = { id: allocateBookingId(), roomId: room.id, guest: room.guest, villa: room.name, branch: activeRoomRef.branch, checkin: room.checkin, checkout: room.checkout, source: room.source, status: "Checked In" };
     BOOKINGS.push(booking);
     room.bookingId = booking.id;
     logRoomActivity(activeRoomRef.branch, room, room.guest, "Check In");
@@ -394,7 +556,7 @@ function startCheckout() {
 
 function prefillInvoiceForCheckout(room) {
   resetForm();
-  setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null });
+  setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null, source: room.source ?? null });
   document.getElementById("guest-name").value = room.guest || "";
   document.getElementById("guest-phone").value = room.phone || "";
   document.getElementById("checkin-date").value = room.checkin || "";
@@ -403,12 +565,12 @@ function prefillInvoiceForCheckout(room) {
   const nights = nightsBetween(room.checkin, room.checkout);
   const rate = room.rate || 0;
   clearItems();
-  addItemRow(room.name + " — Room Charge", String(nights), String(rate), String(nights * rate));
+  addItemRow(room.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa");
 
   // Food orders and activity charges placed during the stay ride along
-  // onto the same invoice.
+  // onto the same invoice, each keeping the category it was charged under.
   (room.pendingCharges || []).forEach(c => {
-    addItemRow(c.desc, c.qty, String(c.rate), String(c.value));
+    addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category);
   });
 }
 
@@ -427,6 +589,7 @@ onAfterGenerate(() => {
     delete room.phone;
     delete room.checkin;
     delete room.checkout;
+    delete room.source;
     delete room.pendingCharges;
     delete room.bookingId;
     checkoutRoomRef = null;

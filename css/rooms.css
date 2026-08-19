@@ -278,6 +278,11 @@
 .activity-custom-row { display: flex; gap: 8px; margin: 4px 0 14px; }
 .activity-custom-row input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 0.85rem; }
 .activity-custom-row input#activity-custom-price { flex: 0 0 88px; }
+/* Second line of the custom-charge row — type and payout. Sits directly
+   under the name/price line, so it loses that row's bottom margin. */
+.activity-custom-row.secondary { margin: -10px 0 14px; }
+.activity-custom-row.secondary select { flex: 1; min-width: 0; padding: 10px 12px; font-size: 0.85rem; }
+.activity-custom-row.secondary input { flex: 0 0 122px; }
 .activity-custom-row #activity-custom-add {
   flex-shrink: 0;
   width: 42px;
@@ -306,7 +311,55 @@
   font-size: 1.05rem;
   margin-bottom: 12px;
 }
+/* Secondary money line under the total (what's payable out to a jeep
+   driver or boat owner) — same row shape, deliberately quieter than the
+   total it sits beneath. */
+.food-order-total-row.subtle {
+  border-top: 1px solid var(--border);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 9px 0;
+  margin-top: -8px;
+}
+.activity-guide-field { margin-bottom: 10px; }
+.label-optional { color: var(--text-muted); font-weight: 400; }
+
 #order-submit-btn:disabled, #charge-activity-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Running tab on an occupied villa — what the stay has racked up so far,
+   plus the option to bill it without ending the stay. */
+.running-tab {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 14px 0;
+  background: var(--white);
+}
+.running-tab-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.running-tab-total { font-size: 1rem; color: var(--maroon); letter-spacing: 0; }
+.running-tab-list { list-style: none; margin: 0 0 12px; padding: 0; }
+.running-tab-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.running-tab-list li:last-child { border-bottom: none; }
+.running-tab-desc { min-width: 0; overflow-wrap: anywhere; }
+.running-tab-value { font-weight: 600; white-space: nowrap; }
 
 /* Orders screen — Create/Edit order + pending orders list */
 .order-edit-banner {

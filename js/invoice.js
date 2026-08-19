@@ -3,6 +3,10 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
+import {
+  CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
+  isChargeCategory, serviceChargeFor, categoryTotals,
+} from "./data/charges.js";
 
 const afterGenerateCallbacks = [];
 export function onAfterGenerate(cb) {
@@ -65,13 +69,23 @@ function getItems() {
     const qty = row.querySelector(".item-qty").value.trim();
     const rate = parseFloat(row.querySelector(".item-rate").value) || 0;
     const value = parseFloat(row.querySelector(".item-value").value) || 0;
-    return { no: i + 1, desc, qty, rate, value };
+    const category = row.querySelector(".item-category").value;
+    return { no: i + 1, desc, qty, rate, value, category };
   }).filter(it => it.desc || it.qty || it.rate || it.value);
 }
 
+// Service charge is 10% of food only, so it's derived rather than typed —
+// but staff can still override it (their own books show plenty of bills
+// where the charge was waived or negotiated). Unticking "auto" hands the
+// field back to them and stops it being recomputed underneath.
+function serviceChargeIsAuto() {
+  return document.getElementById("service-charge-auto").checked;
+}
+
 function computeTotals() {
-  const billTotal = getItems().reduce((sum, it) => sum + it.value, 0);
-  const serviceCharge = num("service-charge");
+  const items = getItems();
+  const billTotal = items.reduce((sum, it) => sum + it.value, 0);
+  const serviceCharge = serviceChargeIsAuto() ? serviceChargeFor(items) : num("service-charge");
   const advance = num("advance");
   const grossAmount = billTotal + serviceCharge;
   const discountType = document.getElementById("discount-type").value;
@@ -84,11 +98,16 @@ function computeTotals() {
   const discountAmount = discountType === "percent" ? grossAmount * (discountInput / 100) : discountInput;
   const netAmount = grossAmount - discountAmount;
   const grandTotal = netAmount - advance;
-  return { billTotal, serviceCharge, advance, grossAmount, discountType, discountInput, discountAmount, netAmount, grandTotal };
+  return { items, billTotal, serviceCharge, advance, grossAmount, discountType, discountInput, discountAmount, netAmount, grandTotal };
 }
 
 function updateLiveTotals() {
   const { billTotal, serviceCharge, advance, grossAmount, discountAmount, netAmount, grandTotal } = computeTotals();
+  // Keep the visible field in step with the derived value while it's on
+  // auto, so what staff read matches what gets billed.
+  const scField = document.getElementById("service-charge");
+  scField.readOnly = serviceChargeIsAuto();
+  if (serviceChargeIsAuto()) scField.value = serviceCharge ? String(serviceCharge) : "0";
   const currency = val("currency") || "LKR";
   document.getElementById("live-bill-total").textContent = fmt(billTotal, currency);
   document.getElementById("live-service-charge").textContent = fmt(serviceCharge, currency);
@@ -100,14 +119,18 @@ function updateLiveTotals() {
   document.getElementById("grand-total-warning").classList.toggle("show", grandTotal < 0);
 }
 
-export function addItemRow(desc = "", qty = "", rate = "", value = "") {
+export function addItemRow(desc = "", qty = "", rate = "", value = "", category = DEFAULT_CHARGE_CATEGORY) {
   const row = document.createElement("tr");
+  const cat = isChargeCategory(category) ? category : DEFAULT_CHARGE_CATEGORY;
   // desc/qty are set as DOM properties below, not interpolated into the
   // HTML string — escapeHtml() only neutralizes <, >, & (via textContent
   // round-tripping), not quotes, so it can't safely sit inside value="...".
   row.innerHTML = `
     <td class="col-no"></td>
     <td class="col-desc" data-label="Description"><input type="text" class="item-desc" placeholder="e.g. Luxury Chalet with private pool (FB)"></td>
+    <td class="col-cat" data-label="Type"><select class="item-category" aria-label="Charge type">
+      ${CHARGE_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? "selected" : ""}>${CHARGE_CATEGORY_LABELS[c]}</option>`).join("")}
+    </select></td>
     <td class="col-qty" data-label="Qty"><input type="text" class="item-qty" placeholder="e.g. 2 nights"></td>
     <td class="col-price" data-label="Rate (LKR)"><input type="number" class="item-rate" min="0" step="0.01" inputmode="decimal" value="${rate}"></td>
     <td class="col-total" data-label="Value"><input type="number" class="item-value" min="0" step="0.01" inputmode="decimal" value="${value}"></td>
@@ -115,6 +138,9 @@ export function addItemRow(desc = "", qty = "", rate = "", value = "") {
   `;
   row.querySelector(".item-desc").value = desc;
   itemsBody.appendChild(row);
+  // Changing a line's type moves it in or out of the food subtotal, which
+  // is what service charge is levied on — so totals must recompute.
+  row.querySelector(".item-category").addEventListener("change", updateLiveTotals);
 
   const qtyInput = row.querySelector(".item-qty");
   qtyInput.value = qty;
@@ -162,6 +188,7 @@ document.getElementById("guest-count").addEventListener("input", sanitizeInteger
   document.getElementById(id).addEventListener("input", updateLiveTotals);
 });
 document.getElementById("discount-type").addEventListener("change", updateLiveTotals);
+document.getElementById("service-charge-auto").addEventListener("change", updateLiveTotals);
 
 // Snap an out-of-range discount back to its cap once the staff member
 // finishes typing, rather than fighting every keystroke while they type.
@@ -290,6 +317,9 @@ export function resetForm() {
   document.getElementById("inv-number").value = String(appState.invoiceCounter);
   document.getElementById("inv-date").value = toDateISO();
   document.getElementById("currency").value = "LKR";
+  // form.reset() restores the checkbox's HTML default (checked), but the
+  // readOnly state it drives is a DOM property reset doesn't touch.
+  document.getElementById("service-charge-auto").checked = true;
   document.getElementById("guest-name-error").classList.remove("show");
   document.getElementById("guest-name").classList.remove("invalid");
   updateLiveTotals();
@@ -368,10 +398,17 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   // The record's id is the same number printed on the document — so a
   // paper invoice can always be found in Reports by the number on it,
   // instead of a separate internal counter nobody printed.
+  // Category totals are stored on the record rather than recomputed from
+  // line items later — the dashboard used to infer its room/food/activity
+  // split by subtracting food and activity records from the invoice total,
+  // which silently broke whenever a charge existed in neither place.
   INVOICES.push({
     id: val("inv-number") || String(appState.invoiceCounter),
     roomId: checkoutContext ? checkoutContext.roomId : null,
     bookingId: checkoutContext ? checkoutContext.bookingId : null,
+    source: checkoutContext && checkoutContext.source ? checkoutContext.source : null,
+    interim: Boolean(checkoutContext && checkoutContext.interim),
+    walkin: Boolean(checkoutContext && checkoutContext.walkin),
     guest: val("guest-name") || "-",
     branch: appState.selectedBranch,
     date: document.getElementById("inv-date").value,
@@ -380,6 +417,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     discount: discountAmount,
     serviceCharge,
     advance,
+    categoryTotals: categoryTotals(items),
   });
   checkoutContext = null;
 

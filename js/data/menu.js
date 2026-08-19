@@ -36,6 +36,7 @@ export const MENU_CATEGORIES = [
   // Wilpattu
   "Fresh Juice",
   "Soft Drinks",
+  "Alcoholic Beverages",
   "Hot Beverages",
   "Packages & Snack Packs",
   "Breakfast",
@@ -234,9 +235,22 @@ export const MENU_ITEMS = [
   { id: 149, number: 66, name: "Watalappam", category: "Desserts", price: 450, ingredients: [], branch: "Wilpattu" },
   { id: 150, number: 67, name: "Fresh Sri Lankan Curd", category: "Desserts", price: 450, ingredients: [], branch: "Wilpattu" },
   { id: 151, number: 68, name: "Fresh Yogurt", category: "Desserts", price: 250, ingredients: [], branch: "Wilpattu" },
+  // Sold at Wilpattu and priced on the staff's own menu sheet, but missing
+  // from the .txt the rest of this list came from — so they were being
+  // billed as one-off custom lines with a hand-typed price.
+  { id: 152, number: 69, name: "Pepsi", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
+  { id: 153, number: 70, name: "Beer", category: "Alcoholic Beverages", price: 1000, ingredients: [], branch: "Wilpattu" },
+  { id: 154, number: 71, name: "Steam Rice", category: "Lunch & Dinner - Main Courses", price: 450, ingredients: [], branch: "Wilpattu" },
+  { id: 155, number: 72, name: "Kottu Roti", category: "Lunch & Dinner - Main Courses", price: 1500, ingredients: [], branch: "Wilpattu" },
+  { id: 156, number: 73, name: "Pork Curry", category: "Lunch & Dinner - Main Courses", price: 1450, ingredients: [], branch: "Wilpattu" },
+  { id: 157, number: 74, name: "Beef Curry", category: "Lunch & Dinner - Main Courses", price: 1600, ingredients: [], branch: "Wilpattu" },
+  { id: 158, number: 75, name: "Cheese Pasta", category: "Lunch & Dinner - Main Courses", price: 1200, ingredients: [], branch: "Wilpattu" },
 ];
 
-let nextDishId = 152;
+// Derived from the data rather than hardcoded — a literal here silently
+// starts handing out ids that already exist the moment a dish is appended
+// above (which is exactly what adding #69-75 would have done).
+let nextDishId = Math.max(0, ...MENU_ITEMS.map(d => d.id)) + 1;
 export function allocateDishId() {
   return nextDishId++;
 }

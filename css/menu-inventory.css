@@ -351,6 +351,16 @@
   letter-spacing: 0.3px;
   margin-top: 1px;
 }
+/* Secondary detail under a list row's name — e.g. how much of an
+   activity's price the hotel actually keeps. Sentence case on purpose,
+   to read as a fact rather than another uppercase label. */
+.list-item-sub {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
 .list-item-number { color: var(--text-muted); font-weight: 700; margin-right: 5px; }
 .list-table.filtered .list-td-name { padding-left: 10px; }
 
