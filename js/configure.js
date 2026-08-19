@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
+import { escapeHtml, fmtLKR, setLogoSrc, showToast, clampMoney, capNumericInput, MAX_MONEY } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, allocateActivityId, clampHotelIncome } from "./data/activities.js";
 import { CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel } from "./data/charges.js";
@@ -71,7 +71,10 @@ document.getElementById("villa-rate-form").addEventListener("submit", (e) => {
   // this handler runs — same pattern as the other plain fields in the app.
   const nameInput = document.getElementById("cfg-villa-name");
   const name = nameInput.value.trim();
-  const rate = parseFloat(document.getElementById("villa-rate-input").value);
+  // Clamped, not just parsed: an unparseable rate would set room.rate to
+  // NaN, which then multiplies through every future checkout total for
+  // this villa and prints "LKR NaN" on the guest's bill.
+  const rate = clampMoney(document.getElementById("villa-rate-input").value);
   const room = (ROOMS_BY_BRANCH[appState.selectedBranch] || []).find(r => r.id === editingVillaId);
   if (!room || !name) return;
 
@@ -188,7 +191,7 @@ document.getElementById("activity-name").addEventListener("input", () => {
 // gets Y" is the thing the manager actually needs to get right, and it's
 // easy to mis-read two bare number fields.
 function updateActivityPayoutHint() {
-  const price = parseFloat(document.getElementById("activity-price").value) || 0;
+  const price = clampMoney(document.getElementById("activity-price").value);
   const raw = document.getElementById("activity-income").value;
   const income = raw === "" ? price : clampHotelIncome(price, parseFloat(raw) || 0);
   const payout = price - income;
@@ -206,7 +209,7 @@ document.getElementById("activity-form").addEventListener("submit", (e) => {
   const nameInput = document.getElementById("activity-name");
   const name = nameInput.value.trim();
   // required + min="1" on the inputs block empty/zero before this runs.
-  const price = parseFloat(document.getElementById("activity-price").value);
+  const price = clampMoney(document.getElementById("activity-price").value);
   if (!name) return;
 
   // Scoped to this branch — the same activity name on the other branch is
@@ -422,3 +425,11 @@ document.getElementById("open-configure-conditions-btn").addEventListener("click
 document.getElementById("open-configure-inventory-btn").addEventListener("click", () => {
   openInventoryScreen("screen-configure");
 });
+
+// Same as-you-type capping the invoice and inventory screens use, so a
+// mistyped villa rate or activity price can't reach a guest's bill.
+[
+  ["villa-rate-input", MAX_MONEY],
+  ["activity-price", MAX_MONEY],
+  ["activity-income", MAX_MONEY],
+].forEach(([id, max]) => capNumericInput(document.getElementById(id), max));

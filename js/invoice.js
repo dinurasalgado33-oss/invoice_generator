@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO } from "./utils.js";
+import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO, safeStorage, clampMoney, MAX_MONEY, MAX_COUNT } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import {
@@ -29,8 +29,10 @@ export function setCheckoutContext(ctx) {
   checkoutContext = ctx;
 }
 
+// Every money field reads through here, so the ceiling can't be bypassed
+// by whichever input the typo landed in.
 function num(id) {
-  return parseFloat(document.getElementById(id).value) || 0;
+  return clampMoney(document.getElementById(id).value);
 }
 
 function val(id) {
@@ -45,6 +47,7 @@ function sanitizeInteger(e) {
   const input = e.target;
   const cleaned = input.value.replace(/[^0-9]/g, "");
   if (cleaned !== input.value) input.value = cleaned;
+  capField(input, MAX_COUNT);
 }
 
 function sanitizeDecimal(e) {
@@ -53,6 +56,16 @@ function sanitizeDecimal(e) {
   const parts = cleaned.split(".");
   if (parts.length > 2) cleaned = parts[0] + "." + parts.slice(1).join("");
   if (cleaned !== input.value) input.value = cleaned;
+  capField(input, MAX_MONEY);
+}
+
+// Stripping characters is not enough on its own: "1e5" loses its "e" and
+// silently becomes 15, and a held-down key produces a number in the
+// quintillions that goes straight onto the printed bill. Cap the field as
+// it's typed so the value on screen is always the value that gets billed.
+function capField(input, max) {
+  const n = parseFloat(input.value);
+  if (Number.isFinite(n) && n > max) input.value = String(max);
 }
 
 const itemsBody = document.getElementById("items-body");
@@ -67,8 +80,8 @@ function getItems() {
   return [...itemsBody.querySelectorAll("tr")].map((row, i) => {
     const desc = row.querySelector(".item-desc").value.trim();
     const qty = row.querySelector(".item-qty").value.trim();
-    const rate = parseFloat(row.querySelector(".item-rate").value) || 0;
-    const value = parseFloat(row.querySelector(".item-value").value) || 0;
+    const rate = clampMoney(row.querySelector(".item-rate").value);
+    const value = clampMoney(row.querySelector(".item-value").value);
     const category = row.querySelector(".item-category").value;
     return { no: i + 1, desc, qty, rate, value, category };
   }).filter(it => it.desc || it.qty || it.rate || it.value);
@@ -152,9 +165,12 @@ export function addItemRow(desc = "", qty = "", rate = "", value = "", category 
 
   function autoFillValue() {
     const qtyNum = parseFloat(qtyInput.value);
-    const rateNum = parseFloat(rateInput.value) || 0;
+    const rateNum = clampMoney(rateInput.value);
     if (!isNaN(qtyNum) && qtyInput.value.trim() === String(qtyNum)) {
-      valueInput.value = (qtyNum * rateNum).toFixed(2);
+      // Qty is free text ("2 nights"), so it has no sanitizer of its own —
+      // clamp the product rather than letting a huge qty multiply a valid
+      // rate into a nonsense line total.
+      valueInput.value = clampMoney(qtyNum * rateNum).toFixed(2);
     }
     updateLiveTotals();
   }
@@ -204,7 +220,7 @@ document.getElementById("guest-count-minus").addEventListener("click", () => {
   guestCountInput.value = Math.max(0, (parseInt(guestCountInput.value, 10) || 0) - 1);
 });
 document.getElementById("guest-count-plus").addEventListener("click", () => {
-  guestCountInput.value = (parseInt(guestCountInput.value, 10) || 0) + 1;
+  guestCountInput.value = Math.min(MAX_COUNT, (parseInt(guestCountInput.value, 10) || 0) + 1);
 });
 
 // Multi-step form wizard
@@ -422,7 +438,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   checkoutContext = null;
 
   appState.invoiceCounter++;
-  localStorage.setItem("leopardinn-invoice-counter", String(appState.invoiceCounter));
+  safeStorage.set("leopardinn-invoice-counter", String(appState.invoiceCounter));
 
   afterGenerateCallbacks.forEach(cb => cb());
 
@@ -441,17 +457,32 @@ document.getElementById("print-btn").addEventListener("click", () => window.prin
 document.getElementById("image-btn").addEventListener("click", () => {
   const target = document.getElementById("invoice-preview");
   const hint = target.querySelector(".scroll-hint");
-  if (hint) hint.style.visibility = "hidden";
 
-  html2canvas(target, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
-    if (hint) hint.style.visibility = "";
-    const link = document.createElement("a");
-    const invNum = document.getElementById("prev-number").textContent || "invoice";
-    link.download = `LeopardInn-${invNum}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }).catch(() => {
+  // html2canvas is a CDN script. Both properties are in remote areas with
+  // patchy connectivity, so it genuinely fails to load sometimes — and
+  // calling it then throws a ReferenceError that .catch() never sees,
+  // leaving the button silently dead. Check before calling, and tell staff
+  // what to do instead.
+  if (typeof html2canvas !== "function") {
+    showToast("Image export needs a connection — use Print instead");
+    return;
+  }
+
+  if (hint) hint.style.visibility = "hidden";
+  try {
+    html2canvas(target, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+      if (hint) hint.style.visibility = "";
+      const link = document.createElement("a");
+      const invNum = document.getElementById("prev-number").textContent || "invoice";
+      link.download = `LeopardInn-${invNum}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }).catch(() => {
+      if (hint) hint.style.visibility = "";
+      showToast("Couldn't generate image");
+    });
+  } catch {
     if (hint) hint.style.visibility = "";
     showToast("Couldn't generate image");
-  });
+  }
 });

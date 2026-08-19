@@ -21,7 +21,7 @@ let editingOrderId = null;
 // cover this order — stock still gets clamped to 0 rather than blocking
 // the order, but the shortfall is surfaced to staff instead of vanishing.
 function deductIngredients(branch, dish, qty) {
-  const inventory = INVENTORY_BY_BRANCH[branch];
+  const inventory = INVENTORY_BY_BRANCH[branch] || [];
   const shortages = [];
   dish.ingredients.forEach(ing => {
     const invItem = inventory.find(i => i.id === ing.itemId);
@@ -34,7 +34,7 @@ function deductIngredients(branch, dish, qty) {
 }
 
 function restoreIngredients(branch, dish, qty) {
-  const inventory = INVENTORY_BY_BRANCH[branch];
+  const inventory = INVENTORY_BY_BRANCH[branch] || [];
   dish.ingredients.forEach(ing => {
     const invItem = inventory.find(i => i.id === ing.itemId);
     if (invItem) invItem.stock = Math.round((invItem.stock + ing.qty * qty) * 100) / 100;

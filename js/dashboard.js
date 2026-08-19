@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, setLogoSrc, toDateISO } from "./utils.js";
+import { escapeHtml, fmtLKR, setLogoSrc, toDateISO, showToast } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
 import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
@@ -104,6 +104,20 @@ function renderDashboard(branch) {
     .map((label, i) => ({ label, value: categoryValues[i], color: palette[i] }))
     .filter(s => s.value > 0);
 
+  // Rendered before the charts so it survives a missing Chart.js — the
+  // legend doubles as a readable breakdown when the doughnut can't draw.
+  const legendEl = document.getElementById("pie-legend");
+  legendEl.innerHTML = usedSlices.map(s => `
+    <li><span class="legend-swatch" style="background:${s.color}"></span>${escapeHtml(s.label)} — ${fmtLKR(s.value)}</li>
+  `).join("") || `<li class="legend-empty">No revenue in this period.</li>`;
+
+  // KPIs and the legend are on screen by this point, so bailing here still
+  // leaves a useful dashboard rather than a broken one.
+  if (!chartsAvailable()) {
+    showChartFallback();
+    return;
+  }
+
   if (pieChart) pieChart.destroy();
   pieChart = new Chart(document.getElementById("revenue-pie-chart"), {
     type: "doughnut",
@@ -118,11 +132,6 @@ function renderDashboard(branch) {
       plugins: { legend: { display: false } },
     },
   });
-
-  const legendEl = document.getElementById("pie-legend");
-  legendEl.innerHTML = usedSlices.map(s => `
-    <li><span class="legend-swatch" style="background:${s.color}"></span>${escapeHtml(s.label)}</li>
-  `).join("");
 
   // Trailing 6 calendar months of real invoice revenue.
   const months = [];
@@ -171,6 +180,21 @@ function renderDashboard(branch) {
   });
 }
 
+// Chart.js is a CDN script and these properties have patchy connectivity,
+// so it does sometimes fail to load. Without this the KPIs render, then
+// `new Chart` throws inside the setTimeout below — an uncaught error that
+// surfaces nowhere and abandons the rest of the render, leaving stale
+// numbers on screen with no clue why.
+function chartsAvailable() {
+  return typeof Chart === "function";
+}
+
+function showChartFallback() {
+  document.querySelectorAll("#screen-dashboard .chart-canvas-wrap").forEach(wrap => {
+    wrap.innerHTML = `<p class="chart-unavailable">Charts need a connection. The figures above are up to date.</p>`;
+  });
+}
+
 document.getElementById("open-dashboard-btn").addEventListener("click", () => {
   setLogoSrc("dashboard-logo", appState.selectedBranchLogo);
   showScreen("screen-dashboard");
@@ -180,7 +204,16 @@ document.getElementById("open-dashboard-btn").addEventListener("click", () => {
   // on purpose — rAF never fires in some embedded/non-compositing webviews,
   // silently skipping this entirely; a macrotask tick is enough to let the
   // display:none → block swap land first.
-  setTimeout(() => renderDashboard(appState.selectedBranch), 0);
+  setTimeout(() => {
+    // Wrapped because this runs detached from the click — anything thrown
+    // here has no caller to report it, so a failure would be invisible.
+    try {
+      renderDashboard(appState.selectedBranch);
+    } catch (err) {
+      console.error("Dashboard render failed:", err);
+      showToast("Couldn't load the dashboard");
+    }
+  }, 0);
 });
 
 document.getElementById("dashboard-export-btn").addEventListener("click", () => window.print());

@@ -1,18 +1,31 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO } from "./utils.js";
+import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
+
+// Guest counts are printed on a document handed to the guest, so a stray
+// keystroke turning "2 adults" into 2 million needs to be caught here
+// rather than showing up on the confirmation.
+function clampCount(value) {
+  return Math.floor(clampMoney(value, MAX_COUNT));
+}
 
 const villaList = document.getElementById("resv-villa-list");
 
 function addVillaRow(name = "", rate = "") {
   const row = document.createElement("div");
   row.className = "villa-rate-row";
+  // Values are set as DOM properties below, never interpolated into the
+  // HTML string: escapeHtml() neutralises <, > and & but NOT quotes, so a
+  // name containing a double quote would break straight out of value="..."
+  // and inject attributes. Same rule the invoice charges table follows.
   row.innerHTML = `
-    <input type="text" class="villa-name-input" placeholder="Villa name" value="${escapeHtml(name)}">
-    <input type="number" class="villa-rate-input" placeholder="Rate (LKR)" min="0" step="1" inputmode="decimal" value="${rate}">
+    <input type="text" class="villa-name-input" placeholder="Villa name" maxlength="80">
+    <input type="number" class="villa-rate-input" placeholder="Rate (LKR)" min="0" step="1" inputmode="decimal">
     <button type="button" class="remove-ingredient-btn" aria-label="Remove villa">&times;</button>
   `;
+  row.querySelector(".villa-name-input").value = name;
+  row.querySelector(".villa-rate-input").value = rate;
   row.querySelector(".remove-ingredient-btn").addEventListener("click", () => row.remove());
   villaList.appendChild(row);
 }
@@ -52,7 +65,10 @@ function reservationNights(checkin, checkout) {
 
 function formatTime12h(value) {
   if (!value) return "N/A";
-  const [h, m] = value.split(":").map(Number);
+  const [h, m] = String(value).split(":").map(Number);
+  // A malformed time used to print "NaN:NaN PM" onto the guest's
+  // confirmation; "N/A" is the same fallback the rest of this document uses.
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return "N/A";
   const period = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 || 12;
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
@@ -90,15 +106,23 @@ function validateReservationForm() {
   return true;
 }
 
+// Mirrors the invoice form's guard. A reservation writes no record, so a
+// double submit can't duplicate data — but it does re-run the whole render
+// and re-fire the toast, and on a slow phone the repeated taps that cause
+// it are exactly when staff are least sure it worked.
+let isGeneratingReservation = false;
+
 document.getElementById("reservation-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  if (isGeneratingReservation) return;
   if (!validateReservationForm()) return;
+  isGeneratingReservation = true;
 
   const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
   const title = document.getElementById("resv-title").value;
   const guestName = resvGuestNameInput.value.trim();
-  const adults = parseInt(document.getElementById("resv-adults").value, 10) || 0;
-  const children = parseInt(document.getElementById("resv-children").value, 10) || 0;
+  const adults = clampCount(document.getElementById("resv-adults").value);
+  const children = clampCount(document.getElementById("resv-children").value);
   const checkinDate = resvCheckinDateInput.value;
   const checkoutDate = resvCheckoutDateInput.value;
   const nights = reservationNights(checkinDate, checkoutDate);
@@ -106,7 +130,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   const villas = [...villaList.querySelectorAll(".villa-rate-row")]
     .map(row => ({
       name: row.querySelector(".villa-name-input").value.trim(),
-      rate: parseFloat(row.querySelector(".villa-rate-input").value) || 0,
+      rate: clampMoney(row.querySelector(".villa-rate-input").value),
     }))
     .filter(v => v.name || v.rate);
 
@@ -152,6 +176,12 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
 
   showToast("Reservation confirmation generated");
   showScreen("screen-reservation-preview");
+  // Re-armed on the next task, not inline: requestSubmit() dispatches
+  // synchronously, so clearing it here would let a burst of taps through.
+  // Deferring also keeps the "← Edit" path working — unlike the invoice
+  // form, this screen can legitimately be resubmitted after an edit, so
+  // the flag can't stay latched until the next reset.
+  setTimeout(() => { isGeneratingReservation = false; }, 0);
 });
 
 document.getElementById("resv-new-btn").addEventListener("click", () => {
@@ -163,11 +193,29 @@ document.getElementById("resv-print-btn").addEventListener("click", () => window
 
 document.getElementById("resv-image-btn").addEventListener("click", () => {
   const target = document.getElementById("reservation-preview");
-  html2canvas(target, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
-    const link = document.createElement("a");
-    const guestName = document.getElementById("resv-prev-guest-name").textContent.replace(/[^a-z0-9]+/gi, "-") || "reservation";
-    link.download = `LeopardInn-Reservation-${guestName}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }).catch(() => showToast("Couldn't generate image"));
+  // See the matching note in invoice.js — a missing CDN script throws
+  // synchronously, so .catch() alone leaves the button silently dead.
+  if (typeof html2canvas !== "function") {
+    showToast("Image export needs a connection — use Print instead");
+    return;
+  }
+  try {
+    html2canvas(target, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+      const link = document.createElement("a");
+      // Cap the filename — a very long guest name produced a path some
+      // filesystems reject, and the download then failed with no message.
+      const guestName = (document.getElementById("resv-prev-guest-name").textContent || "")
+        .replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "reservation";
+      link.download = `LeopardInn-Reservation-${guestName}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }).catch(() => showToast("Couldn't generate image"));
+  } catch {
+    showToast("Couldn't generate image");
+  }
 });
+
+// Guest counts and villa rates print onto a guest-facing document, so cap
+// them as they're typed rather than letting a stray keystroke through.
+[["resv-adults", MAX_COUNT], ["resv-children", MAX_COUNT]]
+  .forEach(([id, max]) => capNumericInput(document.getElementById(id), max));

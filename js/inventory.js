@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber } from "./utils.js";
+import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber, clampMoney, capNumericInput, MAX_COUNT, MAX_MONEY } from "./utils.js";
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
@@ -253,7 +253,7 @@ function renderInventoryScreen() {
 let usageItemId = null;
 
 function openUsageSheet(itemId) {
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const item = inventory.find(i => i.id === itemId);
   if (!item) return;
   usageItemId = itemId;
@@ -284,11 +284,11 @@ document.getElementById("usage-qty").addEventListener("input", () => {
 document.getElementById("usage-form").addEventListener("submit", (e) => {
   e.preventDefault();
   if (!usageItemId) return;
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const item = inventory.find(i => i.id === usageItemId);
   if (!item) return;
 
-  const qty = parseFloat(document.getElementById("usage-qty").value) || 0;
+  const qty = clampMoney(document.getElementById("usage-qty").value, MAX_COUNT);
   // Issuing more than exists means somebody typed the wrong number — the
   // stock figure is the thing being corrected here, so refuse rather than
   // silently clamping to zero and hiding the discrepancy.
@@ -320,7 +320,7 @@ document.getElementById("usage-form").addEventListener("submit", (e) => {
 });
 
 function adjustInventoryStock(itemId, delta) {
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const item = inventory.find(i => i.id === itemId);
   if (!item) return;
   item.stock = Math.max(0, Math.round((item.stock + delta) * 100) / 100);
@@ -374,7 +374,7 @@ document.getElementById("item-form").addEventListener("submit", (e) => {
   const name = document.getElementById("item-name").value.trim();
   if (!name) return;
 
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
 
   const duplicate = inventory.some(i => i.id !== editingItemId && i.name.trim().toLowerCase() === name.toLowerCase());
   if (duplicate) {
@@ -386,12 +386,20 @@ document.getElementById("item-form").addEventListener("submit", (e) => {
 
   const category = document.getElementById("item-category").value;
   const unit = document.getElementById("item-unit").value;
-  const stock = parseFloat(document.getElementById("item-stock").value) || 0;
-  const minStock = parseFloat(document.getElementById("item-min-stock").value) || 0;
-  const costPerUnit = parseFloat(document.getElementById("item-cost").value) || 0;
+  const stock = clampMoney(document.getElementById("item-stock").value, MAX_COUNT);
+  const minStock = clampMoney(document.getElementById("item-min-stock").value, MAX_COUNT);
+  const costPerUnit = clampMoney(document.getElementById("item-cost").value);
 
   if (editingItemId) {
     const item = inventory.find(i => i.id === editingItemId);
+    // The item can be gone by the time this submits (deleted from another
+    // tab, or the branch switched underneath the open sheet). Assigning to
+    // undefined threw and left the sheet stuck open with no explanation.
+    if (!item) {
+      closeItemSheet();
+      showToast("That item no longer exists");
+      return;
+    }
     Object.assign(item, { name, category, unit, stock, minStock, costPerUnit });
     showToast(`${name} updated`);
   } else {
@@ -406,7 +414,7 @@ document.getElementById("item-form").addEventListener("submit", (e) => {
 
 document.getElementById("item-delete-btn").addEventListener("click", async () => {
   if (!editingItemId) return;
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const item = inventory.find(i => i.id === editingItemId);
   if (!item) return;
   const ok = await confirmAction({
@@ -449,8 +457,8 @@ function closeRestockSheet() {
 }
 
 function updateRestockTotal() {
-  const qty = parseFloat(document.getElementById("restock-qty").value) || 0;
-  const cost = parseFloat(document.getElementById("restock-unit-cost").value) || 0;
+  const qty = clampMoney(document.getElementById("restock-qty").value, MAX_COUNT);
+  const cost = clampMoney(document.getElementById("restock-unit-cost").value);
   document.getElementById("restock-total-cost").textContent = fmtLKR(qty * cost);
 }
 
@@ -464,12 +472,12 @@ document.getElementById("restock-sheet-overlay").addEventListener("click", (e) =
 document.getElementById("restock-form").addEventListener("submit", (e) => {
   e.preventDefault();
   if (!restockingItemId) return;
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const item = inventory.find(i => i.id === restockingItemId);
   if (!item) return;
 
-  const qty = parseFloat(document.getElementById("restock-qty").value) || 0;
-  const unitCost = parseFloat(document.getElementById("restock-unit-cost").value) || 0;
+  const qty = clampMoney(document.getElementById("restock-qty").value, MAX_COUNT);
+  const unitCost = clampMoney(document.getElementById("restock-unit-cost").value);
   if (qty <= 0) return;
 
   logRestock(appState.selectedBranch, item, qty, unitCost, todayISO());
@@ -485,12 +493,17 @@ function updateBulkRestockBar() {
   let count = 0;
   let total = 0;
   Object.keys(bulkEntries).forEach(itemId => {
-    const qty = parseFloat(bulkEntries[itemId].qty) || 0;
+    const qty = clampMoney(bulkEntries[itemId].qty, MAX_COUNT);
     if (qty <= 0) return;
     const item = inventory.find(i => i.id === Number(itemId));
     if (!item) return;
     const parsedCost = parseFloat(bulkEntries[itemId].unitCost);
-    const unitCost = isNaN(parsedCost) || parsedCost < 0 ? item.costPerUnit : parsedCost;
+    // `|| 0` matters: an item added during this session may have no
+    // costPerUnit at all, and undefined here propagated into totalCost as
+    // NaN, quietly poisoning the Inventory Spend report totals.
+    const unitCost = isNaN(parsedCost) || parsedCost < 0
+      ? clampMoney(item.costPerUnit || 0)
+      : clampMoney(parsedCost);
     count += 1;
     total += qty * unitCost;
   });
@@ -511,18 +524,23 @@ document.getElementById("bulk-restock-btn").addEventListener("click", () => setB
 document.getElementById("bulk-restock-cancel").addEventListener("click", () => setBulkMode(false));
 
 document.getElementById("bulk-restock-save").addEventListener("click", () => {
-  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch];
+  const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const date = todayISO();
   let itemCount = 0;
   let totalSpend = 0;
 
   Object.keys(bulkEntries).forEach(itemId => {
-    const qty = parseFloat(bulkEntries[itemId].qty) || 0;
+    const qty = clampMoney(bulkEntries[itemId].qty, MAX_COUNT);
     if (qty <= 0) return;
     const item = inventory.find(i => i.id === Number(itemId));
     if (!item) return;
     const parsedCost = parseFloat(bulkEntries[itemId].unitCost);
-    const unitCost = isNaN(parsedCost) || parsedCost < 0 ? item.costPerUnit : parsedCost;
+    // `|| 0` matters: an item added during this session may have no
+    // costPerUnit at all, and undefined here propagated into totalCost as
+    // NaN, quietly poisoning the Inventory Spend report totals.
+    const unitCost = isNaN(parsedCost) || parsedCost < 0
+      ? clampMoney(item.costPerUnit || 0)
+      : clampMoney(parsedCost);
 
     logRestock(appState.selectedBranch, item, qty, unitCost, date);
     itemCount += 1;
@@ -584,3 +602,15 @@ export function openInventoryScreen(backTarget = "screen-home") {
 }
 
 document.getElementById("open-inventory-btn").addEventListener("click", () => openInventoryScreen("screen-home"));
+
+// Cap every numeric field on this screen as it's typed. Without this a
+// held-down key produced stock counts and unit costs in the billions,
+// which then flowed into the Inventory Spend report as real money.
+[
+  ["restock-qty", MAX_COUNT],
+  ["restock-unit-cost", MAX_MONEY],
+  ["usage-qty", MAX_COUNT],
+  ["item-stock", MAX_COUNT],
+  ["item-min-stock", MAX_COUNT],
+  ["item-cost", MAX_MONEY],
+].forEach(([id, max]) => capNumericInput(document.getElementById(id), max));

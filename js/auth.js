@@ -1,5 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
+import { safeStorage } from "./utils.js";
 import { ACCOUNTS, logLogin } from "./data/accounts.js";
 import { selectBranch } from "./branch.js";
 import { confirmAction } from "./confirm.js";
@@ -28,7 +29,7 @@ function applyRoleGates() {
 
 function routeAfterLogin() {
   applyRoleGates();
-  const lockedBranch = localStorage.getItem(LOCKED_BRANCH_KEY);
+  const lockedBranch = safeStorage.get(LOCKED_BRANCH_KEY);
   if (lockedBranch) {
     selectBranch(lockedBranch);
     showScreen("screen-home");
@@ -47,9 +48,9 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   const account = ACCOUNTS.find(a => a.username === username && a.password === password);
 
   if (account) {
-    localStorage.setItem(LOGIN_KEY, "true");
-    localStorage.setItem(ROLE_KEY, account.role);
-    localStorage.setItem(LOCKED_BRANCH_KEY, account.branch || "");
+    safeStorage.set(LOGIN_KEY, "true");
+    safeStorage.set(ROLE_KEY, account.role);
+    safeStorage.set(LOCKED_BRANCH_KEY, account.branch || "");
     appState.currentRole = account.role;
     errorEl.classList.remove("show");
     logLogin(account.username, account.role, account.branch);
@@ -73,9 +74,9 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   });
   if (!ok) return;
 
-  localStorage.removeItem(LOGIN_KEY);
-  localStorage.removeItem(ROLE_KEY);
-  localStorage.removeItem(LOCKED_BRANCH_KEY);
+  safeStorage.remove(LOGIN_KEY);
+  safeStorage.remove(ROLE_KEY);
+  safeStorage.remove(LOCKED_BRANCH_KEY);
   appState.currentRole = null;
 
   document.getElementById("login-form").reset();
@@ -89,10 +90,10 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
 // own screen — this app already hit a real bug once from routing before
 // everything it depends on was ready.
 export function restoreSession() {
-  if (localStorage.getItem(LOGIN_KEY) !== "true") return;
+  if (safeStorage.get(LOGIN_KEY) !== "true") return;
 
   applyRoleGates();
-  const lockedBranch = localStorage.getItem(LOCKED_BRANCH_KEY);
+  const lockedBranch = safeStorage.get(LOCKED_BRANCH_KEY);
   document.getElementById("screen-login").classList.remove("active");
   if (lockedBranch) {
     selectBranch(lockedBranch);

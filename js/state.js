@@ -1,3 +1,5 @@
+import { safeStorage } from "./utils.js";
+
 // Single shared mutable object for state that spans multiple modules
 // (which branch/role is active, the invoice counter). Modules mutate
 // properties on this object rather than each holding their own copy —
@@ -7,10 +9,10 @@ export const appState = {
   selectedBranch: "",
   selectedBranchLabel: "",
   selectedBranchLogo: "",
-  currentRole: localStorage.getItem("leopardinn-role") || null,
+  currentRole: safeStorage.get("leopardinn-role") || null,
   // Starts past the seeded INVOICES ids (151-174) so a fresh session's
   // printed reservation numbers don't collide with the seed data — this
   // number is also used directly as the INVOICES record id (invoice.js),
   // so a collision there means two different invoices sharing one id.
-  invoiceCounter: Number(localStorage.getItem("leopardinn-invoice-counter") || "175"),
+  invoiceCounter: Number(safeStorage.get("leopardinn-invoice-counter") || "175"),
 };

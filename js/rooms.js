@@ -61,6 +61,14 @@ export function renderRooms(statusFilter = null, mode = null) {
 }
 
 export function openRoomDetail(branch, roomId, mode = null) {
+  // A villa that no longer exists (renamed branch, stale row on screen,
+  // a caller passing the wrong key) must not open an empty sheet or throw
+  // halfway through rendering it — say so and stay put instead.
+  const room = (ROOMS_BY_BRANCH[branch] || []).find(r => r.id === roomId);
+  if (!room) {
+    showToast("That villa is no longer available");
+    return;
+  }
   activeRoomRef = { branch, roomId, mode };
   renderRoomDetailBody();
   document.getElementById("room-detail-overlay").classList.add("open");
@@ -76,8 +84,15 @@ function getActiveRoom() {
 
 function renderRoomDetailBody() {
   const room = getActiveRoom();
+  // The villa can disappear between opening the sheet and a later re-render
+  // (charging an activity while another device checks the guest out).
+  if (!room) {
+    closeRoomDetail();
+    showToast("That villa is no longer available");
+    return;
+  }
 
-  document.getElementById("room-detail-name").textContent = room.name;
+  document.getElementById("room-detail-name").textContent = room.name || "Unnamed villa";
   const statusEl = document.getElementById("room-detail-status");
   statusEl.textContent = ROOM_STATUS_LABELS[room.status];
   statusEl.className = "room-detail-status " + room.status;

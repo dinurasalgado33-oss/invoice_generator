@@ -30,6 +30,73 @@ export function toFiniteNumber(n) {
   return Number.isFinite(num) ? num : 0;
 }
 
+// Upper bound for every money field in the app. Nothing at these two
+// properties bills nine figures for one line, so a number past this is a
+// typo (a held-down key, a pasted account number) rather than a real
+// amount — and without a ceiling those typos reach the printed bill and
+// the revenue totals. One billion LKR is far above any real charge while
+// still leaving obvious room for a legitimately large group booking.
+export const MAX_MONEY = 1_000_000_000;
+
+// Largest count for a quantity/guest field. Same reasoning, different
+// scale — nothing here is ordered ten thousand at a time.
+export const MAX_COUNT = 9999;
+
+// Clamps a money input to [0, MAX_MONEY], returning 0 for anything
+// unparseable. Use at the point a typed value becomes a stored number.
+export function clampMoney(n, max = MAX_MONEY) {
+  const num = toFiniteNumber(n);
+  if (num < 0) return 0;
+  return num > max ? max : num;
+}
+
+// Caps a numeric input as it's typed, visibly, so the value on screen is
+// always the value that will be stored. Deliberately not the native `max`
+// attribute: that fires the browser's own validation bubble, which is the
+// undesigned popup this app replaced everywhere else. Silent capping is
+// also better than silent truncation — the number visibly stops climbing,
+// so the staff member sees the limit rather than discovering it later on
+// a printed bill.
+export function capNumericInput(el, max) {
+  if (!el) return;
+  el.addEventListener("input", () => {
+    const n = parseFloat(el.value);
+    if (Number.isFinite(n) && n > max) el.value = String(max);
+    if (Number.isFinite(n) && n < 0) el.value = "0";
+  });
+}
+
+// localStorage throws — not just returns null — when storage is
+// unavailable: iOS Safari private mode raises QuotaExceededError on every
+// setItem, and some embedded webviews block access outright. An uncaught
+// throw here used to be able to take down login, logout and the invoice
+// counter, so every access goes through these instead.
+export const safeStorage = {
+  get(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+};
+
 // A date we can't parse renders as the em-dash placeholder, not as the raw
 // junk string — an invoice reading "not-a-date" is worse than one reading "—".
 export function formatDate(value) {
