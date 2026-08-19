@@ -71,8 +71,14 @@ function renderMenuScreen() {
       })
       .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 
-    list.innerHTML = matches.map(dish => renderDishRow(dish, false, true)).join("") ||
-      `<tr><td colspan="3" class="room-detail-empty">No dishes match.</td></tr>`;
+    list.innerHTML = matches.map(dish => renderDishRow(dish, false, true)).join("") || `
+      <tr><td colspan="3">
+        <div class="list-empty">
+          <p class="list-empty-title">No dishes match “${escapeHtml(searchQuery)}”.</p>
+          <p class="list-empty-hint">Search by dish name or its number.</p>
+          <button type="button" class="secondary-btn" id="menu-empty-clear">Clear search</button>
+        </div>
+      </td></tr>`;
 
     statusEl.style.display = "";
     statusEl.textContent = `${matches.length} result${matches.length === 1 ? "" : "s"}`;
@@ -89,10 +95,22 @@ function renderMenuScreen() {
       const isCollapsed = collapsedCategories.has(category);
       return renderCategoryRow(category, dishes, false) +
         dishes.map(dish => renderDishRow(dish, isCollapsed, false)).join("");
-    }).join("") || `<tr><td colspan="3" class="room-detail-empty">No dishes yet — tap "+" to start the menu.</td></tr>`;
+    }).join("") || `
+      <tr><td colspan="3">
+        <div class="list-empty">
+          <p class="list-empty-title">No dishes on this menu yet.</p>
+          <p class="list-empty-hint">Each branch keeps its own menu and numbers its dishes from #1.</p>
+          <button type="button" class="secondary-btn" id="menu-empty-add">Add first dish</button>
+        </div>
+      </td></tr>`;
 
     statusEl.style.display = "none";
   }
+
+  const emptyClear = document.getElementById("menu-empty-clear");
+  if (emptyClear) emptyClear.addEventListener("click", () => menuSearchClearBtn.click());
+  const emptyAdd = document.getElementById("menu-empty-add");
+  if (emptyAdd) emptyAdd.addEventListener("click", () => openDishSheet(null));
 
   list.querySelectorAll(".list-group-row").forEach(row => {
     row.addEventListener("click", () => {

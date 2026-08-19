@@ -150,7 +150,14 @@ function updateOrderTotal() {
   });
   document.getElementById("order-total").textContent = fmtLKR(total);
   const roomSelected = Boolean(document.getElementById("order-room-select").value);
-  document.getElementById("order-submit-btn").disabled = !anyQty || !roomSelected;
+  const blocked = !anyQty || !roomSelected;
+  document.getElementById("order-submit-btn").disabled = blocked;
+  // Name the missing piece rather than leaving a dead grey button.
+  const hint = document.getElementById("order-submit-hint");
+  hint.hidden = !blocked;
+  hint.textContent = !roomSelected
+    ? "Choose a villa or walk-in first."
+    : "Add at least one dish to place the order.";
   renderOrderSelected();
 }
 

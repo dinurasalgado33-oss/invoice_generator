@@ -20,13 +20,57 @@ export function updateRoomsCardAvailability() {
   document.getElementById("qa-checkout-btn").disabled = !hasData;
 }
 
+// What the current view is filtered to, so the banner and the "show all"
+// escape can describe it — and so re-rendering after a check-in keeps the
+// same filter instead of silently reverting to everything.
+let activeFilter = { statusFilter: null, mode: null };
+
+// Re-render in place after a state change (check-in, cancel, checkout).
+// Calling renderRooms() bare would drop whatever filter the staff member
+// arrived with, so the villa they just acted on stays gone but five
+// unrelated ones appear — which reads as the screen losing its place.
+function rerenderRooms() {
+  renderRooms(activeFilter.statusFilter, activeFilter.mode);
+}
+
+function renderFilterBanner(statusFilter, mode, shownCount, totalCount) {
+  const banner = document.getElementById("rooms-filter-banner");
+  if (!statusFilter && !mode) {
+    banner.hidden = true;
+    return;
+  }
+  banner.hidden = false;
+  const what = mode === "activity"
+    ? "occupied villas — pick one to add an activity charge"
+    : `${ROOM_STATUS_LABELS[statusFilter].toLowerCase()} villas`;
+  document.getElementById("rooms-filter-text").textContent =
+    `Showing ${shownCount} of ${totalCount} · ${what}`;
+}
+
 export function renderRooms(statusFilter = null, mode = null) {
+  activeFilter = { statusFilter, mode };
   const grid = document.getElementById("rooms-grid");
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   grid.innerHTML = "";
 
-  if (statusFilter && !rooms.some(r => r.status === statusFilter)) {
-    grid.innerHTML = `<p class="room-detail-empty">No ${ROOM_STATUS_LABELS[statusFilter].toLowerCase()} villas right now.</p>`;
+  const shown = statusFilter ? rooms.filter(r => r.status === statusFilter) : rooms;
+  renderFilterBanner(statusFilter, mode, shown.length, rooms.length);
+
+  if (!rooms.length) {
+    grid.innerHTML = `<p class="room-detail-empty">No villas set up for this branch yet. A manager can add them in Configure.</p>`;
+    return;
+  }
+
+  if (statusFilter && !shown.length) {
+    // Was a dead end: staff had to guess that the list was filtered and
+    // use the browser back button to escape it.
+    grid.innerHTML = `
+      <div class="rooms-empty-state">
+        <p class="room-detail-empty">No ${ROOM_STATUS_LABELS[statusFilter].toLowerCase()} villas right now.</p>
+        <button type="button" class="secondary-btn" id="rooms-empty-show-all">Show all villas</button>
+      </div>
+    `;
+    document.getElementById("rooms-empty-show-all").addEventListener("click", () => renderRooms(null, null));
     return;
   }
 
@@ -237,7 +281,7 @@ async function cancelCheckIn() {
 
   showToast(`Check-in cancelled for ${room.name}`);
   closeRoomDetail();
-  renderRooms();
+  rerenderRooms();
 }
 
 // Appends a line item to a room's running bill — picked up by
@@ -557,7 +601,7 @@ function showNewBookingForm() {
     logRoomActivity(activeRoomRef.branch, room, room.guest, "Check In");
     showToast(`${room.guest} checked into ${room.name}`);
     renderRoomDetailBody();
-    renderRooms();
+    rerenderRooms();
   });
 }
 
@@ -610,6 +654,8 @@ onAfterGenerate(() => {
     checkoutRoomRef = null;
   }
 });
+
+document.getElementById("rooms-filter-clear").addEventListener("click", () => renderRooms(null, null));
 
 document.getElementById("room-detail-close").addEventListener("click", closeRoomDetail);
 document.getElementById("room-detail-overlay").addEventListener("click", (e) => {

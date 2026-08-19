@@ -161,8 +161,19 @@ function renderInventoryScreen() {
       })
       .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 
-    list.innerHTML = matches.map(item => renderInventoryRow(item, false, true)).join("") ||
-      `<tr><td colspan="4" class="room-detail-empty">No items match.</td></tr>`;
+    // "No items match." left staff stuck: the two filters that produced
+    // the empty list are at the top of the screen, and which one is to
+    // blame isn't obvious — especially the low-stock toggle, which stays
+    // on silently while a search is typed.
+    list.innerHTML = matches.map(item => renderInventoryRow(item, false, true)).join("") || `
+      <tr><td colspan="4">
+        <div class="list-empty">
+          <p class="list-empty-title">${lowOnly && query
+            ? `No low-stock items match “${escapeHtml(searchQuery)}”.`
+            : lowOnly ? "Nothing is running low." : `No items match “${escapeHtml(searchQuery)}”.`}</p>
+          <button type="button" class="secondary-btn" id="inventory-empty-reset">Clear filters</button>
+        </div>
+      </td></tr>`;
 
     statusEl.style.display = "";
     statusEl.textContent = `${matches.length} result${matches.length === 1 ? "" : "s"}`;
@@ -185,10 +196,31 @@ function renderInventoryScreen() {
           items.map(item => renderInventoryRow(item, isDeptCollapsed || isCatCollapsed, false)).join("");
       }).join("");
       return renderDepartmentRow(dept.name, categories, groups) + categoryRows;
-    }).join("") || `<tr><td colspan="4" class="room-detail-empty">No inventory items yet.</td></tr>`;
+    }).join("") || `
+      <tr><td colspan="4">
+        <div class="list-empty">
+          <p class="list-empty-title">No stock items yet.</p>
+          <p class="list-empty-hint">Add what this branch keeps on hand — food, drinks, linen, cleaning supplies.</p>
+          <button type="button" class="secondary-btn" id="inventory-empty-add">Add first item</button>
+        </div>
+      </td></tr>`;
 
     statusEl.style.display = "none";
   }
+
+  const emptyReset = document.getElementById("inventory-empty-reset");
+  if (emptyReset) {
+    emptyReset.addEventListener("click", () => {
+      searchQuery = "";
+      searchInput.value = "";
+      searchClearBtn.style.display = "none";
+      lowOnly = false;
+      lowFilterBtn.setAttribute("aria-pressed", "false");
+      renderInventoryScreen();
+    });
+  }
+  const emptyAdd = document.getElementById("inventory-empty-add");
+  if (emptyAdd) emptyAdd.addEventListener("click", () => openItemSheet(null));
 
   list.querySelectorAll(".inv-dept-row").forEach(row => {
     row.addEventListener("click", () => {

@@ -15,10 +15,57 @@
 .legend-dot.available { background: #3f9142; }
 .legend-dot.occupied { background: var(--maroon); }
 
+/* Tells staff the list is filtered and gives them one tap out of it.
+   Arriving from a quick action used to show a partial list with nothing
+   to explain it, so a villa that wasn't there read as missing data. */
+.rooms-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--bg-alt);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+}
+.rooms-filter-banner[hidden] { display: none; }
+.rooms-filter-text { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; min-width: 0; }
+.rooms-filter-clear {
+  background: none;
+  border: none;
+  color: var(--maroon);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 2px;
+  flex: none;
+}
+
+.rooms-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+.rooms-empty-state .secondary-btn { width: auto; }
+
+/* Two columns, not three. Both properties have only four to six villas,
+   so a third column bought nothing but narrower cards — at 375px they
+   were 109px wide, which truncated most villa names and every guest name
+   and left a tap target smaller than it should be. */
 .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+@media (min-width: 560px) {
+  .rooms-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .room-card {
@@ -135,16 +182,24 @@
   gap: 10px;
   margin-bottom: 14px;
 }
+/* Wraps to two lines rather than truncating. The sheet has the room, and
+   a villa name cut off mid-word ("Extraordinarily Long Vill…") leaves
+   staff unable to confirm which villa they're about to charge or check
+   out — the one thing this header exists to tell them. */
 .room-detail-header h3 {
   margin: 0;
   color: var(--maroon);
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 1.2rem;
+  line-height: 1.25;
   flex: 1;
   min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .room-detail-status {
   flex-shrink: 0;
@@ -264,16 +319,22 @@
 .food-order-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
 .food-order-number { color: var(--text-muted); font-weight: 700; margin-right: 5px; }
 .food-order-price { font-size: 0.76rem; color: var(--text-muted); }
+/* No `overflow: hidden` here. It existed only to clip the two buttons to
+   the container's rounded corners, but it also clipped the transparent
+   44px hit area each button extends (see base.css) straight back down to
+   34px — silently undoing the touch-target fix on the most-tapped control
+   in the app. The children round themselves instead. */
 .food-order-qty-stepper {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
   background: var(--white);
 }
 .food-order-qty-stepper .stepper-input-btn { width: 34px; height: 34px; font-size: 1.05rem; }
+.food-order-qty-stepper .stepper-input-btn:first-child { border-radius: 8.5px 0 0 8.5px; }
+.food-order-qty-stepper .stepper-input-btn:last-child { border-radius: 0 8.5px 8.5px 0; }
 
 .activity-custom-row { display: flex; gap: 8px; margin: 4px 0 14px; }
 .activity-custom-row input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 0.85rem; }

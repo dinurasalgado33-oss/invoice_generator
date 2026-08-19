@@ -480,3 +480,95 @@ select {
   .app { max-width: 100%; padding: 0; }
   .print-only { display: block; }
 }
+
+/* Shared empty state for list/table screens. Replaces bare one-liners like
+   "No items match." — an empty screen should say what happened, why, and
+   offer the way out, rather than leaving staff to guess which of two
+   filters at the top of the page emptied the list. */
+.list-empty,
+.report-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 28px 16px;
+}
+.list-empty-title,
+.report-empty-title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.list-empty-hint,
+.report-empty-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  max-width: 34ch;
+}
+.list-empty .secondary-btn,
+.report-empty .secondary-btn { width: auto; margin-top: 4px; }
+
+/* Minimum comfortable touch target. These icon-only buttons sat at 38px,
+   below the 44px that reliably hits on a phone — and they are primary
+   actions (add a dish, add stock, log out), not incidental ones. */
+.sheet-icon-btn,
+.icon-btn,
+#add-dish-btn,
+#add-inventory-item-btn,
+#bulk-restock-btn,
+#logout-btn,
+#screen-home .back-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Explains a disabled primary action. Sits directly under the button so
+   it reads as the reason for it, not as generic help text. */
+.btn-blocked-hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.btn-blocked-hint[hidden] { display: none; }
+
+/* Hit-area expansion for small controls.
+   These are deliberately small *visually* — a chunky +/- pair would
+   dominate a dish row, and the void button should stay quiet. But a 34px
+   stepper (the single most-tapped control in the app) and an 18px chip
+   remove are below what a thumb reliably hits, especially one-handed on a
+   phone. A transparent ::after pads the touch target out to 44px without
+   changing the rendered size or the layout. */
+.stepper-input-btn,
+.food-order-chip-remove,
+.list-group-add-btn,
+.report-void-btn,
+.rooms-filter-clear,
+.scope-reset,
+.report-search-close {
+  position: relative;
+}
+.stepper-input-btn::after,
+.food-order-chip-remove::after,
+.list-group-add-btn::after,
+.report-void-btn::after,
+.rooms-filter-clear::after,
+.scope-reset::after,
+.report-search-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+/* The chip's own remove button must stay above the chip body, or the
+   expanded area sits under it and swallows nothing. */
+.food-order-chip-remove::after { z-index: 1; }

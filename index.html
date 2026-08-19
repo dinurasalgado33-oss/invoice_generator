@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=74" />
-<link rel="stylesheet" href="css/brand-home.css?v=74" />
-<link rel="stylesheet" href="css/rooms.css?v=74" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=74" />
-<link rel="stylesheet" href="css/invoice.css?v=74" />
-<link rel="stylesheet" href="css/dashboard.css?v=74" />
-<link rel="stylesheet" href="css/reports.css?v=74" />
-<link rel="stylesheet" href="css/reservation.css?v=74" />
+<link rel="stylesheet" href="css/base.css?v=78" />
+<link rel="stylesheet" href="css/brand-home.css?v=78" />
+<link rel="stylesheet" href="css/rooms.css?v=78" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=78" />
+<link rel="stylesheet" href="css/invoice.css?v=78" />
+<link rel="stylesheet" href="css/dashboard.css?v=78" />
+<link rel="stylesheet" href="css/reports.css?v=78" />
+<link rel="stylesheet" href="css/reservation.css?v=78" />
 </head>
 <body>
 
@@ -166,6 +166,14 @@
     </div>
 
     <div class="rooms-wrap">
+      <!-- Arriving from a Check In / Check Out / Activities quick action
+           shows only part of the villa list. Without saying so, a missing
+           villa reads as a bug rather than a filter. -->
+      <div class="rooms-filter-banner" id="rooms-filter-banner" hidden>
+        <span class="rooms-filter-text" id="rooms-filter-text"></span>
+        <button type="button" class="rooms-filter-clear" id="rooms-filter-clear">Show all villas</button>
+      </div>
+
       <div class="rooms-legend">
         <span class="legend-item"><span class="legend-dot available"></span>Available</span>
         <span class="legend-item"><span class="legend-dot occupied"></span>Occupied</span>
@@ -216,6 +224,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
           <span id="order-submit-label">Place Order</span>
         </button>
+        <!-- A greyed-out button with no explanation reads as broken. Says
+             what's still missing instead, and disappears once it isn't. -->
+        <p class="btn-blocked-hint" id="order-submit-hint">Add at least one dish to place the order.</p>
       </div>
 
       <!-- Pending orders -->
@@ -1514,6 +1525,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=74"></script>
+<script type="module" src="js/main.js?v=78"></script>
 </body>
 </html>

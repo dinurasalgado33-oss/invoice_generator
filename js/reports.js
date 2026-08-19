@@ -257,8 +257,35 @@ function renderSummary(range) {
   }
 }
 
+// "No data for this period." was a dead end — it never said *why* the list
+// was empty, and offered nothing to do about it. The three reasons need
+// different answers: a search that matched nothing, a period too narrow to
+// contain anything, or a report that genuinely has no records yet.
 function emptyState() {
-  return `<p class="room-detail-empty">No data for this period.</p>`;
+  if (state.search) {
+    return `
+      <div class="report-empty">
+        <p class="report-empty-title">Nothing matches “${escapeHtml(state.search)}”.</p>
+        <p class="report-empty-hint">Searching ${REPORTS[state.tab].searchHint.toLowerCase()} in ${REPORTS[state.tab].label}.</p>
+        <button type="button" class="secondary-btn" data-empty-action="clear-search">Clear search</button>
+      </div>
+    `;
+  }
+  if (state.preset !== "month") {
+    return `
+      <div class="report-empty">
+        <p class="report-empty-title">Nothing recorded in this period.</p>
+        <p class="report-empty-hint">Showing ${PRESET_LABELS[state.preset].toLowerCase()}.</p>
+        <button type="button" class="secondary-btn" data-empty-action="widen-period">Try this month</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="report-empty">
+      <p class="report-empty-title">Nothing recorded this month.</p>
+      <p class="report-empty-hint">${escapeHtml(REPORTS[state.tab].label)} entries will appear here as they happen.</p>
+    </div>
+  `;
 }
 
 function renderInvoicesTab(range) {
@@ -534,6 +561,28 @@ function renderReportBody(range) {
   else if (state.tab === "logins") body.innerHTML = renderLoginsTab(range);
   else if (state.tab === "activity") body.innerHTML = renderActivityTab(range);
   else body.innerHTML = renderBookingsTab(range);
+
+  // Wired here rather than in emptyState() because every tab writes over
+  // body.innerHTML, which would discard listeners attached any earlier.
+  const clearBtn = body.querySelector('[data-empty-action="clear-search"]');
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      state.search = "";
+      closeSearch();
+      renderAll();
+    });
+  }
+  const widenBtn = body.querySelector('[data-empty-action="widen-period"]');
+  if (widenBtn) {
+    widenBtn.addEventListener("click", () => {
+      state.preset = "month";
+      document.querySelectorAll("#date-preset-row .scope-option")
+        .forEach(o => o.classList.toggle("active", o.dataset.preset === "month"));
+      document.getElementById("custom-range-row").style.display = "none";
+      renderAll();
+    });
+  }
 }
 
 // Keeps the two scope chips reading as the current state, and offers a
