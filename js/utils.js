@@ -4,8 +4,22 @@ export function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Local calendar date, NOT UTC. toISOString() is UTC, so in Sri Lanka
+// (UTC+5:30) anything recorded between midnight and 05:30 local time was
+// being stamped with the previous day — wrong checkout lists, and sales
+// landing in the wrong day's revenue.
+export function toDateISO(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d)) return "";
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return toDateISO();
 }
 
 // Anything that can't be read as a real number becomes 0 rather than

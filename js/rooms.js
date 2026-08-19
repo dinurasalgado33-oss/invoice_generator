@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash } from "./utils.js";
+import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash, toDateISO } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate, setCheckoutContext } from "./invoice.js";
@@ -316,8 +316,8 @@ function chargeActivities() {
 function showNewBookingForm() {
   const room = getActiveRoom();
   const body = document.getElementById("room-detail-body");
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const today = toDateISO();
+  const tomorrow = toDateISO(new Date(Date.now() + 86400000));
 
   body.innerHTML = `
     <form id="new-booking-form">

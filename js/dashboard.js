@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, setLogoSrc } from "./utils.js";
+import { escapeHtml, fmtLKR, setLogoSrc, toDateISO } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
 import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
@@ -41,7 +41,7 @@ function computeMonthlyOccupancy(branch, year, month) {
 
 function renderDashboard(branch) {
   const now = new Date();
-  const thisMonthKey = monthKey(now.toISOString());
+  const thisMonthKey = monthKey(toDateISO(now));
 
   const monthInvoices = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active" && monthKey(inv.date) === thisMonthKey);
   const revenue = monthInvoices.reduce((s, inv) => s + inv.total, 0);
@@ -92,7 +92,7 @@ function renderDashboard(branch) {
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push({ key: monthKey(d.toISOString()), label: d.toLocaleDateString("en-US", { month: "short" }) });
+    months.push({ key: monthKey(toDateISO(d)), label: d.toLocaleDateString("en-US", { month: "short" }) });
   }
   const monthlyValues = months.map(m =>
     INVOICES.filter(inv => inv.branch === branch && inv.status === "Active" && monthKey(inv.date) === m.key)

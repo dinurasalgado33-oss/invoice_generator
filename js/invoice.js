@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmt, setLogoSrc, showToast } from "./utils.js";
+import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 
@@ -288,7 +288,7 @@ export function resetForm() {
   itemsBody.innerHTML = "";
   addItemRow();
   document.getElementById("inv-number").value = String(appState.invoiceCounter);
-  document.getElementById("inv-date").value = new Date().toISOString().slice(0, 10);
+  document.getElementById("inv-date").value = toDateISO();
   document.getElementById("currency").value = "LKR";
   document.getElementById("guest-name-error").classList.remove("show");
   document.getElementById("guest-name").classList.remove("invalid");

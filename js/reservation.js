@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO } from "./utils.js";
+import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 
 const villaList = document.getElementById("resv-villa-list");
@@ -21,7 +21,7 @@ function resetReservationForm() {
   document.getElementById("reservation-form").reset();
   document.getElementById("resv-checkin-date").value = todayISO();
   document.getElementById("resv-checkin-time").value = "14:00";
-  document.getElementById("resv-checkout-date").value = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  document.getElementById("resv-checkout-date").value = toDateISO(new Date(Date.now() + 86400000));
   document.getElementById("resv-checkout-time").value = "11:00";
   villaList.innerHTML = "";
   addVillaRow();
