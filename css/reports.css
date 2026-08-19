@@ -1,14 +1,173 @@
-.reports-filters {
+/* ---------- Reports toolbar ----------
+   Sticks to the top of the screen so switching report, changing period or
+   exporting stays reachable while the data scrolls underneath. The old
+   layout stacked period chips, a branch select and a search field above
+   the table, costing ~380px before a single row of data on a phone. */
+.report-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding: 10px 0 12px;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: 10px;
 }
-.filter-group { display: flex; flex-direction: column; gap: 8px; }
-.filter-group > label {
+.report-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Native select on purpose: eight reports in three groups, no horizontal
+   scrolling, and phones get their own picker UI for free. */
+.report-picker { position: relative; flex: 1; min-width: 0; }
+.report-picker select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 34px 11px 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--maroon);
+  font-family: inherit;
+  cursor: pointer;
+}
+.report-picker select:focus-visible { outline: 2px solid var(--maroon); outline-offset: 1px; }
+.report-picker-caret {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--maroon);
+  pointer-events: none;
+}
+
+.report-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  padding: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.toolbar-btn svg { width: 17px; height: 17px; flex: none; }
+/* Labels are hidden on phones where the row is tight; the icons carry it,
+   and every button keeps an aria-label either way. */
+.toolbar-btn-label { display: none; }
+.toolbar-btn:active { transform: scale(0.96); }
+.toolbar-btn.active {
+  background: var(--maroon);
+  border-color: var(--maroon);
+  color: var(--gold-light);
+}
+@media (hover: hover) and (pointer: fine) {
+  .toolbar-btn:not(.active):hover { border-color: var(--maroon); color: var(--maroon); }
+}
+
+.report-search-row { display: flex; align-items: center; gap: 8px; }
+/* `display: flex` outranks the UA stylesheet's [hidden] { display: none },
+   so without this the collapsed search still occupies its full height. */
+.report-search-row[hidden] { display: none; }
+.report-search-row .input-icon { flex: 1; min-width: 0; }
+.report-search-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0 6px;
+  cursor: pointer;
+  flex: none;
+}
+
+/* Scope chips show their current value rather than a row of five options
+   where four are always inactive. */
+.report-scope-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scope-chip-wrap { position: relative; }
+.scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--maroon);
+  cursor: pointer;
+  max-width: 100%;
+}
+.scope-chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scope-chip svg { width: 14px; height: 14px; flex: none; color: var(--text-muted); }
+.scope-chip-caret { width: 13px; height: 13px; }
+.scope-chip[aria-expanded="true"] { border-color: var(--maroon); }
+/* A report that ignores the period still shows the chip (so the printed
+   header makes sense) but stops pretending it's actionable. */
+.scope-chip.inert { opacity: 0.45; pointer-events: none; }
+.scope-reset {
+  background: none;
+  border: none;
+  color: var(--maroon);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 7px 4px;
+}
+
+.scope-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 210px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.13);
+  padding: 6px;
+}
+.scope-popover[hidden] { display: none; }
+.scope-popover-list { display: flex; flex-direction: column; }
+.scope-option {
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 11px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-muted);
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.scope-option.active { background: var(--maroon); color: var(--gold-light); }
+@media (hover: hover) and (pointer: fine) {
+  .scope-option:not(.active):hover { background: var(--bg-alt); }
 }
 
 .chip-row {
@@ -36,26 +195,31 @@
   .chip:not(.active):hover { border-color: var(--maroon); color: var(--maroon); }
 }
 
-/* Inventory Usage isn't filtered by period — dim the Period controls and
-   explain why, rather than leaving them clickable but silently ignored. */
-#period-filter-group.disabled .chip-row,
-#period-filter-group.disabled .custom-range-row {
-  opacity: 0.4;
-  pointer-events: none;
-}
 .period-filter-note {
-  margin: 8px 0 0;
-  font-size: 0.78rem;
+  margin: 0;
+  font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
 }
+.period-filter-note[hidden] { display: none; }
 
 .custom-range-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding: 8px 5px 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
 }
-.custom-range-row span { color: var(--text-muted); font-size: 0.85rem; }
+.custom-range-row span { color: var(--text-muted); font-size: 0.8rem; }
+.custom-range-row input { flex: 1; min-width: 0; font-size: 0.85rem; padding: 7px 9px; }
+
+/* Print header replaces the on-screen chips, which are no-print. */
+.report-print-scope {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 2px 0 14px;
+}
 
 .kpi-strip {
   background: var(--bg-alt);
@@ -215,7 +379,14 @@
 }
 
 @media print {
-  .reports-filters, .report-tabs { display: none; }
+  .report-toolbar { display: none; }
+}
+
+/* Roomier layout: button labels appear, and the search field sits inline
+   with the picker instead of dropping to its own line. */
+@media (min-width: 620px) {
+  .toolbar-btn-label { display: inline; }
+  .toolbar-btn { padding: 10px 13px; }
 }
 
 /* Void action on an invoice row — quiet until needed, danger-toned since

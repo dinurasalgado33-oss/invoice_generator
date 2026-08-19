@@ -17,6 +17,50 @@ const state = {
 
 const BRANCHES = ["Wilpattu", "Arugam Bay"];
 
+// One entry per report, driving the picker options, the printed heading,
+// the search placeholder and whether the period filter applies. Previously
+// these lived in four different places, which is how the search box ended
+// up telling staff to type an invoice number while showing dish sales.
+//
+// `group` exists because eight flat tabs gave no clue which report answers
+// which question — grouping them by what the manager is actually looking
+// into does.
+const REPORTS = {
+  invoices:  { label: "Invoices",             group: "Money",      searchHint: "Guest name or invoice #" },
+  food:      { label: "Food Orders",          group: "Money",      searchHint: "Dish name" },
+  inventory: { label: "Inventory Usage",      group: "Stock",      searchHint: "Item name", ignoresPeriod: true },
+  spend:     { label: "Inventory Spend",      group: "Stock",      searchHint: "Item name" },
+  restock:   { label: "Restock Log",          group: "Stock",      searchHint: "Item name" },
+  bookings:  { label: "Bookings & Occupancy", group: "Operations", searchHint: "Guest or villa" },
+  activity:  { label: "Check-in / Check-out", group: "Operations", searchHint: "Guest or villa" },
+  logins:    { label: "Staff Logins",         group: "Operations", searchHint: "Username" },
+};
+
+const REPORT_GROUPS = ["Money", "Stock", "Operations"];
+
+// Full names for the popover and the printed header; short ones for the
+// scope chip, where "Wilpattu Forest Retreat" wraps the row onto a second
+// line and costs more height than it adds meaning.
+const BRANCH_LABELS = {
+  all: "All Branches",
+  "Wilpattu": "Wilpattu Forest Retreat",
+  "Arugam Bay": "Arugam Bay Beachfront Hotel",
+};
+
+const BRANCH_SHORT_LABELS = {
+  all: "All Branches",
+  "Wilpattu": "Wilpattu",
+  "Arugam Bay": "Arugam Bay",
+};
+
+const PRESET_LABELS = {
+  today: "Today",
+  week: "This Week",
+  month: "This Month",
+  lastmonth: "Last Month",
+  custom: "Custom range",
+};
+
 // ---------- Date range helpers ----------
 function getActiveRange() {
   const now = new Date();
@@ -471,9 +515,11 @@ function renderReportBody(range) {
   document.getElementById("report-tab-label").textContent = labels[state.tab];
   document.getElementById("report-view-toggle").style.display = state.tab === "restock" ? "flex" : "none";
 
-  const isInventoryTab = state.tab === "inventory";
-  document.getElementById("period-filter-group").classList.toggle("disabled", isInventoryTab);
-  document.getElementById("period-filter-note").style.display = isInventoryTab ? "" : "none";
+  // A report that ignores the period shouldn't offer a period control that
+  // silently does nothing — dim the chip and say why.
+  const ignoresPeriod = Boolean(REPORTS[state.tab].ignoresPeriod);
+  document.getElementById("period-chip").classList.toggle("inert", ignoresPeriod);
+  document.getElementById("period-filter-note").hidden = !ignoresPeriod;
 
   if (state.tab === "invoices") {
     body.innerHTML = renderInvoicesTab(range);
@@ -490,20 +536,108 @@ function renderReportBody(range) {
   else body.innerHTML = renderBookingsTab(range);
 }
 
+// Keeps the two scope chips reading as the current state, and offers a
+// Reset only when there is actually something to reset.
+function renderScope(range) {
+  const periodLabel = state.preset === "custom" ? formatRangeLabel(range) : PRESET_LABELS[state.preset];
+  document.getElementById("period-chip-label").textContent = periodLabel;
+  document.getElementById("branch-chip-label").textContent = BRANCH_SHORT_LABELS[state.branch];
+
+  const isDefault = state.preset === "month" && state.branch === "all" && !state.search;
+  document.getElementById("scope-reset").hidden = isDefault;
+
+  // The screen shows scope in the chips; the printout has no chips, so it
+  // gets a text line instead. The report's own name is left out — the
+  // print-only <h3> above the table already carries it.
+  const scopeParts = [formatRangeLabel(range), BRANCH_LABELS[state.branch]];
+  if (state.search) scopeParts.push(`filtered by “${state.search}”`);
+  document.getElementById("reports-print-scope").textContent = scopeParts.join(" · ");
+}
+
 function renderAll() {
   const range = getActiveRange();
-  document.getElementById("reports-period-label").textContent = "Period: " + formatRangeLabel(range);
+  renderScope(range);
   renderSummary(range);
   renderReportBody(range);
 }
 
-// ---------- Filter wiring ----------
-document.querySelectorAll("#date-preset-row .chip").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll("#date-preset-row .chip").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    state.preset = chip.dataset.preset;
-    document.getElementById("custom-range-row").style.display = state.preset === "custom" ? "flex" : "none";
+// ---------- Toolbar wiring ----------
+function buildReportPicker() {
+  const select = document.getElementById("report-select");
+  select.innerHTML = REPORT_GROUPS.map(group => {
+    const opts = Object.entries(REPORTS)
+      .filter(([, cfg]) => cfg.group === group)
+      .map(([key, cfg]) => `<option value="${key}" ${key === state.tab ? "selected" : ""}>${cfg.label}</option>`)
+      .join("");
+    return `<optgroup label="${group}">${opts}</optgroup>`;
+  }).join("");
+}
+buildReportPicker();
+
+document.getElementById("report-select").addEventListener("change", (e) => {
+  state.tab = e.target.value;
+  // Search terms are report-specific — carrying "perera" from Invoices over
+  // to Inventory Usage would show an empty table for no visible reason.
+  state.search = "";
+  document.getElementById("reports-search").value = "";
+  document.getElementById("reports-search").placeholder = REPORTS[state.tab].searchHint;
+  closeSearch();
+  renderAll();
+});
+
+// ---- Scope popovers ----
+const popovers = [
+  { chip: "period-chip", panel: "period-popover" },
+  { chip: "branch-chip", panel: "branch-popover" },
+];
+
+function closePopovers(except = null) {
+  popovers.forEach(p => {
+    if (p.panel === except) return;
+    document.getElementById(p.panel).hidden = true;
+    document.getElementById(p.chip).setAttribute("aria-expanded", "false");
+  });
+}
+
+popovers.forEach(p => {
+  document.getElementById(p.chip).addEventListener("click", (e) => {
+    e.stopPropagation();
+    const panel = document.getElementById(p.panel);
+    const willOpen = panel.hidden;
+    closePopovers(willOpen ? p.panel : null);
+    panel.hidden = !willOpen;
+    document.getElementById(p.chip).setAttribute("aria-expanded", String(willOpen));
+  });
+});
+
+// Clicking inside a popover shouldn't dismiss it — only clicking away should.
+document.querySelectorAll(".scope-popover").forEach(panel => {
+  panel.addEventListener("click", (e) => e.stopPropagation());
+});
+document.addEventListener("click", () => closePopovers());
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closePopovers();
+});
+
+document.querySelectorAll("#date-preset-row .scope-option").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll("#date-preset-row .scope-option").forEach(o => o.classList.remove("active"));
+    opt.classList.add("active");
+    state.preset = opt.dataset.preset;
+    const custom = state.preset === "custom";
+    document.getElementById("custom-range-row").style.display = custom ? "flex" : "none";
+    // Custom needs its date inputs, so the popover stays open for it.
+    if (!custom) closePopovers();
+    renderAll();
+  });
+});
+
+document.querySelectorAll("#branch-option-row .scope-option").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll("#branch-option-row .scope-option").forEach(o => o.classList.remove("active"));
+    opt.classList.add("active");
+    state.branch = opt.dataset.branch;
+    closePopovers();
     renderAll();
   });
 });
@@ -514,23 +648,58 @@ document.querySelectorAll("#date-preset-row .chip").forEach(chip => {
   });
 });
 
-document.getElementById("reports-branch-select").addEventListener("change", (e) => {
-  state.branch = e.target.value;
+document.getElementById("scope-reset").addEventListener("click", () => {
+  state.preset = "month";
+  state.branch = "all";
+  state.search = "";
+  document.getElementById("reports-search").value = "";
+  document.querySelectorAll("#date-preset-row .scope-option").forEach(o => o.classList.toggle("active", o.dataset.preset === "month"));
+  document.querySelectorAll("#branch-option-row .scope-option").forEach(o => o.classList.toggle("active", o.dataset.branch === "all"));
+  document.getElementById("custom-range-row").style.display = "none";
+  closeSearch();
   renderAll();
 });
 
-document.getElementById("reports-search").addEventListener("input", (e) => {
-  state.search = e.target.value.trim();
-  renderReportBody(getActiveRange());
+// ---- Search (collapsed until asked for) ----
+const searchRow = document.getElementById("report-search-row");
+const searchInput = document.getElementById("reports-search");
+
+function openSearch() {
+  searchRow.hidden = false;
+  document.getElementById("report-search-toggle").setAttribute("aria-expanded", "true");
+  document.getElementById("report-search-toggle").classList.add("active");
+  searchInput.focus();
+}
+
+function closeSearch() {
+  searchRow.hidden = true;
+  document.getElementById("report-search-toggle").setAttribute("aria-expanded", "false");
+  document.getElementById("report-search-toggle").classList.remove("active");
+}
+
+document.getElementById("report-search-toggle").addEventListener("click", () => {
+  if (searchRow.hidden) openSearch();
+  else {
+    // Closing has to clear the term too, or the report stays filtered by
+    // something the manager can no longer see.
+    searchInput.value = "";
+    state.search = "";
+    closeSearch();
+    renderAll();
+  }
 });
 
-document.querySelectorAll(".report-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".report-tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    state.tab = tab.dataset.report;
-    renderReportBody(getActiveRange());
-  });
+document.getElementById("report-search-close").addEventListener("click", () => {
+  searchInput.value = "";
+  state.search = "";
+  closeSearch();
+  renderAll();
+});
+
+searchInput.addEventListener("input", (e) => {
+  state.search = e.target.value.trim();
+  renderScope(getActiveRange());
+  renderReportBody(getActiveRange());
 });
 
 document.querySelectorAll("#report-view-toggle .chip").forEach(chip => {
@@ -671,8 +840,12 @@ document.getElementById("copy-summary-btn").addEventListener("click", async () =
 
 document.getElementById("open-reports-btn").addEventListener("click", () => {
   setLogoSrc("reports-logo", appState.selectedBranchLogo);
+  // Opens scoped to the branch the manager is already working in.
   state.branch = appState.selectedBranch;
-  document.getElementById("reports-branch-select").value = appState.selectedBranch;
+  document.querySelectorAll("#branch-option-row .scope-option").forEach(o => {
+    o.classList.toggle("active", o.dataset.branch === state.branch);
+  });
+  searchInput.placeholder = REPORTS[state.tab].searchHint;
   showScreen("screen-reports");
   renderAll();
 });
