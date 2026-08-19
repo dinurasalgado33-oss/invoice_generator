@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=61" />
-<link rel="stylesheet" href="css/brand-home.css?v=61" />
-<link rel="stylesheet" href="css/rooms.css?v=61" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=61" />
-<link rel="stylesheet" href="css/invoice.css?v=61" />
-<link rel="stylesheet" href="css/dashboard.css?v=61" />
-<link rel="stylesheet" href="css/reports.css?v=61" />
-<link rel="stylesheet" href="css/reservation.css?v=61" />
+<link rel="stylesheet" href="css/base.css?v=62" />
+<link rel="stylesheet" href="css/brand-home.css?v=62" />
+<link rel="stylesheet" href="css/rooms.css?v=62" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=62" />
+<link rel="stylesheet" href="css/invoice.css?v=62" />
+<link rel="stylesheet" href="css/dashboard.css?v=62" />
+<link rel="stylesheet" href="css/reports.css?v=62" />
+<link rel="stylesheet" href="css/reservation.css?v=62" />
 </head>
 <body>
 
@@ -300,6 +300,32 @@
     </div>
   </section>
 
+  <!-- Void invoice sheet (manager only, from Reports > Invoices) -->
+  <div class="room-detail-overlay" id="void-sheet-overlay">
+    <div class="room-detail-sheet" id="void-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="void-sheet-title">Void Invoice</h3>
+        <button type="button" class="sheet-icon-btn" id="void-sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="room-detail-body">
+        <form id="void-form">
+          <p class="step-subtext" id="void-sheet-summary"></p>
+          <div class="field">
+            <label>Reason <span class="label-optional">(recommended)</span></label>
+            <textarea id="void-reason" rows="3" placeholder="e.g. Billed to the wrong villa" enterkeyhint="done"></textarea>
+          </div>
+          <p class="hint">The invoice stays on record marked VOID and stops counting toward revenue. It does not change the villa or booking — re-issue a corrected invoice separately.</p>
+          <button type="submit" class="primary-btn big" id="void-confirm-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M4.9 4.9l14.2 14.2" /></svg>
+            Void This Invoice
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
   <!-- SCREEN: Configure branch & bank details (manager only) -->
   <section id="screen-configure-branch" class="screen">
     <button class="back-btn" data-back="screen-configure">&larr; Back</button>
@@ -1411,6 +1437,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=61"></script>
+<script type="module" src="js/main.js?v=62"></script>
 </body>
 </html>

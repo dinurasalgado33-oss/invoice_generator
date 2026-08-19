@@ -5,6 +5,7 @@ import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
+import { confirmAction } from "./confirm.js";
 
 const state = {
   preset: "month", // today | week | month | lastmonth | custom
@@ -222,8 +223,18 @@ function renderInvoicesTab(range) {
 
   const grandTotal = rows.filter(r => r.status === "Active").reduce((s, r) => s + r.total, 0);
 
-  const list = rows.map(inv => `
-    <div class="report-row ${inv.status === "Void" ? "report-row-void" : ""}">
+  const list = rows.map(inv => {
+    const isVoid = inv.status === "Void";
+    // Voided invoices keep their reason on the row — the point of voiding
+    // rather than deleting is that someone can see what happened later.
+    const voidNote = isVoid && inv.voidReason
+      ? `<div class="report-row-usage"><span>Reason <strong>${escapeHtml(inv.voidReason)}</strong></span></div>`
+      : "";
+    const voidBtn = isVoid
+      ? ""
+      : `<button type="button" class="report-void-btn" data-invoice-id="${escapeHtml(inv.id)}" aria-label="Void invoice #${escapeHtml(inv.id)}">Void</button>`;
+    return `
+    <div class="report-row ${isVoid ? "report-row-void" : ""}">
       <div class="report-row-top">
         <div>
           <span class="report-row-title">#${escapeHtml(inv.id)} — ${escapeHtml(inv.guest)}</span>
@@ -231,11 +242,13 @@ function renderInvoicesTab(range) {
         </div>
         <div class="report-row-end">
           <span class="report-row-amount">${fmtLKR(inv.total)}</span>
-          <span class="stock-badge ${inv.status === "Void" ? "low" : ""}">${inv.status}</span>
+          <span class="stock-badge ${isVoid ? "low" : ""}">${inv.status}</span>
+          ${voidBtn}
         </div>
       </div>
-    </div>
-  `).join("");
+      ${voidNote}
+    </div>`;
+  }).join("");
 
   return `
     ${list}
@@ -462,7 +475,12 @@ function renderReportBody(range) {
   document.getElementById("period-filter-group").classList.toggle("disabled", isInventoryTab);
   document.getElementById("period-filter-note").style.display = isInventoryTab ? "" : "none";
 
-  if (state.tab === "invoices") body.innerHTML = renderInvoicesTab(range);
+  if (state.tab === "invoices") {
+    body.innerHTML = renderInvoicesTab(range);
+    body.querySelectorAll(".report-void-btn").forEach(btn => {
+      btn.addEventListener("click", () => openVoidSheet(btn.dataset.invoiceId));
+    });
+  }
   else if (state.tab === "food") body.innerHTML = renderFoodTab(range);
   else if (state.tab === "inventory") body.innerHTML = renderInventoryTab();
   else if (state.tab === "spend") body.innerHTML = renderSpendTab(range);
@@ -534,8 +552,8 @@ function getExportRows() {
   const range = getActiveRange();
   if (state.tab === "invoices") {
     return {
-      headers: ["Invoice #", "Guest", "Branch", "Date", "Total (LKR)", "Status"],
-      rows: getFilteredInvoices(range).map(r => [r.id, r.guest, r.branch, r.date, r.total, r.status]),
+      headers: ["Invoice #", "Guest", "Branch", "Date", "Total (LKR)", "Status", "Void Reason"],
+      rows: getFilteredInvoices(range).map(r => [r.id, r.guest, r.branch, r.date, r.total, r.status, r.voidReason || ""]),
     };
   }
   if (state.tab === "food") {
@@ -643,4 +661,59 @@ document.getElementById("open-reports-btn").addEventListener("click", () => {
   document.getElementById("reports-branch-select").value = appState.selectedBranch;
   showScreen("screen-reports");
   renderAll();
+});
+
+// ---- Void an invoice (manager-only; Reports is already manager-gated) ----
+// A wrong bill can't be deleted — the record has to stay so the numbering
+// has no unexplained gaps and someone can see later what happened. Voiding
+// keeps the row, marks it VOID, and drops it out of every revenue figure
+// (computeSummary/computeBranchTotals/dashboard all filter status==="Active").
+// Deliberately money-only: it does NOT reopen the villa or the booking,
+// since the villa may already be re-let. Re-issue a corrected invoice.
+let voidingInvoiceId = null;
+
+function openVoidSheet(invoiceId) {
+  const inv = INVOICES.find(i => String(i.id) === String(invoiceId));
+  if (!inv || inv.status === "Void") return;
+  voidingInvoiceId = inv.id;
+
+  document.getElementById("void-sheet-summary").textContent =
+    `#${inv.id} — ${inv.guest} · ${inv.branch} · ${formatDate(inv.date)} · ${fmtLKR(inv.total)}`;
+  document.getElementById("void-reason").value = "";
+  document.getElementById("void-sheet-overlay").classList.add("open");
+}
+
+function closeVoidSheet() {
+  document.getElementById("void-sheet-overlay").classList.remove("open");
+  voidingInvoiceId = null;
+}
+
+document.getElementById("void-sheet-close").addEventListener("click", closeVoidSheet);
+document.getElementById("void-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "void-sheet-overlay") closeVoidSheet();
+});
+
+document.getElementById("void-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (voidingInvoiceId === null) return;
+
+  const inv = INVOICES.find(i => String(i.id) === String(voidingInvoiceId));
+  if (!inv || inv.status === "Void") { closeVoidSheet(); return; }
+
+  const reason = document.getElementById("void-reason").value.trim();
+  const ok = await confirmAction({
+    title: "Void this invoice?",
+    message: `#${inv.id} for ${inv.guest} (${fmtLKR(inv.total)}) will stop counting toward revenue. This can't be undone.`,
+    confirmLabel: "Void Invoice",
+    tone: "danger",
+  });
+  if (!ok) return;
+
+  inv.status = "Void";
+  inv.voidReason = reason;
+  inv.voidedAt = new Date().toISOString();
+
+  closeVoidSheet();
+  renderAll();
+  showToast(`Invoice #${inv.id} voided`);
 });

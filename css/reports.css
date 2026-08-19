@@ -217,3 +217,25 @@
 @media print {
   .reports-filters, .report-tabs { display: none; }
 }
+
+/* Void action on an invoice row — quiet until needed, danger-toned since
+   it's a financial correction that can't be undone. */
+.report-void-btn {
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.report-void-btn:active { transform: scale(0.96); }
+@media (hover: hover) and (pointer: fine) {
+  .report-void-btn:hover { border-color: var(--danger); color: var(--danger); background: #fdf2f1; }
+}
+
+@media print {
+  .report-void-btn { display: none; }
+}
