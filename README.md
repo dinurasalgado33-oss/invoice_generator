@@ -51,6 +51,57 @@ None of this is wired to a backend yet — everything lives in-memory in `js/dat
 
 Swap these for a real data source later without touching the rendering/chart code.
 
+## Offline-first requirements (for the backend build)
+
+Both properties are in remote areas with poor, intermittent connectivity. That is a
+hard design constraint, not a nice-to-have: the app must stay usable with no signal
+and reconcile once a connection returns. Three decisions follow from it, and all
+three are cheaper to make **before** the backend exists than after.
+
+### 1. Data offline — Firestore local cache
+Firestore caches reads in IndexedDB and queues writes locally, replaying them
+automatically when the connection returns. **On web this is opt-in** (it's on by
+default only on iOS/Android), so it must be enabled explicitly at init via
+`persistentLocalCache` in the modular SDK — with `persistentMultipleTabManager()`
+if staff might open the app in more than one tab.
+
+Miss this line and the app silently becomes online-only.
+
+### 2. The app shell offline — service worker
+Firestore's cached data is useless if the app itself won't load. Served from GitHub
+Pages with no signal, a refresh fetches `index.html`, `css/*`, and `js/*` from the
+network and fails — the app never starts. A service worker caching the app shell is
+what makes "open the app with no bars" work at all.
+
+Note this interacts with the `?v=N` cache-busting scheme above: the service worker
+becomes the thing that decides what's stale, so the two need to agree rather than
+fight. Version the cache name alongside `?v=N`.
+
+### 3. Invoice numbering — decide before the first real invoice
+A transactional counter for sequential invoice numbers **requires the server**.
+Offline, a device cannot reserve `#175`, because it can't know another device hasn't
+just taken it. Options:
+
+| Approach | Offline? | Cost |
+|---|---|---|
+| **Per-device prefix** (`W-175`, `A-88`) | Yes | Numbers aren't globally sequential |
+| Assign on sync | No | Guest's printed copy shows a placeholder |
+| Pre-allocated blocks | Partly | Device must go online to refill; leaves gaps |
+
+**Leaning per-device prefix** — it's the only one that behaves identically online and
+offline, and a prefix reads fine on a guest-facing bill. This is expensive to change
+once real invoices exist, so settle it first.
+
+### Conflict handling
+Stock levels have the same shape of problem: two staff deducting the same item
+offline would clobber each other under last-write-wins. Firestore's atomic
+`increment()` handles this correctly — both deductions apply. Use it for stock
+rather than reading, subtracting, and writing back.
+
+Room status is the residual risk (two staff checking different guests into one villa
+offline). Rare enough to accept, but worth surfacing in the UI rather than resolving
+silently.
+
 ## Login & roles
 Username/password is a **client-side gate only** — there's no backend, so the credentials live in plain text in `js/data/accounts.js` (the `ACCOUNTS` array). It keeps casual visitors out but is not real security: anyone with browser dev tools can read or bypass it. Don't reuse a password that matters elsewhere. Once logged in, a device stays signed in (via `localStorage`) until that flag is cleared.
 
