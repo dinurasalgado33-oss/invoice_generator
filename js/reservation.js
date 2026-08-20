@@ -2,6 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
+import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { RESERVATIONS, allocateReservationNo } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
 
@@ -14,20 +15,37 @@ function clampCount(value) {
 
 const villaList = document.getElementById("resv-villa-list");
 
-function addVillaRow(name = "", rate = "") {
+// Villas are picked from the branch's configured list rather than typed,
+// and the nightly rate follows the villa automatically. Free text meant a
+// misspelt villa name and a hand-typed rate could both reach a guest's
+// confirmation, and neither would match what the manager set in Configure.
+function villaOptions() {
+  return ROOMS_BY_BRANCH[appState.selectedBranch] || [];
+}
+
+function addVillaRow(roomId = null) {
+  const villas = villaOptions();
   const row = document.createElement("div");
   row.className = "villa-rate-row";
-  // Values are set as DOM properties below, never interpolated into the
-  // HTML string: escapeHtml() neutralises <, > and & but NOT quotes, so a
-  // name containing a double quote would break straight out of value="..."
-  // and inject attributes. Same rule the invoice charges table follows.
   row.innerHTML = `
-    <input type="text" class="villa-name-input" placeholder="Villa name" maxlength="80">
-    <input type="number" class="villa-rate-input" placeholder="Rate (LKR)" min="0" step="1" inputmode="decimal">
+    <select class="villa-name-select" aria-label="Villa">
+      <option value="">Select a villa…</option>
+      ${villas.map(v => `<option value="${v.id}">${escapeHtml(v.name || "Unnamed villa")}</option>`).join("")}
+    </select>
+    <input type="number" class="villa-rate-input" placeholder="Rate" readonly aria-label="Nightly rate" />
     <button type="button" class="remove-ingredient-btn" aria-label="Remove villa">&times;</button>
   `;
-  row.querySelector(".villa-name-input").value = name;
-  row.querySelector(".villa-rate-input").value = rate;
+  const select = row.querySelector(".villa-name-select");
+  const rateInput = row.querySelector(".villa-rate-input");
+
+  function syncRate() {
+    const villa = villas.find(v => String(v.id) === select.value);
+    rateInput.value = villa ? villa.rate : "";
+  }
+  select.addEventListener("change", syncRate);
+  if (roomId != null) select.value = String(roomId);
+  syncRate();
+
   row.querySelector(".remove-ingredient-btn").addEventListener("click", () => row.remove());
   villaList.appendChild(row);
 }
@@ -132,12 +150,17 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   const checkoutDate = resvCheckoutDateInput.value;
   const nights = reservationNights(checkinDate, checkoutDate);
 
+  // roomId is stored alongside the name so a later proforma joins on the
+  // villa itself, while the name/rate snapshot keeps this reservation
+  // reading correctly even after the villa is renamed or repriced.
+  const configured = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   const villas = [...villaList.querySelectorAll(".villa-rate-row")]
-    .map(row => ({
-      name: row.querySelector(".villa-name-input").value.trim(),
-      rate: clampMoney(row.querySelector(".villa-rate-input").value),
-    }))
-    .filter(v => v.name || v.rate);
+    .map(row => {
+      const id = row.querySelector(".villa-name-select").value;
+      const villa = configured.find(v => String(v.id) === id);
+      return villa ? { roomId: villa.id, name: villa.name, rate: clampMoney(villa.rate) } : null;
+    })
+    .filter(Boolean);
 
   // Header
   document.getElementById("resv-prev-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;

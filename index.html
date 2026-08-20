@@ -6,16 +6,16 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=83" />
-<link rel="stylesheet" href="css/brand-home.css?v=83" />
-<link rel="stylesheet" href="css/rooms.css?v=83" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=83" />
-<link rel="stylesheet" href="css/invoice.css?v=83" />
-<link rel="stylesheet" href="css/dashboard.css?v=83" />
-<link rel="stylesheet" href="css/reports.css?v=83" />
-<link rel="stylesheet" href="css/reservation.css?v=83" />
-  <link rel="stylesheet" href="css/grc.css?v=83" />
-  <link rel="stylesheet" href="css/proforma.css?v=83" />
+<link rel="stylesheet" href="css/base.css?v=84" />
+<link rel="stylesheet" href="css/brand-home.css?v=84" />
+<link rel="stylesheet" href="css/rooms.css?v=84" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=84" />
+<link rel="stylesheet" href="css/invoice.css?v=84" />
+<link rel="stylesheet" href="css/dashboard.css?v=84" />
+<link rel="stylesheet" href="css/reports.css?v=84" />
+<link rel="stylesheet" href="css/reservation.css?v=84" />
+  <link rel="stylesheet" href="css/grc.css?v=84" />
+  <link rel="stylesheet" href="css/proforma.css?v=84" />
 </head>
 <body>
 
@@ -1401,14 +1401,14 @@
       </div>
 
       <h3 class="section-title">Charges</h3>
-      <p class="step-subtext">Agent rates, in the currency above — these are usually contracted rates, not the villa's standard rate.</p>
+      <p class="step-subtext">Villas and rates come from the reservation. Change the nights if the agent is billed for a different span.</p>
       <div id="pf-items-wrap">
         <table id="pf-items-table">
           <thead>
             <tr>
               <th class="col-no">#</th>
-              <th class="col-desc">List of Information</th>
-              <th class="col-qty">Qty</th>
+              <th class="col-desc">Villa</th>
+              <th class="col-qty">Nights</th>
               <th class="col-price">Rate</th>
               <th class="col-total">Value</th>
               <th class="col-del"></th>
@@ -1417,10 +1417,7 @@
           <tbody id="pf-items-body"><!-- injected by JS --></tbody>
         </table>
       </div>
-      <button type="button" id="pf-add-item-btn" class="secondary-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
-        Add a line
-      </button>
+      <p class="field-error" id="pf-no-villas-note" hidden>This reservation has no villas on it, so there is nothing to invoice.</p>
       <p class="field-error" id="pf-items-error">Add at least one charge</p>
 
       <h3 class="section-title">Totals</h3>
@@ -2236,6 +2233,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=83"></script>
+<script type="module" src="js/main.js?v=84"></script>
 </body>
 </html>

@@ -251,3 +251,8 @@
   .proforma-meta { grid-template-columns: 1.4fr 1fr; }
   .proforma-signatures, .proforma-bank, .proforma-policy { break-inside: avoid; }
 }
+
+/* Shown when a reservation has no villas — there is no "add a line"
+   escape on this form, so the dead end has to explain itself. */
+#pf-no-villas-note:not([hidden]) { display: block; }
+#pf-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }

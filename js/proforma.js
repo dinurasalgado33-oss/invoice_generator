@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import {
   escapeHtml, formatDate, setLogoSrc, showToast, toDateISO, orDash,
-  clampMoney, capNumericInput, MAX_MONEY,
+  clampMoney, capNumericInput, MAX_MONEY, MAX_COUNT,
 } from "./utils.js";
 import { BRANCH_INFO, CANCELLATION_POLICY, PROFORMA_NOTICES, PROFORMA_CLOSING } from "./data/branches.js";
 import {
@@ -37,48 +37,47 @@ function renumber() {
   });
 }
 
-function addItemRow(desc = "", qty = "", rate = "", value = "") {
+// A line can only name a villa that is actually on the reservation, and
+// its rate is whatever that reservation set. Staff change nights, nothing
+// else — an agent invoice that could name a villa the guest never booked,
+// at a rate nobody agreed, is a document that disagrees with its own
+// reservation.
+function addItemRow(roomId = null, nights = 1) {
+  const villas = (sourceReservation && sourceReservation.villas) || [];
   const row = document.createElement("tr");
-  // Set as DOM properties below, never interpolated — escapeHtml leaves
-  // quotes alone, so a villa name containing one would break out of a
-  // value="" attribute. Same rule as the invoice charges table.
   row.innerHTML = `
     <td class="col-no"></td>
-    <td class="col-desc" data-label="Description"><input type="text" class="pf-item-desc" placeholder="e.g. Luxury chalet with a private pool DBL (HB)"></td>
-    <td class="col-qty" data-label="Qty"><input type="text" class="pf-item-qty" placeholder="e.g. 1 Night"></td>
-    <td class="col-price" data-label="Rate"><input type="number" class="pf-item-rate" min="0" step="0.01" inputmode="decimal"></td>
-    <td class="col-total" data-label="Value"><input type="number" class="pf-item-value" min="0" step="0.01" inputmode="decimal"></td>
+    <td class="col-desc" data-label="Villa">
+      <select class="pf-item-villa" aria-label="Villa">
+        <option value="">Select a villa…</option>
+        ${villas.map(v => `<option value="${v.roomId}">${escapeHtml(v.name)}</option>`).join("")}
+      </select>
+    </td>
+    <td class="col-qty" data-label="Nights"><input type="number" class="pf-item-nights" min="1" step="1" inputmode="numeric" aria-label="Nights"></td>
+    <td class="col-price" data-label="Rate"><input type="number" class="pf-item-rate" readonly aria-label="Rate"></td>
+    <td class="col-total" data-label="Value"><input type="number" class="pf-item-value" readonly aria-label="Value"></td>
     <td class="col-del"><button type="button" class="row-del-btn" title="Remove line">✕</button></td>
   `;
-  const descInput = row.querySelector(".pf-item-desc");
-  const qtyInput = row.querySelector(".pf-item-qty");
+  const villaSelect = row.querySelector(".pf-item-villa");
+  const nightsInput = row.querySelector(".pf-item-nights");
   const rateInput = row.querySelector(".pf-item-rate");
   const valueInput = row.querySelector(".pf-item-value");
-  descInput.value = desc;
-  qtyInput.value = qty;
-  rateInput.value = rate;
-  valueInput.value = value;
   itemsBody().appendChild(row);
 
-  capNumericInput(rateInput, MAX_MONEY);
-  capNumericInput(valueInput, MAX_MONEY);
-
-  function autoFill() {
-    const r = clampMoney(rateInput.value);
-    // Qty is free text because the document prints it that way ("1 Night"),
-    // but it always leads with the number. Reading that leading number is
-    // what makes the common case work — the prefilled lines are all
-    // "N Nights", and requiring the value to be retyped for those meant a
-    // rate could be entered and the line still total zero.
-    const q = parseFloat(qtyInput.value);
-    if (Number.isFinite(q) && /^\s*\d/.test(qtyInput.value)) {
-      valueInput.value = clampMoney(q * r).toFixed(2);
-    }
+  function sync() {
+    const villa = villas.find(v => String(v.roomId) === villaSelect.value);
+    rateInput.value = villa ? villa.rate : "";
+    const n = Math.max(1, Math.floor(clampMoney(nightsInput.value, MAX_COUNT)) || 1);
+    valueInput.value = villa ? clampMoney(villa.rate * n).toFixed(2) : "";
     updateTotals();
   }
-  qtyInput.addEventListener("input", autoFill);
-  rateInput.addEventListener("input", autoFill);
-  valueInput.addEventListener("input", updateTotals);
+  villaSelect.addEventListener("change", sync);
+  nightsInput.addEventListener("input", sync);
+
+  if (roomId != null) villaSelect.value = String(roomId);
+  nightsInput.value = String(Math.max(1, nights));
+  sync();
+
   row.querySelector(".row-del-btn").addEventListener("click", () => {
     row.remove();
     renumber();
@@ -86,18 +85,28 @@ function addItemRow(desc = "", qty = "", rate = "", value = "") {
   });
 
   renumber();
-  updateTotals();
   el("pf-items-error").classList.remove("show");
 }
 
 function getItems() {
-  return [...itemsBody().querySelectorAll("tr")].map((row, i) => ({
-    no: i + 1,
-    desc: row.querySelector(".pf-item-desc").value.trim(),
-    qty: row.querySelector(".pf-item-qty").value.trim(),
-    rate: clampMoney(row.querySelector(".pf-item-rate").value),
-    value: clampMoney(row.querySelector(".pf-item-value").value),
-  })).filter(it => it.desc || it.qty || it.rate || it.value);
+  const villas = (sourceReservation && sourceReservation.villas) || [];
+  return [...itemsBody().querySelectorAll("tr")].map((row, i) => {
+    const id = row.querySelector(".pf-item-villa").value;
+    const villa = villas.find(v => String(v.roomId) === id);
+    if (!villa) return null;
+    const n = Math.max(1, Math.floor(clampMoney(row.querySelector(".pf-item-nights").value, MAX_COUNT)) || 1);
+    return {
+      no: i + 1,
+      roomId: villa.roomId,
+      // Printed exactly as the paper document reads it: villa name with
+      // the meal plan in brackets, quantity as "N Nights".
+      desc: sourceReservation.bookingType ? `${villa.name} (${sourceReservation.bookingType})` : villa.name,
+      qty: `${n} Night${n === 1 ? "" : "s"}`,
+      nights: n,
+      rate: clampMoney(villa.rate),
+      value: clampMoney(villa.rate * n),
+    };
+  }).filter(Boolean);
 }
 
 function computeTotals() {
@@ -151,20 +160,18 @@ export function openProformaForm(reservationId) {
     </p>
   `;
 
-  // Seed the charge lines from the villas on the reservation. Rates are
-  // deliberately left blank: the reservation carries the rack rate in LKR,
-  // and an agent is billed a contracted rate in their own currency, so
-  // copying the number across would be wrong more often than right.
+  // One line per villa on the reservation, at that reservation's rate and
+  // its number of nights. Staff adjust nights if the agent is being billed
+  // for a different span; everything else is inherited.
   itemsBody().innerHTML = "";
   const villas = (res.villas || []).filter(v => v.name);
-  if (villas.length) {
-    villas.forEach(v => addItemRow(
-      res.bookingType ? `${v.name} (${res.bookingType})` : v.name,
-      `${res.nights} Night${res.nights === 1 ? "" : "s"}`,
-    ));
-  } else {
-    addItemRow();
-  }
+  villas.forEach(v => addItemRow(v.roomId, res.nights || 1));
+
+  // A reservation with no villas can't produce a meaningful agent invoice,
+  // and there's no "add a line" escape any more — say so rather than
+  // showing an empty table with a dead submit button.
+  el("pf-no-villas-note").hidden = villas.length > 0;
+  el("pf-submit-btn").disabled = villas.length === 0;
 
   el("pf-discount").value = "0";
   el("pf-advance").value = "0";
@@ -172,7 +179,6 @@ export function openProformaForm(reservationId) {
   showScreen("screen-proforma-form");
 }
 
-el("pf-add-item-btn").addEventListener("click", () => addItemRow());
 ["pf-discount", "pf-advance"].forEach(id => {
   capNumericInput(el(id), MAX_MONEY);
   el(id).addEventListener("input", updateTotals);
