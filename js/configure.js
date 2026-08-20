@@ -456,25 +456,20 @@ function branchNotices() {
 function renderCancellationList() {
   const list = document.getElementById("configure-cancellation-list");
   list.innerHTML = branchCancellation().map(c => `
-    <tr class="list-item-row">
-      <td class="list-td-name list-td-wrap">${escapeHtml(c.text)}</td>
-      <td>
-        <button type="button" class="list-edit-btn" data-cancellation-id="${c.id}" aria-label="Edit policy line">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-        </button>
-      </td>
-    </tr>
-  `).join("") || `
-    <tr><td colspan="2">
-      <div class="list-empty">
-        <p class="list-empty-title">No cancellation policy set.</p>
-        <p class="list-empty-hint">Agent invoices will print without one until a line is added.</p>
-        <button type="button" class="secondary-btn" id="cancellation-empty-add">Add first line</button>
+    <div class="report-row">
+      <div class="report-row-top">
+        <div>
+          <span class="report-row-sub">${escapeHtml(c.text || "")}</span>
+        </div>
+        <div class="report-row-end">
+          <button type="button" class="list-edit-btn" data-cancellation-id="${c.id}" aria-label="Edit policy line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+        </div>
       </div>
-    </td></tr>`;
+    </div>
+  `).join("") || `<p class="room-detail-empty">No cancellation policy yet — tap "+" to add one.</p>`;
 
-  const emptyAdd = document.getElementById("cancellation-empty-add");
-  if (emptyAdd) emptyAdd.addEventListener("click", () => openCancellationSheet(null));
   list.querySelectorAll(".list-edit-btn").forEach(btn => {
     btn.addEventListener("click", () => openCancellationSheet(Number(btn.dataset.cancellationId)));
   });
@@ -539,28 +534,21 @@ document.getElementById("cancellation-delete-btn").addEventListener("click", asy
 function renderNoticesList() {
   const list = document.getElementById("configure-notices-list");
   list.innerHTML = branchNotices().map(n => `
-    <tr class="list-item-row">
-      <td class="list-td-name list-td-wrap">
-        ${escapeHtml(n.text)}
-        ${n.emphasis ? `<span class="list-item-tag notice-emphasis-tag">prints in red</span>` : ""}
-      </td>
-      <td>
-        <button type="button" class="list-edit-btn" data-notice-id="${n.id}" aria-label="Edit remark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-        </button>
-      </td>
-    </tr>
-  `).join("") || `
-    <tr><td colspan="2">
-      <div class="list-empty">
-        <p class="list-empty-title">No remarks set.</p>
-        <p class="list-empty-hint">Payment terms print around the bank details on agent invoices.</p>
-        <button type="button" class="secondary-btn" id="notice-empty-add">Add first remark</button>
+    <div class="report-row">
+      <div class="report-row-top">
+        <div>
+          <span class="report-row-sub">${escapeHtml(n.text || "")}</span>
+          ${n.emphasis ? `<span class="notice-emphasis-tag">prints in red</span>` : ""}
+        </div>
+        <div class="report-row-end">
+          <button type="button" class="list-edit-btn" data-notice-id="${n.id}" aria-label="Edit remark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+        </div>
       </div>
-    </td></tr>`;
+    </div>
+  `).join("") || `<p class="room-detail-empty">No remarks yet — tap "+" to add one.</p>`;
 
-  const emptyAdd = document.getElementById("notice-empty-add");
-  if (emptyAdd) emptyAdd.addEventListener("click", () => openNoticeSheet(null));
   list.querySelectorAll(".list-edit-btn").forEach(btn => {
     btn.addEventListener("click", () => openNoticeSheet(Number(btn.dataset.noticeId)));
   });

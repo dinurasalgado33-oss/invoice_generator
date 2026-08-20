@@ -214,17 +214,20 @@
 .proforma-signatures .grc-signature-block { min-width: 170px; margin: 0; }
 .proforma-footnote { margin: 10px 0 0; font-size: 0.66rem; color: var(--text-muted); }
 
-/* Configure list rows carry full sentences, so they must wrap rather than
-   truncate the way short name rows do. */
-.list-td-wrap {
-  max-width: none;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-  font-weight: 500;
+/* Small inline badge on the Remarks list — marks a line that prints red
+   on the invoice, which is a property of the term, not a styling choice. */
+.notice-emphasis-tag {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #c0392b;
+  background: #fdf2f1;
+  padding: 2px 8px;
+  border-radius: 20px;
 }
-.notice-emphasis-tag { color: #c0392b; }
 
 @media (max-width: 520px) {
   .proforma-paper { padding: 18px 16px 16px; }
