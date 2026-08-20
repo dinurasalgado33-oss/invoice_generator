@@ -32,7 +32,7 @@ function addVillaRow(roomId = null) {
       <option value="">Select a villa…</option>
       ${villas.map(v => `<option value="${v.id}">${escapeHtml(v.name || "Unnamed villa")}</option>`).join("")}
     </select>
-    <input type="number" class="villa-rate-input" placeholder="Rate" readonly aria-label="Nightly rate" />
+    <input type="number" class="villa-rate-input" placeholder="Rate" min="0" step="0.01" readonly aria-label="Nightly rate" />
     <button type="button" class="remove-ingredient-btn" aria-label="Remove villa">&times;</button>
   `;
   const select = row.querySelector(".villa-name-select");

@@ -1,9 +1,24 @@
 /* Reservation Confirmation form */
 #screen-reservation-form .field-label-standalone:first-of-type { margin-top: 4px; }
 
-.villa-rate-row { display: flex; align-items: center; gap: 8px; }
-.villa-rate-row .villa-name-input { flex: 2; }
-.villa-rate-row .villa-rate-input { flex: 1; }
+.villa-rate-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+/* The villa is a <select> now, not a text input. Without min-width:0 it
+   refuses to shrink below its longest option and squeezes the rate field
+   down to nothing — which is why the price looked like it wasn't filling
+   in at all. */
+.villa-rate-row .villa-name-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Fixed width rather than a flex share: the rate is a derived, read-only
+   number and needs enough room to actually show five or six digits. */
+.villa-rate-row .villa-rate-input {
+  flex: 0 0 104px;
+  text-align: right;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  font-weight: 600;
+}
 
 /* Reservation Confirmation preview — a guest-facing document, styled to
    match the hotel's existing paper confirmation slip rather than the

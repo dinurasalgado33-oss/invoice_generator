@@ -6,16 +6,16 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=84" />
-<link rel="stylesheet" href="css/brand-home.css?v=84" />
-<link rel="stylesheet" href="css/rooms.css?v=84" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=84" />
-<link rel="stylesheet" href="css/invoice.css?v=84" />
-<link rel="stylesheet" href="css/dashboard.css?v=84" />
-<link rel="stylesheet" href="css/reports.css?v=84" />
-<link rel="stylesheet" href="css/reservation.css?v=84" />
-  <link rel="stylesheet" href="css/grc.css?v=84" />
-  <link rel="stylesheet" href="css/proforma.css?v=84" />
+<link rel="stylesheet" href="css/base.css?v=86" />
+<link rel="stylesheet" href="css/brand-home.css?v=86" />
+<link rel="stylesheet" href="css/rooms.css?v=86" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=86" />
+<link rel="stylesheet" href="css/invoice.css?v=86" />
+<link rel="stylesheet" href="css/dashboard.css?v=86" />
+<link rel="stylesheet" href="css/reports.css?v=86" />
+<link rel="stylesheet" href="css/reservation.css?v=86" />
+  <link rel="stylesheet" href="css/grc.css?v=86" />
+  <link rel="stylesheet" href="css/proforma.css?v=86" />
 </head>
 <body>
 
@@ -1417,6 +1417,7 @@
           <tbody id="pf-items-body"><!-- injected by JS --></tbody>
         </table>
       </div>
+      <p class="pf-rate-note" id="pf-rate-note" hidden></p>
       <p class="field-error" id="pf-no-villas-note" hidden>This reservation has no villas on it, so there is nothing to invoice.</p>
       <p class="field-error" id="pf-items-error">Add at least one charge</p>
 
@@ -2065,11 +2066,11 @@
         <div class="form-grid">
           <div class="field">
             <label>Adults</label>
-            <input type="number" id="resv-adults" min="0" value="2" inputmode="numeric" enterkeyhint="next" />
+            <input type="number" id="resv-adults" min="0" step="1" value="2" inputmode="numeric" enterkeyhint="next" />
           </div>
           <div class="field">
             <label>Children</label>
-            <input type="number" id="resv-children" min="0" value="0" inputmode="numeric" enterkeyhint="next" />
+            <input type="number" id="resv-children" min="0" step="1" value="0" inputmode="numeric" enterkeyhint="next" />
           </div>
         </div>
         <div class="field">
@@ -2233,6 +2234,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=84"></script>
+<script type="module" src="js/main.js?v=86"></script>
 </body>
 </html>

@@ -54,8 +54,8 @@ function addItemRow(roomId = null, nights = 1) {
       </select>
     </td>
     <td class="col-qty" data-label="Nights"><input type="number" class="pf-item-nights" min="1" step="1" inputmode="numeric" aria-label="Nights"></td>
-    <td class="col-price" data-label="Rate"><input type="number" class="pf-item-rate" readonly aria-label="Rate"></td>
-    <td class="col-total" data-label="Value"><input type="number" class="pf-item-value" readonly aria-label="Value"></td>
+    <td class="col-price" data-label="Rate"><input type="number" class="pf-item-rate" min="0" step="0.01" inputmode="decimal" readonly aria-label="Rate"></td>
+    <td class="col-total" data-label="Value"><input type="number" class="pf-item-value" min="0" step="0.01" readonly aria-label="Value"></td>
     <td class="col-del"><button type="button" class="row-del-btn" title="Remove line">✕</button></td>
   `;
   const villaSelect = row.querySelector(".pf-item-villa");
@@ -63,20 +63,46 @@ function addItemRow(roomId = null, nights = 1) {
   const rateInput = row.querySelector(".pf-item-rate");
   const valueInput = row.querySelector(".pf-item-value");
   itemsBody().appendChild(row);
+  capNumericInput(rateInput, MAX_MONEY);
 
-  function sync() {
+  // Picking a different villa re-inherits that villa's rate — but only in
+  // LKR. In a foreign currency the inherited figure means nothing, so the
+  // field is left for staff to fill with the contracted rate.
+  function onVillaChange() {
     const villa = villas.find(v => String(v.roomId) === villaSelect.value);
-    rateInput.value = villa ? villa.rate : "";
+    rateInput.value = villa && isLocalCurrency() ? villa.rate : "";
+    recalc();
+  }
+
+  function recalc() {
     const n = Math.max(1, Math.floor(clampMoney(nightsInput.value, MAX_COUNT)) || 1);
-    valueInput.value = villa ? clampMoney(villa.rate * n).toFixed(2) : "";
+    const r = clampMoney(rateInput.value);
+    valueInput.value = villaSelect.value ? clampMoney(r * n).toFixed(2) : "";
     updateTotals();
   }
-  villaSelect.addEventListener("change", sync);
-  nightsInput.addEventListener("input", sync);
+
+  villaSelect.addEventListener("change", onVillaChange);
+  nightsInput.addEventListener("input", recalc);
+  rateInput.addEventListener("input", recalc);
+  // Exposed so a currency change can re-lock or re-inherit every row at
+  // once without rebuilding the table and losing the nights staff typed.
+  row._applyCurrency = () => {
+    const villa = villas.find(v => String(v.roomId) === villaSelect.value);
+    rateInput.readOnly = isLocalCurrency();
+    if (isLocalCurrency()) {
+      rateInput.value = villa ? villa.rate : "";
+    } else {
+      // Deliberately cleared, not converted: the app doesn't know today's
+      // rate, and an LKR figure printed under a "Value (USD)" heading is a
+      // wrong invoice rather than an approximate one.
+      rateInput.value = "";
+    }
+    recalc();
+  };
 
   if (roomId != null) villaSelect.value = String(roomId);
   nightsInput.value = String(Math.max(1, nights));
-  sync();
+  row._applyCurrency();
 
   row.querySelector(".row-del-btn").addEventListener("click", () => {
     row.remove();
@@ -88,6 +114,14 @@ function addItemRow(roomId = null, nights = 1) {
   el("pf-items-error").classList.remove("show");
 }
 
+// The villa rates on a reservation are LKR. Billing an agent in their own
+// currency means those figures don't apply, so the rate field unlocks and
+// staff enter the contracted rate instead. In LKR it stays inherited and
+// locked, which is the common case.
+function isLocalCurrency() {
+  return el("pf-currency").value === "LKR";
+}
+
 function getItems() {
   const villas = (sourceReservation && sourceReservation.villas) || [];
   return [...itemsBody().querySelectorAll("tr")].map((row, i) => {
@@ -95,6 +129,9 @@ function getItems() {
     const villa = villas.find(v => String(v.roomId) === id);
     if (!villa) return null;
     const n = Math.max(1, Math.floor(clampMoney(row.querySelector(".pf-item-nights").value, MAX_COUNT)) || 1);
+    // Read from the field, not from the villa — in a foreign currency the
+    // field holds the agreed rate, which the reservation never knew.
+    const rate = clampMoney(row.querySelector(".pf-item-rate").value);
     return {
       no: i + 1,
       roomId: villa.roomId,
@@ -103,8 +140,8 @@ function getItems() {
       desc: sourceReservation.bookingType ? `${villa.name} (${sourceReservation.bookingType})` : villa.name,
       qty: `${n} Night${n === 1 ? "" : "s"}`,
       nights: n,
-      rate: clampMoney(villa.rate),
-      value: clampMoney(villa.rate * n),
+      rate,
+      value: clampMoney(rate * n),
     };
   }).filter(Boolean);
 }
@@ -124,6 +161,9 @@ function computeTotals() {
 
 function updateTotals() {
   const { billTotal, discount, gross, net, advance, grand } = computeTotals();
+  // Clear the zero-total complaint as soon as it stops being true, rather
+  // than leaving it on screen contradicting the totals below it.
+  if (billTotal > 0) el("pf-items-error").classList.remove("show");
   el("pf-live-bill").textContent = money(billTotal);
   el("pf-live-discount").textContent = money(discount);
   el("pf-live-gross").textContent = money(gross);
@@ -182,6 +222,16 @@ export function openProformaForm(reservationId) {
 ["pf-discount", "pf-advance"].forEach(id => {
   capNumericInput(el(id), MAX_MONEY);
   el(id).addEventListener("input", updateTotals);
+});
+
+// Switching currency re-locks or unlocks every rate at once, keeping the
+// nights already typed.
+el("pf-currency").addEventListener("change", () => {
+  [...itemsBody().querySelectorAll("tr")].forEach(row => row._applyCurrency && row._applyCurrency());
+  const foreign = !isLocalCurrency();
+  el("pf-rate-note").hidden = !foreign;
+  el("pf-rate-note").textContent =
+    `Enter the rate agreed with the agent in ${el("pf-currency").value} — the reservation's LKR rates don't apply.`;
 });
 el("pf-travel-agent").addEventListener("input", () => {
   el("pf-travel-agent-error").classList.remove("show");

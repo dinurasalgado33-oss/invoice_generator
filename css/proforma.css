@@ -256,3 +256,19 @@
    escape on this form, so the dead end has to explain itself. */
 #pf-no-villas-note:not([hidden]) { display: block; }
 #pf-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Explains why the rate opened up when a foreign currency was chosen. */
+.pf-rate-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--maroon);
+  font-weight: 600;
+}
+.pf-rate-note[hidden] { display: none; }
+/* A locked rate is inherited from the reservation; an unlocked one is
+   being typed. They should not look the same. */
+#pf-items-table .pf-item-rate[readonly],
+#pf-items-table .pf-item-value[readonly] {
+  background: var(--bg-alt);
+  color: var(--text-muted);
+}

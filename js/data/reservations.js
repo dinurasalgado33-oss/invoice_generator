@@ -36,5 +36,8 @@ export function proformasForReservation(reservationId) {
 // Central Bank rate on the day, which is why the document says so rather
 // than fixing a rate. No conversion happens in the app: staff enter the
 // agreed amounts directly in whichever currency was contracted.
-export const PROFORMA_CURRENCIES = ["USD", "EUR", "GBP", "LKR"];
-export const DEFAULT_PROFORMA_CURRENCY = "USD";
+export const PROFORMA_CURRENCIES = ["LKR", "USD", "EUR", "GBP"];
+// Defaults to LKR because that is the currency the reservation's villa
+// rates are in — the rates carry straight over and stay locked. Choosing
+// a foreign currency unlocks them for the contracted agent rate.
+export const DEFAULT_PROFORMA_CURRENCY = "LKR";
