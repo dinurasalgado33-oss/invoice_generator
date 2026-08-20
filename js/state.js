@@ -10,6 +10,9 @@ export const appState = {
   selectedBranchLabel: "",
   selectedBranchLogo: "",
   currentRole: safeStorage.get("leopardinn-role") || null,
+  // Who is signed in. Kept so the app can fill in fields it already knows
+  // the answer to — staff were typing their own name on every invoice.
+  currentUser: safeStorage.get("leopardinn-user") || "",
   // Starts past the seeded INVOICES ids (151-174) so a fresh session's
   // printed reservation numbers don't collide with the seed data — this
   // number is also used directly as the INVOICES record id (invoice.js),

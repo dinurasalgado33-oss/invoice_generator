@@ -52,6 +52,8 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
     safeStorage.set(ROLE_KEY, account.role);
     safeStorage.set(LOCKED_BRANCH_KEY, account.branch || "");
     appState.currentRole = account.role;
+    appState.currentUser = account.displayName || account.username;
+    safeStorage.set("leopardinn-user", appState.currentUser);
     errorEl.classList.remove("show");
     logLogin(account.username, account.role, account.branch);
     routeAfterLogin();
@@ -78,6 +80,8 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   safeStorage.remove(ROLE_KEY);
   safeStorage.remove(LOCKED_BRANCH_KEY);
   appState.currentRole = null;
+  appState.currentUser = "";
+  safeStorage.remove("leopardinn-user");
 
   document.getElementById("login-form").reset();
   document.getElementById("login-error").classList.remove("show");

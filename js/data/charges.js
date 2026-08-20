@@ -79,3 +79,12 @@ export function categoryTotals(items) {
 // takes a cut, which is why the manager tracks the split by hand today.
 export const BOOKING_SOURCES = ["Direct", "Booking.com", "Walk-in", "Agent"];
 export const DEFAULT_BOOKING_SOURCE = "Direct";
+
+// Currencies any guest-facing bill can be raised in. Lives here rather
+// than beside the reservation code because both the checkout invoice and
+// the travel agent invoice print it, and the two must not drift apart.
+// No conversion happens anywhere in the app: amounts are entered in
+// whichever currency was agreed, and the agent invoice says payment
+// settles at the Central Bank rate on the day.
+export const CURRENCIES = ["LKR", "USD", "EUR", "GBP"];
+export const DEFAULT_CURRENCY = "LKR";

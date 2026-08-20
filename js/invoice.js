@@ -5,7 +5,7 @@ import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
-  isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK,
+  isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK, CURRENCIES,
 } from "./data/charges.js";
 
 const afterGenerateCallbacks = [];
@@ -71,6 +71,12 @@ function capField(input, max) {
 // Shown read-only on step 4 so staff can see what the guest will read,
 // set once at load since it never changes.
 document.getElementById("fixed-remark-preview").textContent = INVOICE_REMARK;
+
+// Currency prints on the guest's bill, so a typo there is a typo on a
+// financial document — and it was a free text field. Same list the travel
+// agent invoice offers, so the two documents can't drift apart.
+document.getElementById("currency").innerHTML =
+  CURRENCIES.map(c => `<option value="${c}">${c}</option>`).join("");
 
 const itemsBody = document.getElementById("items-body");
 
@@ -340,6 +346,10 @@ export function resetForm() {
   // form.reset() restores the checkbox's HTML default (checked), but the
   // readOnly state it drives is a DOM property reset doesn't touch.
   document.getElementById("service-charge-auto").checked = true;
+  // The app authenticated this person — no reason to make them type their
+  // own name onto every invoice they raise. Still editable, since one
+  // device is shared and whoever checked the bill may not be who logged in.
+  document.getElementById("staff-name").value = appState.currentUser || "";
   document.getElementById("guest-name-error").classList.remove("show");
   document.getElementById("guest-name").classList.remove("invalid");
   updateLiveTotals();

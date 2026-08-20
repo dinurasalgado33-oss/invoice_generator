@@ -10,6 +10,7 @@ import {
   PROFORMA_CURRENCIES, DEFAULT_PROFORMA_CURRENCY,
 } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
+import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 
 // Proforma Invoice — the pre-arrival bill sent to the travel agent or
 // guide who made the booking. Raised against an existing reservation, so
@@ -233,6 +234,8 @@ el("pf-currency").addEventListener("change", () => {
   el("pf-rate-note").textContent =
     `Enter the rate agreed with the agent in ${el("pf-currency").value} — the reservation's LKR rates don't apply.`;
 });
+attachSuggestions(el("pf-travel-agent"), SUGGESTION_KEYS.TRAVEL_AGENT);
+
 el("pf-travel-agent").addEventListener("input", () => {
   el("pf-travel-agent-error").classList.remove("show");
   el("pf-travel-agent").classList.remove("invalid");

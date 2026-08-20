@@ -11,6 +11,7 @@ import {
   isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
 } from "./data/charges.js";
 import { openGrcForm } from "./grc.js";
+import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -462,6 +463,9 @@ function wireActivitiesPanel() {
     categorySelect.value = DEFAULT_CHARGE_CATEGORY;
     updateActivityTotal();
   });
+  // Same list the registration card uses — a guide named here is the same
+  // person as the guide named there.
+  attachSuggestions(document.getElementById("activity-guide"), SUGGESTION_KEYS.GUIDE, ["Ashen", "Pradeep", "Shalika", "Sanjula", "Ashik"]);
   document.getElementById("charge-activity-btn").addEventListener("click", chargeActivities);
 }
 

@@ -7,6 +7,8 @@ import {
 import { BRANCH_INFO } from "./data/branches.js";
 import { openReservations, findReservationById, RESERVATION_STATUS } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
+import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
+import { BOOKING_SOURCES } from "./data/charges.js";
 import {
   GRC_RECORDS, allocateGrcNo, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
   STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
@@ -379,3 +381,13 @@ function renderGrcPreview(g) {
 
 el("grc-print-btn").addEventListener("click", () => window.print());
 el("grc-done-btn").addEventListener("click", () => showScreen("screen-rooms"));
+
+// Fields that take the same few answers repeatedly. Seeded with what the
+// staff's own records already show, so the very first card offers useful
+// options rather than an empty list.
+attachSuggestions(el("grc-guide-name"), SUGGESTION_KEYS.GUIDE, ["Ashen", "Pradeep", "Shalika", "Sanjula", "Ashik"]);
+attachSuggestions(el("grc-travel-agent"), SUGGESTION_KEYS.TRAVEL_AGENT);
+attachSuggestions(el("grc-country"), SUGGESTION_KEYS.COUNTRY, ["Sri Lanka", "India", "United Kingdom", "Germany", "France", "Netherlands", "Australia"]);
+attachSuggestions(el("grc-nationality"), SUGGESTION_KEYS.NATIONALITY, ["Sri Lankan", "Indian", "British", "German", "French", "Dutch", "Australian"]);
+attachSuggestions(el("grc-vehicle-no"), SUGGESTION_KEYS.VEHICLE);
+attachSuggestions(el("grc-reservation-by"), SUGGESTION_KEYS.RESERVED_BY, BOOKING_SOURCES);
