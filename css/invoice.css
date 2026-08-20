@@ -226,17 +226,26 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .invoice-guest { margin-bottom: 20px; }
 
 .discount-input-row { display: flex; gap: 8px; }
-.discount-input-row .input-icon { flex: 1; }
+.discount-input-row .input-icon { flex: 1 1 auto; min-width: 0; }
+/* Fixed width, not a flex share. The select only ever reads "LKR" or "%",
+   but with no constraint it sized to its own padding and took 277px of a
+   343px row — leaving the amount field 58px, too narrow to show "12500". */
 .discount-input-row select {
+  flex: 0 0 92px;
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 0 30px 0 10px;
+  padding: 0 28px 0 10px;
   font-size: 0.95rem;
   background-color: var(--white);
   background-position: right 8px center;
   background-size: 14px;
   color: var(--text);
 }
+/* No currency icon on this one field: the select beside it already says
+   LKR or %, and the icon was consuming 42px of a field that needs the
+   room for digits. */
+.discount-input-row .input-icon .field-icon { display: none; }
+.discount-input-row .input-icon input { padding-left: 12px; }
 
 .invoice-list-title {
   color: var(--maroon);
