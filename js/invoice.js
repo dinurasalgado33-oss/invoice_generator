@@ -392,7 +392,9 @@ function renderInvoicePreview(r) {
 
 // Reopen an invoice already issued — the guest wants another copy, or
 // staff left the page before printing.
-export function reopenInvoice(invoiceId) {
+// Reachable from Guest History today, and from anywhere that lists an
+// invoice later — the caller names where Back goes.
+export function reopenInvoice(invoiceId, returnTo = "screen-guest-history") {
   const r = INVOICES.find(i => String(i.id) === String(invoiceId));
   if (!r) {
     showToast("That invoice is no longer available");
@@ -405,7 +407,7 @@ export function reopenInvoice(invoiceId) {
     return;
   }
   renderInvoicePreview(r);
-  setInvoicePreviewReturn("screen-guest-history", "Back");
+  setInvoicePreviewReturn(returnTo, "Back");
   showScreen("screen-preview");
 }
 

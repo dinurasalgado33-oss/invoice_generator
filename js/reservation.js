@@ -183,7 +183,9 @@ function renderReservationPreview(r) {
 // Reprint an already-issued confirmation — the guest lost their copy, or
 // the agent wants it again. Read-only: it re-renders the stored record and
 // changes nothing.
-export function reprintReservation(reservationId) {
+// Reachable from the Reservations list and from Guest History — the
+// caller says which, so Back cannot land on a screen nobody came from.
+export function reprintReservation(reservationId, returnTo = "screen-reservations") {
   const r = RESERVATIONS.find(x => x.id === reservationId);
   if (!r) {
     showToast("That reservation is no longer available");
@@ -193,7 +195,7 @@ export function reprintReservation(reservationId) {
   // Arriving from the list, "Edit" would drop the user on a blank form —
   // the form holds no state for an already-issued reservation. Send them
   // back where they came from instead.
-  setPreviewReturn("screen-reservations", "Back");
+  setPreviewReturn(returnTo, "Back");
   showScreen("screen-reservation-preview");
 }
 

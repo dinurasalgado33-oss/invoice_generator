@@ -332,7 +332,10 @@ el("grc-form").addEventListener("submit", (e) => {
 // was left there was no way back to it — the record existed but nothing
 // read it — so a card lost before printing, or needed again later, was
 // simply gone.
-export function reprintGrc(bookingId) {
+// returnTo is passed by the caller rather than fixed here: this card is
+// reachable from a villa and from Guest History, and Back has to go to
+// whichever one the user actually came from.
+export function reprintGrc(bookingId, returnTo = "screen-rooms") {
   const card = findGrcByBookingId(bookingId);
   if (!card) {
     // Stays that predate the card — the seeded bookings, or anything
@@ -341,7 +344,7 @@ export function reprintGrc(bookingId) {
     return;
   }
   renderGrcPreview(card);
-  setGrcPreviewReturn("screen-rooms", "Back");
+  setGrcPreviewReturn(returnTo, "Back");
   showScreen("screen-grc-preview");
 }
 

@@ -185,10 +185,12 @@ function renderHistory() {
   });
 }
 
+const BACK_TO_HISTORY = "screen-guest-history";
+
 function openDocument(kind, id) {
-  if (kind === "card") return reprintGrc(Number(id));
-  if (kind === "reservation") return reprintReservation(Number(id));
-  if (kind === "proforma") return reprintProforma(Number(id));
+  if (kind === "card") return reprintGrc(Number(id), BACK_TO_HISTORY);
+  if (kind === "reservation") return reprintReservation(Number(id), BACK_TO_HISTORY);
+  if (kind === "proforma") return reprintProforma(Number(id), BACK_TO_HISTORY);
   if (kind === "invoice") {
     const bookingId = Number(id);
     const invoices = INVOICES.filter(i => i.bookingId === bookingId);
@@ -196,7 +198,7 @@ function openDocument(kind, id) {
     // A stay can carry an interim bill and a checkout invoice. The last one
     // raised is the one staff nearly always want; the rest are listed in
     // the charges sheet, where every invoice for the stay is shown.
-    reopenInvoice(invoices[invoices.length - 1].id);
+    reopenInvoice(invoices[invoices.length - 1].id, BACK_TO_HISTORY);
   }
 }
 
@@ -273,7 +275,7 @@ function openExtras(bookingId) {
 
   document.querySelectorAll(".extras-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      reopenInvoice(btn.dataset.invoiceId);
+      reopenInvoice(btn.dataset.invoiceId, "screen-guest-charges");
     });
   });
 

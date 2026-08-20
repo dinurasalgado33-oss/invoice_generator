@@ -298,6 +298,10 @@ el("proforma-form").addEventListener("submit", (e) => {
   PROFORMA_INVOICES.push(record);
 
   renderProformaPreview(record);
+  // Reset explicitly: a reprint from Guest History mutates this button,
+  // and a freshly generated invoice must not inherit that destination.
+  const backBtn = document.querySelector("#screen-proforma-preview .back-btn");
+  if (backBtn) { backBtn.dataset.back = "screen-reservations"; backBtn.textContent = "← Done"; }
   refreshReservationsList();
   sourceReservation = null;
   isSubmitting = false;
@@ -377,7 +381,10 @@ function renderProformaPreview(p) {
 
 // Reopen an agent invoice already issued — same reason as the others: it
 // was previously reachable only at the moment it was generated.
-export function reprintProforma(proformaId) {
+// Same as the others: the destination travels with the call. Hardcoding
+// it here meant one reprint from Guest History left every later proforma
+// pointing back at Guest History too.
+export function reprintProforma(proformaId, returnTo = "screen-reservations") {
   const p = PROFORMA_INVOICES.find(x => x.id === Number(proformaId));
   if (!p) {
     showToast("That invoice is no longer available");
@@ -385,7 +392,7 @@ export function reprintProforma(proformaId) {
   }
   renderProformaPreview(p);
   const btn = document.querySelector("#screen-proforma-preview .back-btn");
-  if (btn) { btn.dataset.back = "screen-guest-history"; btn.textContent = "← Back"; }
+  if (btn) { btn.dataset.back = returnTo; btn.textContent = "← Back"; }
   showScreen("screen-proforma-preview");
 }
 

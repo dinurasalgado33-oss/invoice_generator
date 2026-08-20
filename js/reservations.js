@@ -140,7 +140,7 @@ function renderReservationsList() {
     btn.addEventListener("click", () => openProformaForm(Number(btn.dataset.reservationId)));
   });
   list.querySelectorAll(".reservation-print-btn").forEach(btn => {
-    btn.addEventListener("click", () => reprintReservation(Number(btn.dataset.reservationId)));
+    btn.addEventListener("click", () => reprintReservation(Number(btn.dataset.reservationId), "screen-reservations"));
   });
   list.querySelectorAll(".reservation-cancel-btn").forEach(btn => {
     btn.addEventListener("click", () => cancelReservation(Number(btn.dataset.reservationId)));
