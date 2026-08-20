@@ -272,9 +272,16 @@ async function startInterimInvoice() {
 // billing only happens at Check Out).
 async function cancelCheckIn() {
   const room = getActiveRoom();
+  const rooms = roomsOnStay(activeRoomRef.branch, room);
+  // Says how many villas are being released, since the stay may cover more
+  // than the one on screen and undoing all of them is not obvious.
+  const scope = rooms.length > 1
+    ? `${room.guest}'s check-in across ${rooms.length} villas (${rooms.map(r => r.name).join(", ")})`
+    : `${room.guest}'s check-in for ${room.name}`;
+
   const ok = await confirmAction({
     title: "Cancel check-in?",
-    message: `Cancel ${room.guest}'s check-in for ${room.name}? This can't be undone.`,
+    message: `Cancel ${scope}? This can't be undone.`,
     confirmLabel: "Cancel Check-In",
     tone: "danger",
   });
@@ -283,17 +290,21 @@ async function cancelCheckIn() {
   const booking = BOOKINGS.find(b => b.id === room.bookingId);
   if (booking) booking.status = "Cancelled";
 
-  logRoomActivity(activeRoomRef.branch, room, room.guest, "Check-In Cancelled");
-  room.status = "available";
-  delete room.guest;
-  delete room.phone;
-  delete room.checkin;
-  delete room.checkout;
-  delete room.source;
-  delete room.pendingCharges;
-  delete room.bookingId;
+  rooms.forEach(r => {
+    logRoomActivity(activeRoomRef.branch, r, r.guest, "Check-In Cancelled");
+    r.status = "available";
+    delete r.guest;
+    delete r.phone;
+    delete r.checkin;
+    delete r.checkout;
+    delete r.source;
+    delete r.pendingCharges;
+    delete r.bookingId;
+  });
 
-  showToast(`Check-in cancelled for ${room.name}`);
+  showToast(rooms.length > 1
+    ? `Check-in cancelled — ${rooms.length} villas freed`
+    : `Check-in cancelled for ${room.name}`);
   closeRoomDetail();
   rerenderRooms();
 }
@@ -566,37 +577,65 @@ function showNewBookingForm() {
   openGrcForm({
     branch,
     room,
-    onComplete: (card) => {
-      room.guest = card.guestName;
-      room.phone = card.phone;
-      room.checkin = card.arrivalDate;
-      room.checkout = card.departureDate;
-      // The card's "Reservation Made by" is free text (an OTA, a walk-in,
-      // a name), so it can't drive the booking-source field on its own —
-      // it's kept on the card and the booking keeps the default unless
-      // reception recorded something recognisable.
-      room.source = BOOKING_SOURCES.includes(card.reservationMadeBy)
+    onComplete: (card, reservation) => {
+      const all = ROOMS_BY_BRANCH[branch] || [];
+
+      // A party that reserved several villas is one stay, not several.
+      // Checking them in villa by villa produced a separate booking, card
+      // and invoice for each — so one group appeared as two guests in the
+      // history and got two bills. Every villa on their reservation is
+      // taken together, from whichever one staff started on.
+      let rooms = [room];
+      if (reservation) {
+        const reserved = (reservation.villas || [])
+          .map(v => all.find(r => r.id === v.roomId))
+          .filter(Boolean);
+        // Only villas actually free right now. One already occupied
+        // belongs to somebody else and can't be handed over silently.
+        const free = reserved.filter(r => r.id === room.id || r.status === "available");
+        const taken = reserved.filter(r => r.id !== room.id && r.status !== "available");
+        rooms = [room, ...free.filter(r => r.id !== room.id)];
+        if (taken.length) {
+          showToast(`${taken.map(r => r.name).join(", ")} already occupied — checked in to the rest`);
+        }
+      }
+
+      const source = BOOKING_SOURCES.includes(card.reservationMadeBy)
         ? card.reservationMadeBy
         : DEFAULT_BOOKING_SOURCE;
-      room.status = "occupied";
 
-      // Keep the booking's id on the room so check-out / cancel can close
-      // the exact row this check-in opened, rather than re-finding it by
-      // matching guest + villa + dates.
+      // One booking covering every villa on the stay. `roomId` stays as the
+      // villa staff started from, so anything joining on it still resolves;
+      // `roomIds` is what checkout and cancellation actually work through.
       const booking = {
         id: allocateBookingId(),
         roomId: room.id,
-        guest: room.guest,
-        villa: room.name,
+        roomIds: rooms.map(r => r.id),
+        guest: card.guestName,
+        villa: rooms.map(r => r.name).join(" + "),
         branch,
-        checkin: room.checkin,
-        checkout: room.checkout,
-        source: room.source,
+        checkin: card.arrivalDate,
+        checkout: card.departureDate,
+        source,
+        reservationId: reservation ? reservation.id : null,
         status: "Checked In",
       };
       BOOKINGS.push(booking);
-      room.bookingId = booking.id;
-      logRoomActivity(branch, room, room.guest, "Check In");
+
+      rooms.forEach(r => {
+        r.guest = card.guestName;
+        r.phone = card.phone;
+        r.checkin = card.arrivalDate;
+        r.checkout = card.departureDate;
+        r.source = source;
+        r.status = "occupied";
+        r.bookingId = booking.id;
+        logRoomActivity(branch, r, r.guest, "Check In");
+      });
+
+      if (rooms.length > 1) {
+        showToast(`${card.guestName} checked into ${rooms.length} villas`);
+      }
       rerenderRooms();
       return booking.id;
     },
@@ -611,7 +650,21 @@ function startCheckout() {
   showScreen("screen-form");
 }
 
+// Every villa on the stay, not just the one staff tapped. A party in two
+// villas gets one bill covering both — billing the villa you happened to
+// open would leave the other one unbilled and still occupied.
+function roomsOnStay(branch, room) {
+  const all = ROOMS_BY_BRANCH[branch] || [];
+  const booking = BOOKINGS.find(b => b.id === room.bookingId);
+  if (!booking || !Array.isArray(booking.roomIds) || booking.roomIds.length < 2) return [room];
+  const rooms = booking.roomIds.map(id => all.find(r => r.id === id)).filter(Boolean);
+  return rooms.length ? rooms : [room];
+}
+
 function prefillInvoiceForCheckout(room) {
+  const branch = activeRoomRef ? activeRoomRef.branch : appState.selectedBranch;
+  const rooms = roomsOnStay(branch, room);
+
   resetForm();
   setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null, source: room.source ?? null });
   document.getElementById("guest-name").value = room.guest || "";
@@ -620,14 +673,23 @@ function prefillInvoiceForCheckout(room) {
   document.getElementById("checkout-date").value = room.checkout || "";
 
   const nights = nightsBetween(room.checkin, room.checkout);
-  const rate = room.rate || 0;
   clearItems();
-  addItemRow(room.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa");
+
+  // One room-charge line per villa, each at its own nightly rate — the
+  // villas on a stay are often different sizes and prices.
+  rooms.forEach(r => {
+    const rate = r.rate || 0;
+    addItemRow(r.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa");
+  });
 
   // Food orders and activity charges placed during the stay ride along
   // onto the same invoice, each keeping the category it was charged under.
-  (room.pendingCharges || []).forEach(c => {
-    addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category);
+  // Collected from every villa, since charges follow whichever villa the
+  // order was placed against.
+  rooms.forEach(r => {
+    (r.pendingCharges || []).forEach(c => {
+      addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category);
+    });
   });
 }
 
@@ -640,15 +702,20 @@ onAfterGenerate(() => {
     const booking = BOOKINGS.find(b => b.id === room.bookingId);
     if (booking) booking.status = "Checked Out";
 
-    logRoomActivity(checkoutRoomRef.branch, room, room.guest, "Check Out");
-    room.status = "available";
-    delete room.guest;
-    delete room.phone;
-    delete room.checkin;
-    delete room.checkout;
-    delete room.source;
-    delete room.pendingCharges;
-    delete room.bookingId;
+    // Frees every villa on the stay. The invoice just billed all of them,
+    // so leaving the others occupied would strand them with no bill left
+    // to raise.
+    roomsOnStay(checkoutRoomRef.branch, room).forEach(r => {
+      logRoomActivity(checkoutRoomRef.branch, r, r.guest, "Check Out");
+      r.status = "available";
+      delete r.guest;
+      delete r.phone;
+      delete r.checkin;
+      delete r.checkout;
+      delete r.source;
+      delete r.pendingCharges;
+      delete r.bookingId;
+    });
     checkoutRoomRef = null;
   }
 });

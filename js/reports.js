@@ -195,7 +195,11 @@ function computeOccupancy(range) {
     // Math.max(0, NaN) is NaN, not 0 — an unparseable checkin/checkout date
     // would otherwise poison the running total and render "NaN%".
     const nights = Math.round((end - start) / 86400000);
-    bookedNights += Number.isFinite(nights) ? Math.max(0, nights) : 0;
+    // A stay can now span several villas, and each one is a room taken out
+    // of availability for those nights. Counting the booking once would
+    // under-report occupancy for every multi-villa party.
+    const villaCount = Array.isArray(b.roomIds) && b.roomIds.length ? b.roomIds.length : 1;
+    bookedNights += Number.isFinite(nights) ? Math.max(0, nights) * villaCount : 0;
   });
 
   return Math.min(100, Math.round((bookedNights / totalRoomNights) * 100));

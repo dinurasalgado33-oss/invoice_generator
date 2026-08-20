@@ -110,12 +110,24 @@ function paxTotal() {
 
 // Nights and room number are derived, never typed — they have to agree
 // with the booking this card creates.
+// Villas this card covers: the reservation's, when one is linked and its
+// villas are free, otherwise just the one being checked into.
+function villaNamesForStay() {
+  if (!context) return "";
+  if (!linkedReservation) return context.room.name;
+  const names = (linkedReservation.villas || []).map(v => v.name).filter(Boolean);
+  return names.length ? names.join(" + ") : context.room.name;
+}
+
 function syncDerivedFields() {
   const arrival = val("grc-arrival-date");
   const departure = val("grc-departure-date");
   const nights = arrival && departure && departure > arrival ? nightsBetween(arrival, departure) : 0;
   el("grc-nights").value = nights ? String(nights) : "—";
-  el("grc-room-no").value = context ? context.room.name : "";
+  // Lists every villa on the stay once a reservation is linked — the card
+  // is one document for the whole party, so naming only the villa staff
+  // happened to start from would understate what they were given.
+  el("grc-room-no").value = villaNamesForStay();
 }
 
 export function openGrcForm({ branch, room, onComplete }) {
@@ -254,7 +266,7 @@ el("grc-form").addEventListener("submit", (e) => {
     grcNo: allocateGrcNo(),
     branch: context.branch,
     roomId: context.room.id,
-    roomName: context.room.name,
+    roomName: villaNamesForStay(),
     bookingId: null, // set by the caller once the booking exists
     guestName: val("grc-guest-name"),
     address: val("grc-address"),
@@ -293,7 +305,9 @@ el("grc-form").addEventListener("submit", (e) => {
 
   // The booking only comes into existence here — this is the point the
   // guest is actually checked in.
-  const bookingId = context.onComplete(record);
+  // The linked reservation goes through too: it decides which villas the
+  // stay covers, which only the caller can act on.
+  const bookingId = context.onComplete(record, linkedReservation);
   record.bookingId = bookingId ?? null;
   GRC_RECORDS.push(record);
 
