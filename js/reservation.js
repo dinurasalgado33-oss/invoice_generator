@@ -2,6 +2,8 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
+import { RESERVATIONS, allocateReservationNo } from "./data/reservations.js";
+import { refreshReservationsList } from "./reservations.js";
 
 // Guest counts are printed on a document handed to the guest, so a stray
 // keystroke turning "2 adults" into 2 million needs to be caught here
@@ -46,12 +48,15 @@ function resetReservationForm() {
 
 document.getElementById("resv-add-villa-btn").addEventListener("click", () => addVillaRow());
 
-document.getElementById("qa-reservation-btn").addEventListener("click", () => {
+// Opened from the Reservations screen rather than straight off the home
+// quick action — that now lands on the list, since a reservation is a
+// record staff come back to, not just a document they print once.
+export function openReservationForm() {
   document.getElementById("resv-form-branch-label").textContent = appState.selectedBranchLabel;
   setLogoSrc("resv-form-logo", appState.selectedBranchLogo);
   resetReservationForm();
   showScreen("screen-reservation-form");
-});
+}
 
 // Distinct from utils.js's nightsBetween(), which returns 1 for a
 // same-day range — this one is used purely for a "N nights" display
@@ -106,10 +111,9 @@ function validateReservationForm() {
   return true;
 }
 
-// Mirrors the invoice form's guard. A reservation writes no record, so a
-// double submit can't duplicate data — but it does re-run the whole render
-// and re-fire the toast, and on a slow phone the repeated taps that cause
-// it are exactly when staff are least sure it worked.
+// Mirrors the invoice form's guard — and it now matters more than it did:
+// a reservation writes a real record, so a double submit would create two
+// bookings with two reservation numbers for one guest.
 let isGeneratingReservation = false;
 
 document.getElementById("reservation-form").addEventListener("submit", (e) => {
@@ -118,6 +122,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   if (!validateReservationForm()) return;
   isGeneratingReservation = true;
 
+  const reservationId = allocateReservationNo();
   const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
   const title = document.getElementById("resv-title").value;
   const guestName = resvGuestNameInput.value.trim();
@@ -173,6 +178,30 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   document.getElementById("resv-prev-conditions").innerHTML = conditions
     .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
     `<p class="room-detail-empty">No conditions set.</p>`;
+
+  // Save the reservation as a record, not just a printed page — the
+  // Reservations list reads from this, and a travel agent invoice is
+  // raised against it later using these same details.
+  RESERVATIONS.push({
+    id: reservationId,
+    no: reservationId,
+    branch: appState.selectedBranch,
+    title,
+    guestName,
+    adults,
+    children,
+    guestTotal: adults + children,
+    contact: document.getElementById("resv-contact").value.trim(),
+    checkinDate,
+    checkinTime: document.getElementById("resv-checkin-time").value,
+    checkoutDate,
+    checkoutTime: document.getElementById("resv-checkout-time").value,
+    nights,
+    bookingType: document.getElementById("resv-booking-type").value.trim(),
+    villas,
+    createdAt: new Date().toISOString(),
+  });
+  refreshReservationsList();
 
   showToast("Reservation confirmation generated");
   showScreen("screen-reservation-preview");

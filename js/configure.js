@@ -4,7 +4,11 @@ import { escapeHtml, fmtLKR, setLogoSrc, showToast, clampMoney, capNumericInput,
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, allocateActivityId, clampHotelIncome } from "./data/activities.js";
 import { CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel } from "./data/charges.js";
-import { BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId } from "./data/branches.js";
+import {
+  BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId,
+  CANCELLATION_POLICY, allocateCancellationId,
+  PROFORMA_NOTICES, allocateNoticeId,
+} from "./data/branches.js";
 import { confirmAction } from "./confirm.js";
 import { openInventoryScreen } from "./inventory.js";
 
@@ -433,3 +437,209 @@ document.getElementById("open-configure-inventory-btn").addEventListener("click"
   ["activity-price", MAX_MONEY],
   ["activity-income", MAX_MONEY],
 ].forEach(([id, max]) => capNumericInput(document.getElementById(id), max));
+
+// ---- Travel agent / guide invoice settings ----
+// Two editable lists that print on the Proforma Invoice. The bank account
+// it also prints is deliberately NOT here — it lives in Branch & Bank
+// Details, so an account change follows through to every document.
+
+let editingCancellationId = null;
+let editingNoticeId = null;
+
+function branchCancellation() {
+  return CANCELLATION_POLICY[appState.selectedBranch] || [];
+}
+function branchNotices() {
+  return PROFORMA_NOTICES[appState.selectedBranch] || [];
+}
+
+function renderCancellationList() {
+  const list = document.getElementById("configure-cancellation-list");
+  list.innerHTML = branchCancellation().map(c => `
+    <tr class="list-item-row">
+      <td class="list-td-name list-td-wrap">${escapeHtml(c.text)}</td>
+      <td>
+        <button type="button" class="list-edit-btn" data-cancellation-id="${c.id}" aria-label="Edit policy line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+        </button>
+      </td>
+    </tr>
+  `).join("") || `
+    <tr><td colspan="2">
+      <div class="list-empty">
+        <p class="list-empty-title">No cancellation policy set.</p>
+        <p class="list-empty-hint">Agent invoices will print without one until a line is added.</p>
+        <button type="button" class="secondary-btn" id="cancellation-empty-add">Add first line</button>
+      </div>
+    </td></tr>`;
+
+  const emptyAdd = document.getElementById("cancellation-empty-add");
+  if (emptyAdd) emptyAdd.addEventListener("click", () => openCancellationSheet(null));
+  list.querySelectorAll(".list-edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => openCancellationSheet(Number(btn.dataset.cancellationId)));
+  });
+}
+
+function openCancellationSheet(id) {
+  editingCancellationId = id;
+  const line = id ? branchCancellation().find(c => c.id === id) : null;
+  document.getElementById("cancellation-sheet-title").textContent = line ? "Edit Policy Line" : "Add Policy Line";
+  document.getElementById("cancellation-text").value = line ? line.text : "";
+  document.getElementById("cancellation-delete-btn").style.display = line ? "" : "none";
+  document.getElementById("cancellation-sheet-overlay").classList.add("open");
+}
+
+function closeCancellationSheet() {
+  document.getElementById("cancellation-sheet-overlay").classList.remove("open");
+  editingCancellationId = null;
+}
+
+document.getElementById("add-cancellation-btn").addEventListener("click", () => openCancellationSheet(null));
+document.getElementById("cancellation-sheet-close").addEventListener("click", closeCancellationSheet);
+document.getElementById("cancellation-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "cancellation-sheet-overlay") closeCancellationSheet();
+});
+
+document.getElementById("cancellation-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = document.getElementById("cancellation-text").value.trim();
+  if (!text) return;
+  const list = branchCancellation();
+  if (editingCancellationId) {
+    const line = list.find(c => c.id === editingCancellationId);
+    if (!line) { closeCancellationSheet(); showToast("That line no longer exists"); return; }
+    line.text = text;
+    showToast("Policy line updated");
+  } else {
+    list.push({ id: allocateCancellationId(), text });
+    showToast("Policy line added");
+  }
+  closeCancellationSheet();
+  renderCancellationList();
+});
+
+document.getElementById("cancellation-delete-btn").addEventListener("click", async () => {
+  if (!editingCancellationId) return;
+  const list = branchCancellation();
+  const line = list.find(c => c.id === editingCancellationId);
+  if (!line) return;
+  const ok = await confirmAction({
+    title: "Remove this policy line?",
+    message: `"${line.text}" will stop printing on travel agent invoices.`,
+    confirmLabel: "Remove Line",
+    tone: "danger",
+  });
+  if (!ok) return;
+  list.splice(list.findIndex(c => c.id === editingCancellationId), 1);
+  closeCancellationSheet();
+  renderCancellationList();
+  showToast("Policy line removed");
+});
+
+function renderNoticesList() {
+  const list = document.getElementById("configure-notices-list");
+  list.innerHTML = branchNotices().map(n => `
+    <tr class="list-item-row">
+      <td class="list-td-name list-td-wrap">
+        ${escapeHtml(n.text)}
+        ${n.emphasis ? `<span class="list-item-tag notice-emphasis-tag">prints in red</span>` : ""}
+      </td>
+      <td>
+        <button type="button" class="list-edit-btn" data-notice-id="${n.id}" aria-label="Edit remark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+        </button>
+      </td>
+    </tr>
+  `).join("") || `
+    <tr><td colspan="2">
+      <div class="list-empty">
+        <p class="list-empty-title">No remarks set.</p>
+        <p class="list-empty-hint">Payment terms print around the bank details on agent invoices.</p>
+        <button type="button" class="secondary-btn" id="notice-empty-add">Add first remark</button>
+      </div>
+    </td></tr>`;
+
+  const emptyAdd = document.getElementById("notice-empty-add");
+  if (emptyAdd) emptyAdd.addEventListener("click", () => openNoticeSheet(null));
+  list.querySelectorAll(".list-edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => openNoticeSheet(Number(btn.dataset.noticeId)));
+  });
+}
+
+function openNoticeSheet(id) {
+  editingNoticeId = id;
+  const notice = id ? branchNotices().find(n => n.id === id) : null;
+  document.getElementById("notice-sheet-title").textContent = notice ? "Edit Remark" : "Add Remark";
+  document.getElementById("notice-text").value = notice ? notice.text : "";
+  document.getElementById("notice-emphasis").checked = notice ? Boolean(notice.emphasis) : false;
+  document.getElementById("notice-delete-btn").style.display = notice ? "" : "none";
+  document.getElementById("notice-sheet-overlay").classList.add("open");
+}
+
+function closeNoticeSheet() {
+  document.getElementById("notice-sheet-overlay").classList.remove("open");
+  editingNoticeId = null;
+}
+
+document.getElementById("add-notice-btn").addEventListener("click", () => openNoticeSheet(null));
+document.getElementById("notice-sheet-close").addEventListener("click", closeNoticeSheet);
+document.getElementById("notice-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "notice-sheet-overlay") closeNoticeSheet();
+});
+
+document.getElementById("notice-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = document.getElementById("notice-text").value.trim();
+  if (!text) return;
+  const emphasis = document.getElementById("notice-emphasis").checked;
+  const list = branchNotices();
+  if (editingNoticeId) {
+    const notice = list.find(n => n.id === editingNoticeId);
+    if (!notice) { closeNoticeSheet(); showToast("That remark no longer exists"); return; }
+    Object.assign(notice, { text, emphasis });
+    showToast("Remark updated");
+  } else {
+    list.push({ id: allocateNoticeId(), text, emphasis });
+    showToast("Remark added");
+  }
+  closeNoticeSheet();
+  renderNoticesList();
+});
+
+document.getElementById("notice-delete-btn").addEventListener("click", async () => {
+  if (!editingNoticeId) return;
+  const list = branchNotices();
+  const notice = list.find(n => n.id === editingNoticeId);
+  if (!notice) return;
+  const ok = await confirmAction({
+    title: "Remove this remark?",
+    message: `"${notice.text}" will stop printing on travel agent invoices.`,
+    confirmLabel: "Remove Remark",
+    tone: "danger",
+  });
+  if (!ok) return;
+  list.splice(list.findIndex(n => n.id === editingNoticeId), 1);
+  closeNoticeSheet();
+  renderNoticesList();
+  showToast("Remark removed");
+});
+
+document.getElementById("open-configure-proforma-btn").addEventListener("click", () => {
+  document.getElementById("configure-proforma-branch-label").textContent = appState.selectedBranchLabel;
+  setLogoSrc("configure-proforma-logo", appState.selectedBranchLogo);
+  showScreen("screen-configure-proforma");
+});
+
+document.getElementById("open-configure-cancellation-btn").addEventListener("click", () => {
+  document.getElementById("configure-cancellation-branch-label").textContent = appState.selectedBranchLabel;
+  setLogoSrc("configure-cancellation-logo", appState.selectedBranchLogo);
+  renderCancellationList();
+  showScreen("screen-configure-cancellation");
+});
+
+document.getElementById("open-configure-notices-btn").addEventListener("click", () => {
+  document.getElementById("configure-notices-branch-label").textContent = appState.selectedBranchLabel;
+  setLogoSrc("configure-notices-logo", appState.selectedBranchLogo);
+  renderNoticesList();
+  showScreen("screen-configure-notices");
+});

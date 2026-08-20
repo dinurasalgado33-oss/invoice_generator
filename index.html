@@ -6,15 +6,16 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=80" />
-<link rel="stylesheet" href="css/brand-home.css?v=80" />
-<link rel="stylesheet" href="css/rooms.css?v=80" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=80" />
-<link rel="stylesheet" href="css/invoice.css?v=80" />
-<link rel="stylesheet" href="css/dashboard.css?v=80" />
-<link rel="stylesheet" href="css/reports.css?v=80" />
-<link rel="stylesheet" href="css/reservation.css?v=80" />
-  <link rel="stylesheet" href="css/grc.css?v=80" />
+<link rel="stylesheet" href="css/base.css?v=82" />
+<link rel="stylesheet" href="css/brand-home.css?v=82" />
+<link rel="stylesheet" href="css/rooms.css?v=82" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=82" />
+<link rel="stylesheet" href="css/invoice.css?v=82" />
+<link rel="stylesheet" href="css/dashboard.css?v=82" />
+<link rel="stylesheet" href="css/reports.css?v=82" />
+<link rel="stylesheet" href="css/reservation.css?v=82" />
+  <link rel="stylesheet" href="css/grc.css?v=82" />
+  <link rel="stylesheet" href="css/proforma.css?v=82" />
 </head>
 <body>
 
@@ -276,6 +277,13 @@
           <span class="settings-row-sub">Add, edit, or remove dishes</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-proforma-btn">
+        <span class="settings-row-text">
+          <span class="settings-row-title">Travel Agent / Guide Invoice</span>
+          <span class="settings-row-sub">Cancellation policy and payment terms</span>
+        </span>
+        <svg class="settings-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
       </button>
       <button type="button" class="settings-row" id="open-configure-inventory-btn">
         <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg>
@@ -1336,6 +1344,363 @@
 
   <!-- SCREEN: Reservation Confirmation form -->
   <!-- SCREEN: Guest Registration Card — this IS the check-in. A booking is
+  <!-- SCREEN: Reservations dashboard — make a new one, or work from the
+       list of past reservations (each can raise a travel agent invoice). -->
+  <section id="screen-reservations" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="reservations-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Reservations — <span id="reservations-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="reservations-toolbar">
+        <div class="input-icon reservations-search">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+          <input type="text" id="reservations-search" placeholder="Guest name or reservation no" autocapitalize="off" spellcheck="false" />
+        </div>
+        <button type="button" class="primary-btn" id="make-reservation-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+          Make a Reservation
+        </button>
+      </div>
+
+      <div class="reservations-list" id="reservations-list"><!-- injected by JS --></div>
+    </div>
+  </section>
+
+  <!-- SCREEN: Proforma Invoice form (travel agent / guide) -->
+  <section id="screen-proforma-form" class="screen">
+    <button class="back-btn" data-back="screen-reservations">&larr; Back</button>
+    <div class="brand small">
+      <img id="proforma-form-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Invoice for Travel Agent / Guide</h2>
+    </div>
+
+    <form id="proforma-form">
+      <!-- Everything the reservation already knows is filled in and shown
+           read-only, so staff only type what the reservation couldn't tell
+           us. Editing the stay itself belongs on the reservation. -->
+      <div class="proforma-from-reservation" id="proforma-source-summary"></div>
+
+      <h3 class="section-title">Agent details</h3>
+      <div class="field">
+        <label>Travel Agent</label>
+        <input type="text" id="pf-travel-agent" autocapitalize="words" maxlength="120" enterkeyhint="next" />
+        <p class="field-error" id="pf-travel-agent-error">Travel agent is required</p>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Voucher No</label>
+          <input type="text" id="pf-voucher-no" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
+        </div>
+        <div class="field">
+          <label for="pf-currency">Currency</label>
+          <select id="pf-currency"><!-- injected by JS --></select>
+        </div>
+      </div>
+
+      <h3 class="section-title">Charges</h3>
+      <p class="step-subtext">Agent rates, in the currency above — these are usually contracted rates, not the villa's standard rate.</p>
+      <div id="pf-items-wrap">
+        <table id="pf-items-table">
+          <thead>
+            <tr>
+              <th class="col-no">#</th>
+              <th class="col-desc">List of Information</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-price">Rate</th>
+              <th class="col-total">Value</th>
+              <th class="col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="pf-items-body"><!-- injected by JS --></tbody>
+        </table>
+      </div>
+      <button type="button" id="pf-add-item-btn" class="secondary-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+        Add a line
+      </button>
+      <p class="field-error" id="pf-items-error">Add at least one charge</p>
+
+      <h3 class="section-title">Totals</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Discount</label>
+          <input type="number" id="pf-discount" min="0" step="0.01" inputmode="decimal" value="0" />
+        </div>
+        <div class="field">
+          <label>Advance</label>
+          <input type="number" id="pf-advance" min="0" step="0.01" inputmode="decimal" value="0" />
+        </div>
+      </div>
+
+      <div class="live-summary" aria-live="polite">
+        <div class="live-summary-row"><span>Bill Total</span><span id="pf-live-bill">0.00</span></div>
+        <div class="live-summary-row"><span>Discount</span><span id="pf-live-discount">0.00</span></div>
+        <div class="live-summary-row"><span>Gross Amount</span><span id="pf-live-gross">0.00</span></div>
+        <div class="live-summary-row"><span>Net Amount</span><span id="pf-live-net">0.00</span></div>
+        <div class="live-summary-row"><span>Advance</span><span id="pf-live-advance">0.00</span></div>
+        <div class="live-summary-row grand"><span>Grand Total</span><span id="pf-live-grand">0.00</span></div>
+      </div>
+
+      <div class="field">
+        <label>Remark <span class="label-optional">(optional)</span></label>
+        <input type="text" id="pf-remark" placeholder="e.g. Children under 12 years - Free" maxlength="200" autocapitalize="sentences" enterkeyhint="done" />
+      </div>
+
+      <p class="hint">Payment terms, bank details and the cancellation policy are printed automatically — a manager edits them in Configure.</p>
+
+      <button type="submit" class="primary-btn big" id="pf-submit-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+        Generate Proforma Invoice
+      </button>
+    </form>
+  </section>
+
+  <!-- SCREEN: printed Proforma Invoice -->
+  <section id="screen-proforma-preview" class="screen">
+    <button class="back-btn no-print" data-back="screen-reservations">&larr; Done</button>
+
+    <div id="proforma-preview" class="proforma-paper">
+      <div class="reservation-header">
+        <img id="pf-prev-logo" src="" alt="" class="reservation-logo" onerror="this.style.display='none'" />
+        <div class="reservation-header-text">
+          <h2 id="pf-prev-hotel-name"></h2>
+          <p id="pf-prev-address"></p>
+          <p id="pf-prev-contact-line"></p>
+        </div>
+      </div>
+      <div class="reservation-header-rule"></div>
+
+      <h1 class="proforma-title">Proforma Invoice</h1>
+
+      <div class="proforma-meta">
+        <div class="proforma-meta-col">
+          <div class="pf-row"><span>Guest Name</span><strong id="pf-prev-guest"></strong></div>
+          <div class="pf-row"><span>Travel Agent</span><strong id="pf-prev-agent"></strong></div>
+          <div class="pf-row"><span>No of Guest</span><strong id="pf-prev-guests"></strong></div>
+          <div class="pf-row"><span>Contact No</span><strong id="pf-prev-contact"></strong></div>
+          <div class="pf-row"><span>No of Nights</span><strong id="pf-prev-nights"></strong></div>
+          <div class="pf-row"><span>Voucher No</span><strong id="pf-prev-voucher"></strong></div>
+          <div class="pf-row"><span>Check in Date</span><strong id="pf-prev-checkin"></strong></div>
+          <div class="pf-row"><span>Check out Date</span><strong id="pf-prev-checkout"></strong></div>
+        </div>
+        <div class="proforma-meta-col">
+          <div class="pf-row"><span>Reservation No</span><strong id="pf-prev-resno"></strong></div>
+          <div class="pf-row"><span>Date</span><strong id="pf-prev-date"></strong></div>
+          <div class="pf-row"><span>Currency</span><strong id="pf-prev-currency"></strong></div>
+        </div>
+      </div>
+
+      <div class="proforma-items-wrap">
+        <img src="assets/watermark.png" alt="" class="proforma-watermark" onerror="this.style.display='none'" />
+        <table class="proforma-items-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>List of Information</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Value (<span id="pf-prev-currency-head"></span>)</th>
+            </tr>
+          </thead>
+          <tbody id="pf-prev-items"></tbody>
+        </table>
+
+        <div class="proforma-totals">
+          <div class="totals-row"><span>Bill Total</span><span id="pf-prev-bill"></span></div>
+          <div class="totals-row"><span>Discount</span><span id="pf-prev-discount"></span></div>
+          <div class="totals-row"><span>Gross Amount</span><span id="pf-prev-gross"></span></div>
+          <div class="totals-row"><span>Net Amount</span><span id="pf-prev-net"></span></div>
+          <div class="totals-row"><span>Advance</span><span id="pf-prev-advance"></span></div>
+          <div class="totals-row grand"><span>Grand Total</span><span id="pf-prev-grand"></span></div>
+        </div>
+      </div>
+
+      <p class="proforma-remark" id="pf-prev-remark-row">
+        <span>Remark</span> : <strong id="pf-prev-remark"></strong>
+      </p>
+
+      <div class="proforma-notices" id="pf-prev-notices"></div>
+
+      <table class="proforma-bank">
+        <tbody>
+          <tr><td>Account Name</td><td id="pf-prev-bank-name"></td></tr>
+          <tr><td>Account Number</td><td id="pf-prev-bank-no"></td></tr>
+          <tr><td>Bank</td><td id="pf-prev-bank"></td></tr>
+          <tr><td>Branch</td><td id="pf-prev-bank-branch"></td></tr>
+        </tbody>
+      </table>
+
+      <div class="proforma-notices" id="pf-prev-notices-after"></div>
+
+      <div class="proforma-policy">
+        <p class="proforma-policy-label">Cancellation Policy :</p>
+        <ul id="pf-prev-policy"></ul>
+      </div>
+
+      <p class="proforma-closing" id="pf-prev-closing"></p>
+      <p class="proforma-thanks">Thank you</p>
+
+      <div class="proforma-signatures">
+        <div class="grc-signature-block">
+          <div class="grc-signature-line"></div>
+          <p>Checked By</p>
+        </div>
+        <div class="grc-signature-block">
+          <div class="grc-signature-line"></div>
+          <p>Guest Signature</p>
+        </div>
+      </div>
+      <p class="proforma-footnote">This is a computer generated invoice, no signature is required</p>
+    </div>
+
+    <div class="export-bar no-print">
+      <button class="action-btn" id="pf-print-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+        Print Invoice
+      </button>
+      <button class="action-btn secondary" id="pf-image-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
+        Save as Image
+      </button>
+    </div>
+  </section>
+
+  <!-- SCREEN: Configure > Travel Agent / Guide Invoice (hub) -->
+  <section id="screen-configure-proforma" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-proforma-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Travel Agent / Guide Invoice — <span id="configure-proforma-branch-label"></span></h2>
+    </div>
+
+    <div class="settings-list">
+      <button type="button" class="settings-row" id="open-configure-cancellation-btn">
+        <span class="settings-row-text">
+          <span class="settings-row-title">Cancellation Policy</span>
+          <span class="settings-row-sub">The charges that apply as arrival approaches</span>
+        </span>
+        <svg class="settings-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-notices-btn">
+        <span class="settings-row-text">
+          <span class="settings-row-title">Remarks &amp; Payment Terms</span>
+          <span class="settings-row-sub">Printed around the bank details</span>
+        </span>
+        <svg class="settings-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+      </button>
+    </div>
+    <p class="hint">The bank account printed on this invoice comes from Branch &amp; Bank Details, so it only has to be changed in one place.</p>
+  </section>
+
+  <!-- SCREEN: Configure > Cancellation Policy -->
+  <section id="screen-configure-cancellation" class="screen">
+    <button class="back-btn" data-back="screen-configure-proforma">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-cancellation-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Cancellation Policy — <span id="configure-cancellation-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="list-header-row">
+        <p class="hint">Printed in this order on the travel agent invoice.</p>
+        <button type="button" class="icon-btn" id="add-cancellation-btn" aria-label="Add a policy line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+        </button>
+      </div>
+      <table class="list-table">
+        <tbody id="configure-cancellation-list"><!-- injected by JS --></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SCREEN: Configure > Proforma remarks / payment terms -->
+  <section id="screen-configure-notices" class="screen">
+    <button class="back-btn" data-back="screen-configure-proforma">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-notices-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Remarks &amp; Payment Terms — <span id="configure-notices-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="list-header-row">
+        <p class="hint">Printed around the bank details. Marked lines print in red.</p>
+        <button type="button" class="icon-btn" id="add-notice-btn" aria-label="Add a remark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
+        </button>
+      </div>
+      <table class="list-table">
+        <tbody id="configure-notices-list"><!-- injected by JS --></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Sheet: edit a cancellation policy line -->
+  <div class="room-detail-overlay" id="cancellation-sheet-overlay">
+    <div class="room-detail-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="cancellation-sheet-title">Add Policy Line</h3>
+        <div class="sheet-header-actions">
+          <button type="button" class="sheet-icon-btn sheet-icon-btn-danger" id="cancellation-delete-btn" style="display:none" aria-label="Delete line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+          </button>
+          <button type="button" class="sheet-icon-btn" id="cancellation-sheet-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div class="room-detail-body">
+        <form id="cancellation-form">
+          <div class="field">
+            <label>Policy Line</label>
+            <textarea id="cancellation-text" rows="3" required autocapitalize="sentences" maxlength="300"></textarea>
+          </div>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+            Save Line
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet: edit a proforma remark / payment term -->
+  <div class="room-detail-overlay" id="notice-sheet-overlay">
+    <div class="room-detail-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="notice-sheet-title">Add Remark</h3>
+        <div class="sheet-header-actions">
+          <button type="button" class="sheet-icon-btn sheet-icon-btn-danger" id="notice-delete-btn" style="display:none" aria-label="Delete remark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+          </button>
+          <button type="button" class="sheet-icon-btn" id="notice-sheet-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div class="room-detail-body">
+        <form id="notice-form">
+          <div class="field">
+            <label>Remark</label>
+            <textarea id="notice-text" rows="3" required autocapitalize="sentences" maxlength="300"></textarea>
+          </div>
+          <label class="inline-check">
+            <input type="checkbox" id="notice-emphasis" />
+            <span>Print in red — for terms the agent must act on</span>
+          </label>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+            Save Remark
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
        only created once this is completed and printed. -->
   <section id="screen-grc-form" class="screen">
     <button class="back-btn" data-back="screen-rooms">&larr; Back</button>
@@ -1879,6 +2244,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=80"></script>
+<script type="module" src="js/main.js?v=82"></script>
 </body>
 </html>

@@ -1,0 +1,250 @@
+/* Reservations list + Proforma Invoice (travel agent / guide) */
+
+.reservations-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.reservations-search { flex: 1; min-width: 180px; }
+.reservations-toolbar .primary-btn { margin: 0; width: auto; flex: none; }
+
+.reservations-list { display: flex; flex-direction: column; gap: 12px; }
+
+.reservation-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.reservation-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.reservation-card-id { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.reservation-no {
+  font-weight: 700;
+  color: var(--maroon);
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+}
+/* Re-invoicing is allowed, so this isn't a blocker — it's there so staff
+   don't raise a second invoice without realising one already went out. */
+.reservation-issued {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #2c6b2f;
+  background: #dff3e0;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.reservation-card-date { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+.reservation-card-guest {
+  margin: 8px 0 2px;
+  font-weight: 700;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.reservation-card-meta { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+.reservation-card-villas {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.reservation-card-actions { margin-top: 12px; }
+.reservation-card-actions .secondary-btn { width: 100%; margin: 0; }
+
+/* Form: what the reservation already established, shown read-only */
+.proforma-from-reservation {
+  background: var(--bg-alt);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 10px 10px 0;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+.proforma-source-label {
+  margin: 0 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.proforma-source-main { margin: 0; font-weight: 700; color: var(--maroon); overflow-wrap: anywhere; }
+.proforma-source-meta { margin: 3px 0 0; font-size: 0.82rem; color: var(--text-muted); }
+
+#pf-items-wrap { overflow-x: auto; }
+#pf-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+#pf-items-table th {
+  text-align: left;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 6px;
+  border-bottom: 2px solid var(--border);
+}
+#pf-items-table td { padding: 6px 4px; vertical-align: middle; }
+#pf-items-table input { padding: 8px; font-size: 0.95rem; }
+#pf-items-table .col-qty input,
+#pf-items-table .col-price input,
+#pf-items-table .col-total input { text-align: right; }
+
+/* ---- The printed document ---- */
+.proforma-paper {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 28px 22px;
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+.proforma-title {
+  text-align: center;
+  margin: 16px 0 18px;
+  font-size: 1.25rem;
+  color: var(--maroon);
+  font-family: Georgia, 'Times New Roman', serif;
+  text-decoration: underline;
+}
+
+.proforma-meta {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 4px 26px;
+  margin-bottom: 20px;
+}
+.proforma-meta-col { min-width: 0; }
+.pf-row { display: flex; gap: 8px; padding: 3px 0; align-items: baseline; }
+.pf-row span { flex: 0 0 42%; color: var(--text-muted); font-size: 0.82rem; }
+.pf-row strong { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+.proforma-items-wrap { position: relative; margin-bottom: 14px; }
+.proforma-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 62%;
+  max-width: 320px;
+  object-fit: contain;
+  /* Faintness is baked into the PNG's alpha, not CSS opacity — a
+     translucent img plus opacity rasterises as a black block in
+     Chromium's print-to-PDF pipeline. */
+  pointer-events: none;
+  z-index: 0;
+}
+.proforma-items-table {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.proforma-items-table th {
+  border-bottom: 1.5px solid var(--border);
+  padding: 6px 8px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: right;
+}
+.proforma-items-table th:nth-child(2) { text-align: left; }
+.proforma-items-table td { padding: 6px 8px; text-align: right; }
+.proforma-items-table td:nth-child(2) { text-align: left; overflow-wrap: anywhere; }
+
+.proforma-totals {
+  position: relative;
+  z-index: 1;
+  margin: 14px 0 0 auto;
+  max-width: 300px;
+}
+.proforma-totals .totals-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 3px 0;
+  font-size: 0.86rem;
+}
+.proforma-totals .totals-row.grand {
+  font-weight: 700;
+  border-top: 1.5px solid var(--text);
+  border-bottom: 3px double var(--text);
+  margin-top: 4px;
+  padding: 5px 0;
+}
+
+.proforma-remark { margin: 6px 0 16px; font-size: 0.85rem; }
+.proforma-remark span { color: var(--text-muted); }
+
+.proforma-notices { margin: 0 0 8px; }
+.proforma-notice { margin: 2px 0; font-size: 0.83rem; font-weight: 600; }
+/* Red is reserved for the terms the agent has to act on — it's a property
+   of the notice in Configure, not a per-invoice choice. */
+.proforma-notice-strong { margin: 2px 0; font-size: 0.83rem; font-weight: 700; color: #c0392b; }
+
+.proforma-bank {
+  border-collapse: collapse;
+  margin: 6px 0 10px;
+  font-size: 0.83rem;
+}
+.proforma-bank td { border: 1px solid var(--text); padding: 4px 12px 4px 8px; }
+.proforma-bank td:first-child { color: var(--text-muted); }
+
+.proforma-policy { margin: 14px 0; }
+.proforma-policy-label { margin: 0 0 4px; font-weight: 600; font-size: 0.85rem; }
+.proforma-policy ul { margin: 0; padding-left: 28px; }
+.proforma-policy li { font-size: 0.83rem; padding: 2px 0; }
+
+.proforma-closing { margin: 16px 0 4px; font-size: 0.85rem; line-height: 1.5; }
+.proforma-thanks { margin: 12px 0 0; font-size: 0.85rem; }
+
+.proforma-signatures {
+  display: flex;
+  gap: 40px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.proforma-signatures .grc-signature-block { min-width: 170px; margin: 0; }
+.proforma-footnote { margin: 10px 0 0; font-size: 0.66rem; color: var(--text-muted); }
+
+/* Configure list rows carry full sentences, so they must wrap rather than
+   truncate the way short name rows do. */
+.list-td-wrap {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+.notice-emphasis-tag { color: #c0392b; }
+
+@media (max-width: 520px) {
+  .proforma-paper { padding: 18px 16px 16px; }
+  .proforma-meta { grid-template-columns: 1fr; }
+  .proforma-totals { max-width: none; }
+  .proforma-signatures { flex-direction: column; gap: 10px; align-items: stretch; }
+  .reservations-toolbar .primary-btn { width: 100%; }
+}
+
+@media print {
+  .proforma-paper {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 0.8rem;
+    /* Without this the maroon header and the red payment terms print grey,
+       and the red is doing real work on this document. */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .proforma-meta { grid-template-columns: 1.4fr 1fr; }
+  .proforma-signatures, .proforma-bank, .proforma-policy { break-inside: avoid; }
+}

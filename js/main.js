@@ -20,6 +20,8 @@ import "./inventory.js";
 import "./dashboard.js";
 import "./reports.js";
 import "./reservation.js";
+import "./reservations.js";
+import "./proforma.js";
 import "./branch.js";
 import { restoreSession } from "./auth.js";
 
