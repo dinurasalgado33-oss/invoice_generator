@@ -5,7 +5,7 @@ import {
   RESERVATIONS, proformasForReservation, findReservationById, RESERVATION_STATUS,
 } from "./data/reservations.js";
 import { openReservationForm, reprintReservation } from "./reservation.js";
-import { openProformaForm } from "./proforma.js";
+import { openProformaForm, reprintProforma } from "./proforma.js";
 import { confirmAction } from "./confirm.js";
 
 // Reservations screen — the home for pre-arrival paperwork. Making a
@@ -91,8 +91,13 @@ function renderReservationsList() {
     // Re-invoicing is legitimate (an amended stay, a corrected agent rate),
     // so this isn't a blocker — staff just need to see one already went
     // out, or they'll issue a duplicate without knowing.
+    // ...and it has to open, not just announce itself. An agent invoice
+    // raised before arrival has no booking behind it yet, so Guest History
+    // can't reach it either — this card was the only place it existed, and
+    // the only button on offer generated a second one.
     const issuedTag = issued.length
-      ? `<span class="reservation-issued">${issued.length} agent invoice${issued.length === 1 ? "" : "s"}</span>`
+      ? `<button type="button" class="reservation-issued" data-open-proforma="${issued[issued.length - 1].id}"
+                 title="Open the agent invoice already raised">${issued.length} agent invoice${issued.length === 1 ? "" : "s"}</button>`
       : "";
     const villas = (r.villas || []).map(v => v.name).filter(Boolean).join(", ");
     // Only a standing reservation can be cancelled. Cancelling an already
@@ -129,7 +134,7 @@ function renderReservationsList() {
         <div class="reservation-card-actions">
           <button type="button" class="secondary-btn reservation-invoice-btn" data-reservation-id="${r.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
-            Generate Invoice for Guide
+            ${issued.length ? "Generate Another Agent Invoice" : "Generate Invoice for Guide"}
           </button>
         </div>
       </div>
@@ -138,6 +143,9 @@ function renderReservationsList() {
 
   list.querySelectorAll(".reservation-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => openProformaForm(Number(btn.dataset.reservationId)));
+  });
+  list.querySelectorAll("[data-open-proforma]").forEach(btn => {
+    btn.addEventListener("click", () => reprintProforma(Number(btn.dataset.openProforma), "screen-reservations"));
   });
   list.querySelectorAll(".reservation-print-btn").forEach(btn => {
     btn.addEventListener("click", () => reprintReservation(Number(btn.dataset.reservationId), "screen-reservations"));

@@ -44,7 +44,15 @@
   background: #dff3e0;
   padding: 2px 8px;
   border-radius: 20px;
+  /* It is a button now — the badge was the only place an agent invoice
+     raised before arrival could be opened from. */
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.5;
 }
+.reservation-issued:hover { border-color: #2c6b2f; }
+.reservation-issued:focus-visible { outline: 2px solid var(--maroon); outline-offset: 2px; }
 .reservation-card-date { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
 .reservation-card-guest {
   margin: 8px 0 2px;

@@ -182,3 +182,7 @@
   font-size: .88rem;
   color: var(--text-muted);
 }
+
+/* A counter sale, not a stay — teal keeps it visibly a different kind of
+   row from the checked-in/checked-out sequence around it. */
+.stay-status.walkin { background: #e6f2f1; color: #1f6b63; }

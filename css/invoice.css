@@ -466,3 +466,34 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   line-height: 1.45;
   color: var(--text-muted);
 }
+
+/* Void marking. A cancelled invoice keeps its figures — the record must
+   stay readable — but it cannot look like a bill that is still owed. */
+.invoice-void-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #fdf2f1;
+  border: 2px solid var(--danger);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+}
+.invoice-void-banner[hidden] { display: none; }
+.invoice-void-word {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.18em;
+  color: var(--danger);
+}
+.invoice-void-reason { font-size: .88rem; color: var(--danger); overflow-wrap: anywhere; }
+/* Faint diagonal wash so it reads as cancelled at a glance, including on
+   a printed copy that has been photocopied or faxed. */
+.invoice-paper.is-void {
+  background-image: repeating-linear-gradient(
+    -45deg, rgba(179, 65, 58, .05) 0 14px, transparent 14px 28px);
+}
+@media print {
+  .invoice-void-banner { border-width: 2px; }
+}

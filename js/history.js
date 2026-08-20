@@ -24,21 +24,47 @@ const PAGE = 10;
 let shown = PAGE;
 let searchQuery = "";
 
+// A walk-in food sale bills on the spot and never creates a booking, so it
+// has no stay to be filed under. Without this the invoice was raised, paid,
+// and then unreachable — the one document a walk-in customer might come
+// back about. Shown as a stay-shaped row with a single date, because what
+// staff are looking for here is the invoice, not a stay.
+function walkInSales() {
+  return INVOICES
+    .filter(i => i.branch === appState.selectedBranch && !i.bookingId)
+    .map(i => ({
+      id: `w${i.id}`,
+      walkInInvoiceId: i.id,
+      guest: i.guest,
+      villa: "Walk-in sale",
+      checkin: i.date,
+      checkout: i.date,
+      branch: i.branch,
+      // Not the invoice's own wording: "Active" sitting in a column of
+      // "Checked Out" pills reads as a stay state, which this isn't.
+      status: i.status === "Void" ? "Void" : "Walk-in",
+    }));
+}
+
 function stays() {
   return BOOKINGS
     .filter(b => b.branch === appState.selectedBranch)
+    .concat(walkInSales())
     .sort((a, b) => {
       // Latest first, by arrival. Ties broken by id so the order is stable
       // rather than shuffling between renders.
       if (a.checkin !== b.checkin) return a.checkin < b.checkin ? 1 : -1;
-      return b.id - a.id;
+      // String compare, not subtraction: walk-in rows carry a "w"-prefixed
+      // id, and `b.id - a.id` on those is NaN — a comparator that returns
+      // NaN silently stops ordering anything.
+      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
 }
 
 function matches(b) {
   const q = searchQuery.trim().toLowerCase();
   if (!q) return true;
-  return String(b.id).includes(q)
+  return String(b.walkInInvoiceId || b.id).includes(q)
     || (b.guest || "").toLowerCase().includes(q)
     || (b.villa || "").toLowerCase().includes(q);
 }
@@ -47,6 +73,16 @@ function matches(b) {
 // — an interim bill part-way through, then the checkout invoice — so this
 // returns them all rather than assuming one.
 function documentsFor(booking) {
+  // A walk-in has exactly one document and none of the stay paperwork —
+  // no registration card, no reservation, no agent invoice.
+  if (booking.walkInInvoiceId) {
+    return {
+      card: null,
+      reservation: null,
+      proformas: [],
+      invoices: INVOICES.filter(i => i.id === booking.walkInInvoiceId),
+    };
+  }
   const card = findGrcByBookingId(booking.id);
   const reservation = RESERVATIONS.find(r => r.bookingId === booking.id) || null;
   const proformas = reservation
@@ -57,6 +93,10 @@ function documentsFor(booking) {
 }
 
 function chargesFor(booking) {
+  // Nothing accrues against a walk-in — it is billed at the counter and
+  // closed. Filtering by its "w"-prefixed id would match nothing anyway,
+  // but returning empty says so deliberately.
+  if (booking.walkInInvoiceId) return { food: [], activities: [] };
   return {
     food: FOOD_ORDER_RECORDS.filter(f => f.bookingId === booking.id),
     activities: ACTIVITY_RECORDS.filter(a => a.bookingId === booking.id),
@@ -92,6 +132,8 @@ function statusPill(b) {
     "Checked Out": "out",
     "Upcoming": "upcoming",
     "Cancelled": "cancelled",
+    "Walk-in": "walkin",
+    "Void": "cancelled",
   };
   return `<span class="stay-status ${map[b.status] || "out"}">${escapeHtml(b.status)}</span>`;
 }
@@ -137,7 +179,7 @@ function renderHistory() {
     const extras = food.length + activities.length;
     return `
       <tr class="stay-row">
-        <td class="hc-no" data-label="Stay"><span class="stay-no">#${b.id}</span></td>
+        <td class="hc-no" data-label="Stay"><span class="stay-no">#${b.walkInInvoiceId || b.id}</span></td>
         <td class="hc-guest" data-label="Guest">
           <span class="stay-guest">${escapeHtml(orDash(b.guest))}</span>
           ${statusPill(b)}
@@ -150,7 +192,9 @@ function renderHistory() {
           <span class="stay-line">
             <span class="stay-villa">${escapeHtml(orDash(b.villa))}</span>
             <span class="stay-sep">·</span>
-            <span class="stay-dates">${formatDate(b.checkin)} &rarr; ${formatDate(b.checkout)}</span>
+            <span class="stay-dates">${b.walkInInvoiceId
+              ? formatDate(b.checkin)
+              : `${formatDate(b.checkin)} &rarr; ${formatDate(b.checkout)}`}</span>
           </span>
         </td>
         <td class="hc-docs" data-label="Documents">
@@ -158,7 +202,7 @@ function renderHistory() {
             ${docButton({ kind: "card", label: "Card", id: b.id, available: Boolean(card) })}
             ${docButton({ kind: "reservation", label: "Reservation", id: reservation ? reservation.id : "", available: Boolean(reservation) })}
             ${docButton({ kind: "proforma", label: "Agent", id: proformas.length ? proformas[proformas.length - 1].id : "", available: proformas.length > 0 })}
-            ${docButton({ kind: "invoice", label: invoices.length > 1 ? `Invoice ×${invoices.length}` : "Invoice", id: b.id, available: invoices.length > 0 })}
+            ${docButton({ kind: b.walkInInvoiceId ? "walkin-invoice" : "invoice", label: invoices.length > 1 ? `Invoice ×${invoices.length}` : "Invoice", id: b.walkInInvoiceId || b.id, available: invoices.length > 0 })}
           </div>
         </td>
         <td class="hc-extra" data-label="Activities &amp; Food">
@@ -191,6 +235,9 @@ function openDocument(kind, id) {
   if (kind === "card") return reprintGrc(Number(id), BACK_TO_HISTORY);
   if (kind === "reservation") return reprintReservation(Number(id), BACK_TO_HISTORY);
   if (kind === "proforma") return reprintProforma(Number(id), BACK_TO_HISTORY);
+  // A walk-in row carries its invoice id directly — there is no booking to
+  // look it up through.
+  if (kind === "walkin-invoice") return reopenInvoice(String(id), BACK_TO_HISTORY);
   if (kind === "invoice") {
     const bookingId = Number(id);
     const invoices = INVOICES.filter(i => i.bookingId === bookingId);

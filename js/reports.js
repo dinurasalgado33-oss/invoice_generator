@@ -3,7 +3,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
 import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
-import { RESTOCK_LOG, getInventoryUsage } from "./data/inventory.js";
+import { RESTOCK_LOG, USAGE_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
 import { confirmAction } from "./confirm.js";
 
@@ -31,6 +31,7 @@ const REPORTS = {
   inventory: { label: "Inventory Usage",      group: "Stock",      searchHint: "Item name", ignoresPeriod: true },
   spend:     { label: "Inventory Spend",      group: "Stock",      searchHint: "Item name" },
   restock:   { label: "Restock Log",          group: "Stock",      searchHint: "Item name" },
+  writeoffs: { label: "Stock Written Off",     group: "Stock",      searchHint: "Item name" },
   bookings:  { label: "Bookings & Occupancy", group: "Operations", searchHint: "Guest or villa" },
   activity:  { label: "Check-in / Check-out", group: "Operations", searchHint: "Guest or villa" },
   logins:    { label: "Staff Logins",         group: "Operations", searchHint: "Username" },
@@ -132,6 +133,16 @@ function getFilteredFoodOrders(range) {
 
 function getFilteredInventoryUsage() {
   return getInventoryUsage().filter(r => matchesBranch(r.branch) && matchesSearch(r.item));
+}
+
+// Inventory Usage derives "used" from opening + restocked - closing, so it
+// can show how much left the store but never why. This is the log the
+// staff actually fill in — spoilage, staff meals, kitchen use — and until
+// now nothing rendered it at all.
+function getFilteredUsageLog(range) {
+  return USAGE_LOG
+    .filter(r => inRange(r.date, range) && matchesBranch(r.branch) && matchesSearch(r.itemName))
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 function getFilteredRestockLog(range) {
@@ -389,6 +400,37 @@ function renderInventoryTab() {
   }).join("");
 }
 
+// Grouped by reason first, because the question a manager brings to this
+// report is "how much are we throwing away", not "what happened on the 3rd".
+function renderWriteoffsTab(range) {
+  const rows = getFilteredUsageLog(range);
+  if (!rows.length) return emptyState();
+
+  const byReason = {};
+  rows.forEach(r => {
+    if (!byReason[r.reason]) byReason[r.reason] = [];
+    byReason[r.reason].push(r);
+  });
+
+  // Reuses .report-group-heading, the same grouping treatment the Restock
+  // Log already uses, so the two Stock reports read alike.
+  return Object.keys(byReason).sort().map(reason => {
+    const entries = byReason[reason];
+    return `
+      <h4 class="report-group-heading">${escapeHtml(reason)} &middot; ${entries.length} entr${entries.length === 1 ? "y" : "ies"}</h4>
+      ${entries.map(r => `
+        <div class="report-row">
+          <div class="report-row-top">
+            <div>
+              <span class="report-row-title">${escapeHtml(r.itemName)}</span>
+              <span class="report-row-sub">${escapeHtml(r.category)} &middot; ${escapeHtml(r.branch)} &middot; ${formatDate(r.date)}</span>
+            </div>
+            <span class="report-row-amount">-${r.qty} ${escapeHtml(r.unit || "")}</span>
+          </div>
+        </div>`).join("")}`;
+  }).join("");
+}
+
 function renderSpendTab(range) {
   const rows = getFilteredRestockLog(range);
   if (!rows.length) return emptyState();
@@ -541,7 +583,7 @@ function renderReportBody(range) {
   const body = document.getElementById("report-body");
   const labels = {
     invoices: "Invoices", food: "Food Orders", inventory: "Inventory Usage", spend: "Inventory Spend",
-    restock: "Restock Log", logins: "Staff Logins", activity: "Check-in / Check-out", bookings: "Bookings & Occupancy",
+    restock: "Restock Log", writeoffs: "Stock Written Off", logins: "Staff Logins", activity: "Check-in / Check-out", bookings: "Bookings & Occupancy",
   };
   document.getElementById("report-tab-label").textContent = labels[state.tab];
   document.getElementById("report-view-toggle").style.display = state.tab === "restock" ? "flex" : "none";
@@ -562,6 +604,7 @@ function renderReportBody(range) {
   else if (state.tab === "inventory") body.innerHTML = renderInventoryTab();
   else if (state.tab === "spend") body.innerHTML = renderSpendTab(range);
   else if (state.tab === "restock") body.innerHTML = renderRestockLogTab(range);
+  else if (state.tab === "writeoffs") body.innerHTML = renderWriteoffsTab(range);
   else if (state.tab === "logins") body.innerHTML = renderLoginsTab(range);
   else if (state.tab === "activity") body.innerHTML = renderActivityTab(range);
   else body.innerHTML = renderBookingsTab(range);
@@ -810,6 +853,12 @@ function getExportRows() {
     return {
       headers: ["Item", "Category", "Branch", "Opening", "Restocked", "Used", "Closing", "Min Stock"],
       rows: getFilteredInventoryUsage().map(r => [r.item, r.category, r.branch, r.opening, r.restocked, r.used, r.closing, r.minStock]),
+    };
+  }
+  if (state.tab === "writeoffs") {
+    return {
+      headers: ["Date", "Item", "Category", "Branch", "Qty", "Unit", "Reason"],
+      rows: getFilteredUsageLog(range).map(r => [r.date, r.itemName, r.category, r.branch, r.qty, r.unit, r.reason]),
     };
   }
   if (state.tab === "spend" || state.tab === "restock") {

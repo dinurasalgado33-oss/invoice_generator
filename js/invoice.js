@@ -388,6 +388,15 @@ function renderInvoicePreview(r) {
 
   document.getElementById("prev-notes").textContent = INVOICE_REMARK;
   document.getElementById("prev-staff").textContent = r.staffName || "";
+
+  // A cancelled invoice must not reprint as though it were still owed.
+  // The figures stay on the page — the record has to remain readable —
+  // but the document says plainly that it no longer stands.
+  const voided = r.status === "Void";
+  const banner = document.getElementById("prev-void-banner");
+  banner.hidden = !voided;
+  document.getElementById("prev-void-reason").textContent = voided && r.voidReason ? r.voidReason : "";
+  document.getElementById("invoice-preview").classList.toggle("is-void", voided);
 }
 
 // Reopen an invoice already issued — the guest wants another copy, or
