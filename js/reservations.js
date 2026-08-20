@@ -4,7 +4,7 @@ import { escapeHtml, formatDate, setLogoSrc, showToast, orDash, todayISO } from 
 import {
   RESERVATIONS, proformasForReservation, findReservationById, RESERVATION_STATUS,
 } from "./data/reservations.js";
-import { openReservationForm } from "./reservation.js";
+import { openReservationForm, reprintReservation } from "./reservation.js";
 import { openProformaForm } from "./proforma.js";
 import { confirmAction } from "./confirm.js";
 
@@ -95,6 +95,9 @@ function renderReservationsList() {
       ? `<span class="reservation-issued">${issued.length} agent invoice${issued.length === 1 ? "" : "s"}</span>`
       : "";
     const villas = (r.villas || []).map(v => v.name).filter(Boolean).join(", ");
+    // Only a standing reservation can be cancelled. Cancelling an already
+    // cancelled or already fulfilled one is meaningless, so the control
+    // isn't offered rather than being offered and refused.
     const isOpen = r.status === RESERVATION_STATUS.CONFIRMED;
     return `
       <div class="reservation-card ${r.status === RESERVATION_STATUS.CANCELLED ? "is-cancelled" : ""}">
@@ -104,7 +107,16 @@ function renderReservationsList() {
             ${statusBadge(r)}
             ${issuedTag}
           </div>
-          <span class="reservation-card-date">${formatDate(r.createdAt.slice(0, 10))}</span>
+          <div class="reservation-card-tools">
+            <span class="reservation-card-date">${formatDate(r.createdAt.slice(0, 10))}</span>
+            <button type="button" class="reservation-icon-btn reservation-print-btn" data-reservation-id="${r.id}" aria-label="Print confirmation for RES-${r.no}" title="Print confirmation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+            </button>
+            ${isOpen ? `
+            <button type="button" class="reservation-icon-btn danger reservation-cancel-btn" data-reservation-id="${r.id}" aria-label="Cancel RES-${r.no}" title="Cancel reservation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
+            </button>` : ""}
+          </div>
         </div>
         <p class="reservation-card-guest">${escapeHtml(orDash(r.guestName))}</p>
         <p class="reservation-card-meta">
@@ -119,7 +131,6 @@ function renderReservationsList() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
             Generate Invoice for Guide
           </button>
-          ${isOpen ? `<button type="button" class="sheet-text-danger-btn reservation-cancel-btn" data-reservation-id="${r.id}">Cancel this reservation</button>` : ""}
         </div>
       </div>
     `;
@@ -127,6 +138,9 @@ function renderReservationsList() {
 
   list.querySelectorAll(".reservation-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => openProformaForm(Number(btn.dataset.reservationId)));
+  });
+  list.querySelectorAll(".reservation-print-btn").forEach(btn => {
+    btn.addEventListener("click", () => reprintReservation(Number(btn.dataset.reservationId)));
   });
   list.querySelectorAll(".reservation-cancel-btn").forEach(btn => {
     btn.addEventListener("click", () => cancelReservation(Number(btn.dataset.reservationId)));

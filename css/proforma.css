@@ -301,3 +301,42 @@
 .reservation-card-actions .sheet-text-danger-btn { width: 100%; margin-top: 8px; }
 #reservations-tabs { margin-bottom: 14px; }
 .grc-reservation-picker { padding-bottom: 4px; }
+
+/* Card tools — print and cancel sit top-right as icons. Cancel used to be
+   a full-width text button under the card, which gave a rarely-used and
+   destructive action more weight than the primary one above it. */
+.reservation-card-tools { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.reservation-card-tools .reservation-card-date { margin-right: 4px; }
+.reservation-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.reservation-icon-btn svg { width: 15px; height: 15px; }
+.reservation-icon-btn:active { transform: scale(0.94); }
+/* Kept visually small so it doesn't dominate the card, but padded out to a
+   44px touch target — same technique as the order steppers. */
+.reservation-icon-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .reservation-icon-btn:hover { border-color: var(--maroon); color: var(--maroon); }
+  .reservation-icon-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: #fdf2f1; }
+}
+

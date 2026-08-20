@@ -132,6 +132,81 @@ function validateReservationForm() {
   return true;
 }
 
+// Renders the printable confirmation from a stored reservation. Shared by
+// "generate" and by reprinting from the Reservations list, so both produce
+// an identical document.
+//
+// The letterhead, bank details and conditions come from current branch
+// config rather than being frozen into the record: if the hotel's phone
+// number or bank account changes, a reprint should carry the number that
+// works today, not the one that was right in March.
+function renderReservationPreview(r) {
+  const branchInfo = BRANCH_INFO[r.branch] || {};
+
+  document.getElementById("resv-prev-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
+  document.getElementById("resv-prev-address").textContent = branchInfo.address || "";
+  document.getElementById("resv-prev-contact-line").textContent =
+    [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
+  setLogoSrc("resv-prev-logo", appState.selectedBranchLogo);
+
+  document.getElementById("resv-prev-guest-name").textContent =
+    r.guestName ? `${r.title || ""} ${r.guestName}`.trim() : "-";
+  document.getElementById("resv-prev-guest-total").textContent = String(r.guestTotal ?? 0);
+  document.getElementById("resv-prev-adults").textContent = String(r.adults ?? 0);
+  document.getElementById("resv-prev-children").textContent = String(r.children ?? 0);
+  document.getElementById("resv-prev-contact").textContent = r.contact || "N/A";
+
+  document.getElementById("resv-prev-checkin-date").textContent = r.checkinDate ? formatDate(r.checkinDate) : "N/A";
+  document.getElementById("resv-prev-checkin-time").textContent = formatTime12h(r.checkinTime);
+  document.getElementById("resv-prev-checkout-date").textContent = r.checkoutDate ? formatDate(r.checkoutDate) : "N/A";
+  document.getElementById("resv-prev-checkout-time").textContent = formatTime12h(r.checkoutTime);
+  document.getElementById("resv-prev-duration").textContent =
+    r.nights ? `${r.nights} night${r.nights === 1 ? "" : "s"}` : "N/A";
+  document.getElementById("resv-prev-villa-count").textContent = String((r.villas || []).length);
+  document.getElementById("resv-prev-booking-type").textContent = r.bookingType || "N/A";
+
+  document.getElementById("resv-prev-pricing-body").innerHTML = (r.villas || []).map(v => `
+    <tr><td>${escapeHtml(v.name) || "-"}</td><td>${v.rate ? fmtLKR(v.rate) : "-"}</td></tr>
+  `).join("") || `<tr><td colspan="2" class="room-detail-empty">No villas added.</td></tr>`;
+
+  document.getElementById("resv-prev-bank-account-name").textContent = branchInfo.bankAccountName || "-";
+  document.getElementById("resv-prev-bank-account-no").textContent = branchInfo.bankAccountNumber || "-";
+  document.getElementById("resv-prev-bank").textContent = branchInfo.bankName || "-";
+  document.getElementById("resv-prev-bank-branch").textContent = branchInfo.bankBranch || "-";
+
+  const conditions = RESERVATION_CONDITIONS[r.branch] || [];
+  document.getElementById("resv-prev-conditions").innerHTML = conditions
+    .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
+    `<p class="room-detail-empty">No conditions set.</p>`;
+}
+
+// Reprint an already-issued confirmation — the guest lost their copy, or
+// the agent wants it again. Read-only: it re-renders the stored record and
+// changes nothing.
+export function reprintReservation(reservationId) {
+  const r = RESERVATIONS.find(x => x.id === reservationId);
+  if (!r) {
+    showToast("That reservation is no longer available");
+    return;
+  }
+  renderReservationPreview(r);
+  // Arriving from the list, "Edit" would drop the user on a blank form —
+  // the form holds no state for an already-issued reservation. Send them
+  // back where they came from instead.
+  setPreviewReturn("screen-reservations", "Back");
+  showScreen("screen-reservation-preview");
+}
+
+// The preview is reached two ways — straight after generating (where going
+// back to the form to amend makes sense) and by reprinting from the list
+// (where it does not). The back button follows whichever it was.
+function setPreviewReturn(screenId, label) {
+  const btn = document.querySelector('#screen-reservation-preview .back-btn');
+  if (!btn) return;
+  btn.dataset.back = screenId;
+  btn.textContent = `← ${label}`;
+}
+
 // Mirrors the invoice form's guard — and it now matters more than it did:
 // a reservation writes a real record, so a double submit would create two
 // bookings with two reservation numbers for one guest.
@@ -187,50 +262,11 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   }
   document.getElementById("resv-conflict-error").classList.remove("show");
 
-  // Header
-  document.getElementById("resv-prev-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
-  document.getElementById("resv-prev-address").textContent = branchInfo.address || "";
-  document.getElementById("resv-prev-contact-line").textContent =
-    [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
-  setLogoSrc("resv-prev-logo", appState.selectedBranchLogo);
-
-  // Guest details
-  document.getElementById("resv-prev-guest-name").textContent = guestName ? `${title} ${guestName}` : "-";
-  document.getElementById("resv-prev-guest-total").textContent = String(adults + children);
-  document.getElementById("resv-prev-adults").textContent = String(adults);
-  document.getElementById("resv-prev-children").textContent = String(children);
-  document.getElementById("resv-prev-contact").textContent = document.getElementById("resv-contact").value.trim() || "N/A";
-
-  // Stay details
-  document.getElementById("resv-prev-checkin-date").textContent = checkinDate ? formatDate(checkinDate) : "N/A";
-  document.getElementById("resv-prev-checkin-time").textContent = formatTime12h(document.getElementById("resv-checkin-time").value);
-  document.getElementById("resv-prev-checkout-date").textContent = checkoutDate ? formatDate(checkoutDate) : "N/A";
-  document.getElementById("resv-prev-checkout-time").textContent = formatTime12h(document.getElementById("resv-checkout-time").value);
-  document.getElementById("resv-prev-duration").textContent = nights ? `${nights} night${nights === 1 ? "" : "s"}` : "N/A";
-  document.getElementById("resv-prev-villa-count").textContent = String(villas.length || 0);
-  document.getElementById("resv-prev-booking-type").textContent = document.getElementById("resv-booking-type").value.trim() || "N/A";
-
-  // Pricing
-  document.getElementById("resv-prev-pricing-body").innerHTML = villas.map(v => `
-    <tr><td>${escapeHtml(v.name) || "-"}</td><td>${v.rate ? fmtLKR(v.rate) : "-"}</td></tr>
-  `).join("") || `<tr><td colspan="2" class="room-detail-empty">No villas added.</td></tr>`;
-
-  // Payment details
-  document.getElementById("resv-prev-bank-account-name").textContent = branchInfo.bankAccountName || "-";
-  document.getElementById("resv-prev-bank-account-no").textContent = branchInfo.bankAccountNumber || "-";
-  document.getElementById("resv-prev-bank").textContent = branchInfo.bankName || "-";
-  document.getElementById("resv-prev-bank-branch").textContent = branchInfo.bankBranch || "-";
-
-  // Conditions — manager-editable per branch (Configure > Reservation Conditions)
-  const conditions = RESERVATION_CONDITIONS[appState.selectedBranch] || [];
-  document.getElementById("resv-prev-conditions").innerHTML = conditions
-    .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
-    `<p class="room-detail-empty">No conditions set.</p>`;
-
-  // Save the reservation as a record, not just a printed page — the
-  // Reservations list reads from this, and a travel agent invoice is
-  // raised against it later using these same details.
-  RESERVATIONS.push({
+  // The record is built first and the document rendered from it, rather
+  // than from the form fields — that way reprinting an old reservation
+  // runs the exact same code, so a reprint can't quietly differ from what
+  // the guest was originally sent.
+  const record = {
     id: reservationId,
     no: reservationId,
     branch: appState.selectedBranch,
@@ -253,9 +289,12 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     cancelledAt: null,
     cancelReason: "",
     createdAt: new Date().toISOString(),
-  });
+  };
+  RESERVATIONS.push(record);
   refreshReservationsList();
 
+  renderReservationPreview(record);
+  setPreviewReturn("screen-reservation-form", "Edit");
   showToast("Reservation confirmation generated");
   showScreen("screen-reservation-preview");
   // Re-armed on the next task, not inline: requestSubmit() dispatches
