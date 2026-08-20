@@ -5,7 +5,7 @@ import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
-  isChargeCategory, serviceChargeFor, categoryTotals,
+  isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK,
 } from "./data/charges.js";
 
 const afterGenerateCallbacks = [];
@@ -67,6 +67,10 @@ function capField(input, max) {
   const n = parseFloat(input.value);
   if (Number.isFinite(n) && n > max) input.value = String(max);
 }
+
+// Shown read-only on step 4 so staff can see what the guest will read,
+// set once at load since it never changes.
+document.getElementById("fixed-remark-preview").textContent = INVOICE_REMARK;
 
 const itemsBody = document.getElementById("items-body");
 
@@ -406,9 +410,9 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   document.getElementById("prev-advance").textContent = advance ? fmt(advance, currency) : "-";
   document.getElementById("prev-total").textContent = fmt(grandTotal, currency);
 
-  // Remark + signature
-  const notes = document.getElementById("notes").value.trim();
-  document.getElementById("prev-notes").textContent = notes || "-";
+  // Remark + signature. The remark is a fixed policy notice, so it isn't
+  // read from a field — it's the same sentence on every invoice.
+  document.getElementById("prev-notes").textContent = INVOICE_REMARK;
   document.getElementById("prev-staff").textContent = val("staff-name") || "";
 
   // The record's id is the same number printed on the document — so a

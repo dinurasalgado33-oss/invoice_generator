@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=78" />
-<link rel="stylesheet" href="css/brand-home.css?v=78" />
-<link rel="stylesheet" href="css/rooms.css?v=78" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=78" />
-<link rel="stylesheet" href="css/invoice.css?v=78" />
-<link rel="stylesheet" href="css/dashboard.css?v=78" />
-<link rel="stylesheet" href="css/reports.css?v=78" />
-<link rel="stylesheet" href="css/reservation.css?v=78" />
+<link rel="stylesheet" href="css/base.css?v=79" />
+<link rel="stylesheet" href="css/brand-home.css?v=79" />
+<link rel="stylesheet" href="css/rooms.css?v=79" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=79" />
+<link rel="stylesheet" href="css/invoice.css?v=79" />
+<link rel="stylesheet" href="css/dashboard.css?v=79" />
+<link rel="stylesheet" href="css/reports.css?v=79" />
+<link rel="stylesheet" href="css/reservation.css?v=79" />
 </head>
 <body>
 
@@ -1194,10 +1194,15 @@
 
       <div class="form-step" data-step="4">
         <h3 class="section-title first">Almost done</h3>
-        <p class="step-subtext">Anything else worth noting on the invoice?</p>
+        <p class="step-subtext">Just your name, then the invoice is ready.</p>
+
+        <!-- The Remark is a fixed policy notice, not a per-invoice field.
+             Shown here read-only so staff know what the guest will see,
+             but there is deliberately nothing to edit — it must read the
+             same on every bill. -->
         <div class="field">
-          <label>Remark <span class="label-optional">(optional)</span></label>
-          <textarea id="notes" rows="2" placeholder="e.g. Kayak ride - Free&#10;Children under 12 years - Free" autocapitalize="sentences" enterkeyhint="done"></textarea>
+          <label>Remark printed on the invoice</label>
+          <p class="fixed-remark-preview" id="fixed-remark-preview"></p>
         </div>
 
         <div class="field">
@@ -1525,6 +1530,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=78"></script>
+<script type="module" src="js/main.js?v=79"></script>
 </body>
 </html>

@@ -43,6 +43,18 @@ export function chargeCategoryLabel(value) {
 // hunting through the form code.
 export const SERVICE_CHARGE_RATE = 0.1;
 
+// Fixed policy notice printed in the Remark box on every invoice. Not a
+// per-invoice field: it states a standing charging policy, so it has to
+// read identically on every bill a guest is handed. Deliberately not
+// editable from the UI — a notice that can be reworded per invoice stops
+// being a policy.
+//
+// Lives next to SERVICE_CHARGE_RATE on purpose: if the rate ever changes,
+// this sentence is wrong, and having them adjacent makes that obvious.
+export const INVOICE_REMARK =
+  "Please note that a 10% service charge will be added to all BB (Bed & Breakfast), " +
+  "HB (Half Board) and FB (Full Board) Bookings.";
+
 export function foodSubtotal(items) {
   return items.reduce((sum, it) => (it.category === "food" ? sum + it.value : sum), 0);
 }
