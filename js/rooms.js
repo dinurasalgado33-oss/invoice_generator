@@ -5,7 +5,7 @@ import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/roo
 import { ACTIVITIES_BY_BRANCH, clampHotelIncome } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate, setCheckoutContext } from "./invoice.js";
 import { confirmAction } from "./confirm.js";
-import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId } from "./data/reports.js";
+import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId, writeOffStayRecords } from "./data/reports.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
   isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
@@ -259,17 +259,23 @@ async function startInterimInvoice() {
 
   clearItems();
   charges.forEach(c => addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category));
-  // Cleared up front: these charges are now on an invoice, so leaving them
-  // on the tab would bill them a second time at checkout.
-  delete room.pendingCharges;
+  // The tab is NOT cleared here. It used to be, on the reasoning that these
+  // charges were "now on an invoice" — but at this point they are only on a
+  // *form*. Pressing Back, which the form itself invites, wiped the tab and
+  // raised no invoice: the guest's food simply vanished from their bill.
+  // The charges are remembered instead, and removed once an invoice for
+  // this villa actually exists.
+  interimRef = { branch: activeRoomRef.branch, roomId: room.id, charges: charges.slice() };
 
   showScreen("screen-form");
 }
 
+// Which villa's tab is sitting on the invoice form, waiting to find out
+// whether it becomes an invoice or gets abandoned.
+let interimRef = null;
+
 // Undo a mistaken check-in — clears the room back to available without
-// generating an invoice. Any food/activity charges already run up during
-// that stay are discarded along with it (they were never billed, since
-// billing only happens at Check Out).
+// generating an invoice, discarding whatever was on the tab.
 async function cancelCheckIn() {
   const room = getActiveRoom();
   const rooms = roomsOnStay(activeRoomRef.branch, room);
@@ -279,16 +285,30 @@ async function cancelCheckIn() {
     ? `${room.guest}'s check-in across ${rooms.length} villas (${rooms.map(r => r.name).join(", ")})`
     : `${room.guest}'s check-in for ${room.name}`;
 
+  // The sheet shows the running tab directly above this button, and the
+  // warning used to say only "this can't be undone" — never that the money
+  // on screen was about to be written off. Staff were being asked to
+  // approve a write-off without being told there was one.
+  const unbilled = rooms.reduce(
+    (sum, r) => sum + (r.pendingCharges || []).reduce((s, c) => s + c.value, 0), 0);
+  const moneyWarning = unbilled > 0
+    ? ` ${fmtLKR(unbilled)} on the running tab will be written off and billed to nobody.`
+    : "";
+
   const ok = await confirmAction({
     title: "Cancel check-in?",
-    message: `Cancel ${scope}? This can't be undone.`,
-    confirmLabel: "Cancel Check-In",
+    message: `Cancel ${scope}?${moneyWarning} This can't be undone.`,
+    confirmLabel: unbilled > 0 ? "Cancel & Write Off" : "Cancel Check-In",
     tone: "danger",
   });
   if (!ok) return;
 
   const booking = BOOKINGS.find(b => b.id === room.bookingId);
   if (booking) booking.status = "Cancelled";
+  // The charges are gone from the tab, so no invoice will ever carry them.
+  // Left untouched they'd go on counting as revenue in the Food Orders and
+  // Activities reports — money the hotel never billed and never took.
+  writeOffStayRecords(room.bookingId, `Check-in cancelled for ${room.guest}`);
 
   rooms.forEach(r => {
     logRoomActivity(activeRoomRef.branch, r, r.guest, "Check-In Cancelled");
@@ -694,7 +714,23 @@ function prefillInvoiceForCheckout(room) {
 }
 
 // If an invoice was generated from a Room Map checkout, the villa is free again.
-onAfterGenerate(() => {
+onAfterGenerate((record) => {
+  // An interim bill only clears the tab once the invoice is real, and only
+  // the exact charges it billed — anything ordered while the form was open
+  // stays on the tab rather than being swept away with them.
+  if (interimRef) {
+    const billedThisVilla = record && record.interim && record.roomId === interimRef.roomId;
+    if (billedThisVilla) {
+      const room = (ROOMS_BY_BRANCH[interimRef.branch] || []).find(r => r.id === interimRef.roomId);
+      if (room && Array.isArray(room.pendingCharges)) {
+        const billed = new Set(interimRef.charges);
+        room.pendingCharges = room.pendingCharges.filter(c => !billed.has(c));
+        if (!room.pendingCharges.length) delete room.pendingCharges;
+      }
+    }
+    interimRef = null;
+  }
+
   if (checkoutRoomRef) {
     const room = (ROOMS_BY_BRANCH[checkoutRoomRef.branch] || []).find(r => r.id === checkoutRoomRef.roomId);
     if (!room) { checkoutRoomRef = null; return; }

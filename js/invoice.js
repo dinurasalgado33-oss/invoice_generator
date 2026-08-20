@@ -395,7 +395,10 @@ function renderInvoicePreview(r) {
   const voided = r.status === "Void";
   const banner = document.getElementById("prev-void-banner");
   banner.hidden = !voided;
-  document.getElementById("prev-void-reason").textContent = voided && r.voidReason ? r.voidReason : "";
+  // Reason and author together — a reprinted void needs to say not just
+  // that it was cancelled but on whose authority.
+  const voidDetail = !voided ? "" : [r.voidReason, r.voidedBy ? "voided by " + r.voidedBy : ""].filter(Boolean).join(" · ");
+  document.getElementById("prev-void-reason").textContent = voidDetail;
   document.getElementById("invoice-preview").classList.toggle("is-void", voided);
 }
 
@@ -519,7 +522,10 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   appState.invoiceCounter++;
   safeStorage.set("leopardinn-invoice-counter", String(appState.invoiceCounter));
 
-  afterGenerateCallbacks.forEach(cb => cb());
+  // The record is passed so a listener can tell *which* invoice was just
+  // raised. Without it, a listener holding state from an abandoned flow
+  // has no way to know this generate wasn't the one it was waiting for.
+  afterGenerateCallbacks.forEach(cb => cb(record));
 
   showToast("Invoice generated");
   showScreen("screen-preview");

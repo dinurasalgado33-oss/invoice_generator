@@ -113,3 +113,33 @@ export const BOOKINGS = [
   { id: 15, roomId: 8, guest: "Sanduni Rathnayake", villa: "Pool Villa 1", branch: "Wilpattu", checkin: "2026-06-25", checkout: "2026-06-28", status: "Checked Out" },
   { id: 16, roomId: 4, guest: "Michael Chen", villa: "Barrel Villa", branch: "Arugam Bay", checkin: "2026-06-30", checkout: "2026-07-02", status: "Cancelled" },
 ];
+
+// A stay's food and activity records are written the moment the charge is
+// made, not when it is billed. That is right for the kitchen and for stock,
+// but it means a stay that never produces an invoice leaves its revenue on
+// the books forever — the Food Orders report counting money the hotel never
+// billed and never took, while the Invoices report and the dashboard show
+// nothing. Marking the records keeps them visible as a record of what was
+// actually made and served, while taking them out of every revenue total.
+export function writeOffStayRecords(bookingId, reason) {
+  if (bookingId === null || bookingId === undefined) return 0;
+  const at = new Date().toISOString();
+  let touched = 0;
+  [FOOD_ORDER_RECORDS, ACTIVITY_RECORDS].forEach(set => {
+    set.forEach(r => {
+      if (r.bookingId === bookingId && !r.writtenOff) {
+        r.writtenOff = true;
+        r.writeOffReason = reason || "";
+        r.writtenOffAt = at;
+        touched++;
+      }
+    });
+  });
+  return touched;
+}
+
+// The single definition of "this money counted". Every revenue figure in
+// the app reads through it so the reports cannot drift apart again.
+export function countsAsRevenue(record) {
+  return !record.writtenOff;
+}

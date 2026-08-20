@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
-import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS, countsAsRevenue } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG, USAGE_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
@@ -128,7 +128,15 @@ function getFilteredInvoices(range) {
 }
 
 function getFilteredFoodOrders(range) {
-  return FOOD_ORDER_RECORDS.filter(r => inRange(r.date, range) && matchesBranch(r.branch) && matchesSearch(r.dish));
+  // Written-off orders are excluded here, not hidden: renderFoodTab says
+  // how many and what they were worth. They were cooked and served, so
+  // they belong in the kitchen record — but no invoice ever carried them,
+  // so counting them as revenue overstates the month.
+  return FOOD_ORDER_RECORDS.filter(r => inRange(r.date, range) && matchesBranch(r.branch) && matchesSearch(r.dish) && countsAsRevenue(r));
+}
+
+function getWrittenOffFood(range) {
+  return FOOD_ORDER_RECORDS.filter(r => inRange(r.date, range) && matchesBranch(r.branch) && matchesSearch(r.dish) && !countsAsRevenue(r));
 }
 
 function getFilteredInventoryUsage() {
@@ -313,8 +321,8 @@ function renderInvoicesTab(range) {
     const isVoid = inv.status === "Void";
     // Voided invoices keep their reason on the row — the point of voiding
     // rather than deleting is that someone can see what happened later.
-    const voidNote = isVoid && inv.voidReason
-      ? `<div class="report-row-usage"><span>Reason <strong>${escapeHtml(inv.voidReason)}</strong></span></div>`
+    const voidNote = isVoid && (inv.voidReason || inv.voidedBy)
+      ? `<div class="report-row-usage">${inv.voidReason ? `<span>Reason <strong>${escapeHtml(inv.voidReason)}</strong></span>` : ""}${inv.voidedBy ? `<span>Voided by <strong>${escapeHtml(inv.voidedBy)}</strong></span>` : ""}</div>`
       : "";
     const voidBtn = isVoid
       ? ""
@@ -342,9 +350,27 @@ function renderInvoicesTab(range) {
   `;
 }
 
+// Food that was made and served but that no invoice ever carried — a
+// cancelled check-in leaves exactly this behind. It is a real cost with no
+// income against it, so it gets stated plainly rather than quietly dropped.
+function renderWriteOffNote(off) {
+  const value = off.reduce((s, r) => s + (r.revenue || 0), 0);
+  const reasons = [...new Set(off.map(r => r.writeOffReason).filter(Boolean))];
+  return `
+    <div class="report-writeoff-note">
+      <span class="report-writeoff-head">${off.length} order${off.length === 1 ? "" : "s"} written off &middot; ${fmtLKR(value)}</span>
+      <span class="report-writeoff-sub">Served but never billed, so not counted as revenue.${reasons.length ? " " + escapeHtml(reasons.join("; ")) : ""}</span>
+    </div>`;
+}
+
 function renderFoodTab(range) {
   const rows = getFilteredFoodOrders(range);
-  if (!rows.length) return emptyState();
+  const off = getWrittenOffFood(range);
+  // Shown even when there are no countable rows left — a report that just
+  // says "nothing here" would hide the fact that food was served and
+  // written off, which is exactly what a manager needs to see.
+  const offNote = off.length ? renderWriteOffNote(off) : "";
+  if (!rows.length) return offNote + emptyState();
 
   // Grouped by branch + dish, not just dish name — the two branches run
   // entirely separate menus, so an identically-named dish from each (e.g.
@@ -359,7 +385,7 @@ function renderFoodTab(range) {
   });
   const ranked = Object.values(byDish).sort((a, b) => b.qty - a.qty);
 
-  return ranked.map((d, i) => `
+  return offNote + ranked.map((d, i) => `
     <div class="report-row">
       <div class="report-row-top">
         <div>
@@ -823,14 +849,14 @@ function getExportRows() {
       headers: [
         "Invoice #", "Guest", "Branch", "Date", "Source", "Total (LKR)",
         "Villa", "Food", "Safari", "Transport", "Ticket", "Other",
-        "Service Charge", "Status", "Void Reason",
+        "Service Charge", "Status", "Void Reason", "Voided By",
       ],
       rows: getFilteredInvoices(range).map(r => {
         const c = r.categoryTotals || {};
         return [
           r.id, r.guest, r.branch, r.date, r.source || "", r.total,
           c.villa || 0, c.food || 0, c.safari || 0, c.transport || 0, c.ticket || 0, c.other || 0,
-          r.serviceCharge || 0, r.status, r.voidReason || "",
+          r.serviceCharge || 0, r.status, r.voidReason || "", r.voidedBy || "",
         ];
       }),
     };
@@ -1001,6 +1027,10 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
   inv.status = "Void";
   inv.voidReason = reason;
   inv.voidedAt = new Date().toISOString();
+  // An invoice records who prepared it; cancelling one is the bigger
+  // financial act and recorded nobody. Two managers share these accounts,
+  // and "who wrote this off" is the first question an audit asks.
+  inv.voidedBy = appState.currentUser || "";
 
   closeVoidSheet();
   renderAll();

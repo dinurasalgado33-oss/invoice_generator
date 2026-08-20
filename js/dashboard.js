@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, toDateISO, showToast } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
-import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { CHARGE_CATEGORY_LABELS } from "./data/charges.js";
 
@@ -90,7 +90,10 @@ function renderDashboard(branch) {
   // handed straight back out — reporting the gross as revenue overstates
   // the month badly (the staff's own books show safaris grossing 378k with
   // 57k kept).
-  const branchActivities = ACTIVITY_RECORDS.filter(r => r.branch === branch);
+  // Written-off records are excluded: a safari charged to a stay whose
+  // check-in was then cancelled is not money owed to the provider, and
+  // showing it as payable sends the manager to pay a bill twice.
+  const branchActivities = ACTIVITY_RECORDS.filter(r => r.branch === branch && countsAsRevenue(r));
   const activityGross = branchActivities.reduce((s, r) => s + r.revenue, 0);
   const activityPayout = branchActivities.reduce((s, r) => s + (r.payout || 0), 0);
   const payoutEl = document.getElementById("kpi-payout");

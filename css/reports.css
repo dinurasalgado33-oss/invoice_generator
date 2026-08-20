@@ -410,3 +410,19 @@
 @media print {
   .report-void-btn { display: none; }
 }
+
+/* Money that was served but never billed. Amber, not red — it is not an
+   error, it is a fact the manager needs in front of them. */
+.report-writeoff-note {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #fdf3dd;
+  border: 1px solid #e8cf94;
+  border-left: 4px solid #c9932b;
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+}
+.report-writeoff-head { font-weight: 700; font-size: .9rem; color: #7a5510; }
+.report-writeoff-sub { font-size: .82rem; color: #8a6a2e; }
