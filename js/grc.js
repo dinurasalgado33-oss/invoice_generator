@@ -10,7 +10,7 @@ import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { BOOKING_SOURCES } from "./data/charges.js";
 import {
-  GRC_RECORDS, allocateGrcNo, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
+  GRC_RECORDS, allocateGrcNo, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
   STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
   DEFAULT_ARRIVAL_TIME, DEFAULT_DEPARTURE_TIME,
 } from "./data/grc.js";
@@ -307,11 +307,39 @@ el("grc-form").addEventListener("submit", (e) => {
   }
 
   renderGrcPreview(record);
+  setGrcPreviewReturn("screen-rooms", "Done");
   context = null;
   isSubmitting = false;
   showToast(`${record.guestName} checked in — print the card for signing`);
   showScreen("screen-grc-preview");
 });
+
+// Reopen the card for a stay already checked in. Once the preview screen
+// was left there was no way back to it — the record existed but nothing
+// read it — so a card lost before printing, or needed again later, was
+// simply gone.
+export function reprintGrc(bookingId) {
+  const card = findGrcByBookingId(bookingId);
+  if (!card) {
+    // Stays that predate the card — the seeded bookings, or anything
+    // checked in before this screen existed — genuinely have none.
+    showToast("No registration card on file for this stay");
+    return;
+  }
+  renderGrcPreview(card);
+  setGrcPreviewReturn("screen-rooms", "Back");
+  showScreen("screen-grc-preview");
+}
+
+// The preview is reached two ways: straight after checking a guest in,
+// where "Done" ends the task, and by reopening it later from the villa,
+// where the user is mid-flow and expects to return.
+function setGrcPreviewReturn(screenId, label) {
+  const btn = document.querySelector("#screen-grc-preview .back-btn");
+  if (!btn) return;
+  btn.dataset.back = screenId;
+  btn.textContent = `← ${label}`;
+}
 
 function tickRows(options, selected) {
   return options.map(opt => `

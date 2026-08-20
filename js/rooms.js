@@ -10,7 +10,7 @@ import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
   isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
 } from "./data/charges.js";
-import { openGrcForm } from "./grc.js";
+import { openGrcForm, reprintGrc } from "./grc.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
@@ -174,6 +174,10 @@ function renderRoomDetailBody() {
         <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
         <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
         ${renderRunningTab(room)}
+        <button type="button" class="secondary-btn" id="view-grc-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+          Registration Card
+        </button>
         <button type="button" class="primary-btn big" id="check-out-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
@@ -182,6 +186,14 @@ function renderRoomDetailBody() {
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
       document.getElementById("cancel-checkin-btn").addEventListener("click", cancelCheckIn);
+      // Reopens the signed card for this stay. Deliberately here rather
+      // than on the villa card in the grid — that card is itself a
+      // <button>, and a button inside a button is invalid markup with
+      // unreliable click handling.
+      document.getElementById("view-grc-btn").addEventListener("click", () => {
+        closeRoomDetail();
+        reprintGrc(room.bookingId ?? null);
+      });
       const interimBtn = document.getElementById("interim-invoice-btn");
       if (interimBtn) interimBtn.addEventListener("click", startInterimInvoice);
     }
