@@ -35,7 +35,12 @@
   font-variant-numeric: tabular-nums;
 }
 .stay-guest { display: block; font-weight: 700; overflow-wrap: anywhere; }
-.hc-in, .hc-out { white-space: nowrap; color: var(--text-muted); }
+/* Villa and dates read as one fact, so they sit on one line with the
+   villa carrying the weight and the dates trailing it quietly. */
+.stay-line { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.stay-villa { font-weight: 600; }
+.stay-sep { color: var(--border); }
+.stay-dates { color: var(--text-muted); white-space: nowrap; font-size: .86rem; }
 
 /* Status is encoded in colour as well as words, so a row's state reads
    before it's read. */
@@ -128,38 +133,52 @@
 }
 .extras-invoice-btn { width: auto; margin: 0; padding: 5px 11px; font-size: .76rem; }
 
-/* Below this the seven columns stop fitting, so each stay becomes a card.
-   Same approach the invoice charges table already uses — a horizontally
-   scrolling table is far worse to operate one-handed than a stack. */
-@media (max-width: 860px) {
-  .history-table, .history-table tbody, .history-table tr, .history-table td { display: block; width: 100%; }
-  .history-table thead { display: none; }
-  .history-table-wrap { overflow: visible; }
-  .history-table tr {
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow);
-  }
-  .history-table td { border: none; padding: 3px 0; }
-  .history-table td::before {
-    content: attr(data-label);
-    display: block;
-    font-size: .66rem;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 2px;
-  }
-  /* The stay number and guest lead the card, so they don't need a label
-     repeating what is obvious from position. */
-  .history-table td.hc-no::before, .history-table td.hc-guest::before { display: none; }
-  .history-table td.hc-no { display: inline-block; width: auto; margin-right: 8px; }
-  .history-table td.hc-guest { display: inline-block; width: auto; }
-  .history-table td.hc-in, .history-table td.hc-out { display: inline-block; width: 48%; margin-top: 8px; }
-  .history-table td.hc-docs, .history-table td.hc-extra { margin-top: 12px; }
-  .extras-btn { width: 100%; }
+/* Every stay is a card, at every width — not only on phones.
+   The app is a 720px column throughout (base.css), so this table can
+   never be wider than ~688px of content, and five columns in that space
+   leaves the Documents cell 142px for four buttons. There is no viewport
+   where the table layout is the better one, so it is not conditional.
+   The <table> markup stays for what it is worth semantically. */
+.history-table, .history-table tbody, .history-table tr, .history-table td { display: block; width: 100%; }
+.history-table thead { display: none; }
+.history-table-wrap { overflow: visible; }
+.history-table tr {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.history-table td { border: none; padding: 3px 0; }
+.history-table td::before {
+  content: attr(data-label);
+  display: block;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+/* The stay number and guest lead the card, so they don't need a label
+   repeating what is obvious from position. */
+.history-table td.hc-no::before, .history-table td.hc-guest::before { display: none; }
+.history-table td.hc-no { display: inline-block; width: auto; margin-right: 8px; }
+.history-table td.hc-guest { display: inline-block; width: auto; }
+.history-table td.hc-stay { margin-top: 6px; }
+/* The line is self-explanatory — a label above it would restate it. */
+.history-table td.hc-stay::before { display: none; }
+.history-table td.hc-docs { margin-top: 12px; }
+/* The button says "View activities & food" or "No activities or food",
+   so a heading above it would only repeat itself. */
+.history-table td.hc-extra { margin-top: 10px; }
+.history-table td.hc-extra::before { display: none; }
+.extras-btn { width: 100%; }
+
+/* Charges page */
+.charges-sub {
+  margin: -6px 0 20px;
+  font-size: .88rem;
+  color: var(--text-muted);
 }

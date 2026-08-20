@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=94" />
-<link rel="stylesheet" href="css/brand-home.css?v=94" />
-<link rel="stylesheet" href="css/rooms.css?v=94" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=94" />
-<link rel="stylesheet" href="css/invoice.css?v=94" />
-<link rel="stylesheet" href="css/dashboard.css?v=94" />
-<link rel="stylesheet" href="css/reports.css?v=94" />
-<link rel="stylesheet" href="css/reservation.css?v=94" />
-  <link rel="stylesheet" href="css/grc.css?v=94" />
-  <link rel="stylesheet" href="css/proforma.css?v=94" />
-  <link rel="stylesheet" href="css/history.css?v=94" />
+<link rel="stylesheet" href="css/base.css?v=97" />
+<link rel="stylesheet" href="css/brand-home.css?v=97" />
+<link rel="stylesheet" href="css/rooms.css?v=97" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=97" />
+<link rel="stylesheet" href="css/invoice.css?v=97" />
+<link rel="stylesheet" href="css/dashboard.css?v=97" />
+<link rel="stylesheet" href="css/reports.css?v=97" />
+<link rel="stylesheet" href="css/reservation.css?v=97" />
+  <link rel="stylesheet" href="css/grc.css?v=97" />
+  <link rel="stylesheet" href="css/proforma.css?v=97" />
+  <link rel="stylesheet" href="css/history.css?v=97" />
 </head>
 <body>
 
@@ -1376,9 +1376,7 @@
             <tr>
               <th class="hc-no">Stay</th>
               <th class="hc-guest">Guest</th>
-              <th class="hc-villa">Villa</th>
-              <th class="hc-in">Check-in</th>
-              <th class="hc-out">Check-out</th>
+              <th class="hc-stay">Villa &amp; dates</th>
               <th class="hc-docs">Documents</th>
               <th class="hc-extra">Activities &amp; Food</th>
             </tr>
@@ -1393,19 +1391,18 @@
     </div>
   </section>
 
-  <!-- Sheet: what a guest ordered and did during their stay -->
-  <div class="room-detail-overlay" id="history-detail-overlay">
-    <div class="room-detail-sheet" role="dialog" aria-modal="true">
-      <div class="room-detail-handle"></div>
-      <div class="room-detail-header">
-        <h3 id="history-detail-title">Activities &amp; Food</h3>
-        <button type="button" class="sheet-icon-btn" id="history-detail-close" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-        </button>
-      </div>
-      <div class="room-detail-body" id="history-detail-body"><!-- injected by JS --></div>
+  <!-- SCREEN: what a guest ordered and did during their stay. A page
+       rather than a sheet — it is a record staff read and print from, not
+       a quick confirmation, and it needs somewhere to go back to. -->
+  <section id="screen-guest-charges" class="screen">
+    <button class="back-btn" data-back="screen-guest-history">&larr; Back</button>
+    <div class="brand small">
+      <img id="charges-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2 id="charges-title">Activities &amp; Food</h2>
     </div>
-  </div>
+    <p class="charges-sub" id="charges-sub"></p>
+    <div class="list-wrap" id="charges-body"><!-- injected by JS --></div>
+  </section>
 
   <!-- SCREEN: Reservations dashboard — make a new one, or work from the
        list of past reservations (each can raise a travel agent invoice). -->
@@ -2336,6 +2333,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=94"></script>
+<script type="module" src="js/main.js?v=97"></script>
 </body>
 </html>

@@ -109,7 +109,7 @@ function renderHistory() {
   if (!filtered.length) {
     const searching = Boolean(searchQuery.trim());
     body.innerHTML = `
-      <tr><td colspan="7">
+      <tr><td colspan="5">
         <div class="list-empty">
           <p class="list-empty-title">${searching
             ? `Nothing matches “${escapeHtml(searchQuery)}”.`
@@ -142,9 +142,17 @@ function renderHistory() {
           <span class="stay-guest">${escapeHtml(orDash(b.guest))}</span>
           ${statusPill(b)}
         </td>
-        <td class="hc-villa" data-label="Villa">${escapeHtml(orDash(b.villa))}</td>
-        <td class="hc-in" data-label="Check-in">${formatDate(b.checkin)}</td>
-        <td class="hc-out" data-label="Check-out">${formatDate(b.checkout)}</td>
+        <!-- Villa and both dates on one line. Split across three labelled
+             cells they took four lines of a phone card to say something a
+             single line says better — the labels were restating what the
+             values already made obvious. -->
+        <td class="hc-stay" data-label="Stay dates">
+          <span class="stay-line">
+            <span class="stay-villa">${escapeHtml(orDash(b.villa))}</span>
+            <span class="stay-sep">·</span>
+            <span class="stay-dates">${formatDate(b.checkin)} &rarr; ${formatDate(b.checkout)}</span>
+          </span>
+        </td>
         <td class="hc-docs" data-label="Documents">
           <div class="doc-btns">
             ${docButton({ kind: "card", label: "Card", id: b.id, available: Boolean(card) })}
@@ -155,7 +163,7 @@ function renderHistory() {
         </td>
         <td class="hc-extra" data-label="Activities &amp; Food">
           <button type="button" class="secondary-btn extras-btn" data-booking-id="${b.id}" ${extras ? "" : "disabled"}>
-            ${extras ? `View (${extras})` : "None"}
+            ${extras ? `View activities &amp; food (${extras})` : "No activities or food"}
           </button>
         </td>
       </tr>`;
@@ -206,8 +214,10 @@ function openExtras(bookingId) {
   const actTotal = activities.reduce((s, a) => s + (a.revenue || 0), 0);
   const actPayout = activities.reduce((s, a) => s + (a.payout || 0), 0);
 
-  document.getElementById("history-detail-title").textContent =
-    `${booking.guest} · ${booking.villa}`;
+  setLogoSrc("charges-logo", appState.selectedBranchLogo);
+  document.getElementById("charges-title").textContent = booking.guest || "Guest";
+  document.getElementById("charges-sub").textContent =
+    `Stay #${booking.id} · ${booking.villa} · ${formatDate(booking.checkin)} → ${formatDate(booking.checkout)}`;
 
   const section = (title, rows, total, extra = "") => `
     <div class="extras-section">
@@ -256,24 +266,21 @@ function openExtras(bookingId) {
         </div>`).join("")}
     </div>` : "";
 
-  document.getElementById("history-detail-body").innerHTML =
+  document.getElementById("charges-body").innerHTML =
     section("Food &amp; Beverage", foodRows, foodTotal)
     + section("Activities", actRows, actTotal, payoutLine)
     + invoiceList;
 
   document.querySelectorAll(".extras-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      closeExtras();
       reopenInvoice(btn.dataset.invoiceId);
     });
   });
 
-  document.getElementById("history-detail-overlay").classList.add("open");
+  showScreen("screen-guest-charges");
 }
 
-function closeExtras() {
-  document.getElementById("history-detail-overlay").classList.remove("open");
-}
+
 
 export function openGuestHistory() {
   document.getElementById("history-branch-label").textContent = appState.selectedBranchLabel;
@@ -296,11 +303,6 @@ document.getElementById("history-search").addEventListener("input", (e) => {
 document.getElementById("history-more-btn").addEventListener("click", () => {
   shown += PAGE;
   renderHistory();
-});
-
-document.getElementById("history-detail-close").addEventListener("click", closeExtras);
-document.getElementById("history-detail-overlay").addEventListener("click", (e) => {
-  if (e.target.id === "history-detail-overlay") closeExtras();
 });
 
 document.getElementById("qa-history-btn").addEventListener("click", openGuestHistory);
