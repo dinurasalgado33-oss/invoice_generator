@@ -6,14 +6,15 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=79" />
-<link rel="stylesheet" href="css/brand-home.css?v=79" />
-<link rel="stylesheet" href="css/rooms.css?v=79" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=79" />
-<link rel="stylesheet" href="css/invoice.css?v=79" />
-<link rel="stylesheet" href="css/dashboard.css?v=79" />
-<link rel="stylesheet" href="css/reports.css?v=79" />
-<link rel="stylesheet" href="css/reservation.css?v=79" />
+<link rel="stylesheet" href="css/base.css?v=80" />
+<link rel="stylesheet" href="css/brand-home.css?v=80" />
+<link rel="stylesheet" href="css/rooms.css?v=80" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=80" />
+<link rel="stylesheet" href="css/invoice.css?v=80" />
+<link rel="stylesheet" href="css/dashboard.css?v=80" />
+<link rel="stylesheet" href="css/reports.css?v=80" />
+<link rel="stylesheet" href="css/reservation.css?v=80" />
+  <link rel="stylesheet" href="css/grc.css?v=80" />
 </head>
 <body>
 
@@ -1334,6 +1335,354 @@
   </section>
 
   <!-- SCREEN: Reservation Confirmation form -->
+  <!-- SCREEN: Guest Registration Card — this IS the check-in. A booking is
+       only created once this is completed and printed. -->
+  <section id="screen-grc-form" class="screen">
+    <button class="back-btn" data-back="screen-rooms">&larr; Back</button>
+    <div class="brand small">
+      <img id="grc-form-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Guest Registration — <span id="grc-form-villa"></span></h2>
+    </div>
+
+    <form id="grc-form">
+      <ol class="stepper" id="grc-stepper">
+        <li class="stepper-item" data-step="1">
+          <span class="stepper-circle">
+            <span class="stepper-num">1</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Guest</span>
+        </li>
+        <li class="stepper-item" data-step="2">
+          <span class="stepper-circle">
+            <span class="stepper-num">2</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Stay</span>
+        </li>
+        <li class="stepper-item" data-step="3">
+          <span class="stepper-circle">
+            <span class="stepper-num">3</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Hotel Use</span>
+        </li>
+        <li class="stepper-item" data-step="4">
+          <span class="stepper-circle">
+            <span class="stepper-num">4</span>
+            <svg class="stepper-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+          <span class="stepper-label">Confirm</span>
+        </li>
+      </ol>
+      <p class="sr-only" id="grc-step-announce" aria-live="polite"></p>
+
+      <!-- Step 1 — Guest identity -->
+      <div class="form-step active" data-step="1">
+        <h3 class="section-title first">Who is checking in?</h3>
+        <p class="step-subtext">The guest's own details, as they appear on their passport or NIC.</p>
+
+        <div class="field">
+          <label>Guest Name</label>
+          <input type="text" id="grc-guest-name" required autocomplete="name" autocapitalize="words" maxlength="120" enterkeyhint="next" />
+          <p class="field-error" id="grc-guest-name-error">Guest name is required</p>
+        </div>
+        <div class="field">
+          <label>Address</label>
+          <textarea id="grc-address" rows="2" autocapitalize="sentences" maxlength="250" enterkeyhint="next"></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="grc-country" autocapitalize="words" maxlength="60" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Nationality</label>
+            <input type="text" id="grc-nationality" autocapitalize="words" maxlength="60" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Passport No</label>
+            <input type="text" id="grc-passport" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>NIC No</label>
+            <input type="text" id="grc-nic" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
+          </div>
+        </div>
+        <p class="field-error" id="grc-id-error">Enter a Passport No or an NIC No — at least one is required</p>
+        <div class="form-grid">
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="grc-phone" autocomplete="tel" inputmode="tel" maxlength="40" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>E-Mail</label>
+            <input type="email" id="grc-email" autocomplete="email" inputmode="email" maxlength="120" enterkeyhint="next" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 — The stay itself -->
+      <div class="form-step" data-step="2">
+        <h3 class="section-title first">The stay</h3>
+        <p class="step-subtext">Arrival and departure, plus what they're booked on.</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Date of Arrival</label>
+            <input type="date" id="grc-arrival-date" required />
+          </div>
+          <div class="field">
+            <label>Time</label>
+            <input type="time" id="grc-arrival-time" />
+          </div>
+          <div class="field">
+            <label>Date of Departure</label>
+            <input type="date" id="grc-departure-date" required />
+            <p class="field-error" id="grc-departure-error">Departure must be after arrival</p>
+          </div>
+          <div class="field">
+            <label>Time</label>
+            <input type="time" id="grc-departure-time" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Previous Destination</label>
+            <input type="text" id="grc-prev-destination" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Next Destination</label>
+            <input type="text" id="grc-next-destination" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="grc-room-type">Room Type</label>
+            <select id="grc-room-type"><!-- injected by JS --></select>
+          </div>
+          <div class="field">
+            <label for="grc-meal-plan">Meal Plan</label>
+            <select id="grc-meal-plan"><!-- injected by JS --></select>
+          </div>
+        </div>
+
+        <h4 class="grc-subhead">No of Pax</h4>
+        <div class="grc-pax-grid">
+          <div class="field">
+            <label>Adults</label>
+            <input type="number" id="grc-adults" min="0" step="1" inputmode="numeric" value="1" />
+          </div>
+          <div class="field">
+            <label>Children</label>
+            <input type="number" id="grc-children" min="0" step="1" inputmode="numeric" value="0" />
+          </div>
+          <div class="field">
+            <label>Kids</label>
+            <input type="number" id="grc-kids" min="0" step="1" inputmode="numeric" value="0" />
+          </div>
+          <div class="field">
+            <label>Guide</label>
+            <input type="number" id="grc-guide-pax" min="0" step="1" inputmode="numeric" value="0" />
+          </div>
+        </div>
+        <p class="field-error" id="grc-pax-error">At least one guest is required</p>
+      </div>
+
+      <!-- Step 3 — Hotel use only -->
+      <div class="form-step" data-step="3">
+        <h3 class="section-title first">Hotel use only</h3>
+        <p class="step-subtext">Filled in by reception. Nights and villa come from the booking.</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>No. of Nights</label>
+            <input type="text" id="grc-nights" readonly />
+          </div>
+          <div class="field">
+            <label>Room No</label>
+            <input type="text" id="grc-room-no" readonly />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Reservation Made by</label>
+          <input type="text" id="grc-reservation-by" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Travel Agent</label>
+            <input type="text" id="grc-travel-agent" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Guide / Chauffeur</label>
+            <input type="text" id="grc-guide-name" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Contact No</label>
+            <input type="tel" id="grc-contact-no" inputmode="tel" maxlength="40" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Vehicle No</label>
+            <input type="text" id="grc-vehicle-no" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Voucher No</label>
+            <input type="text" id="grc-voucher-no" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label>Master Bill No</label>
+            <input type="text" id="grc-master-bill" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Total Amount (LKR)</label>
+          <input type="number" id="grc-total-amount" min="0" step="0.01" inputmode="decimal" />
+        </div>
+      </div>
+
+      <!-- Step 4 — Requests, notice, confirm -->
+      <div class="form-step" data-step="4">
+        <h3 class="section-title first">Almost done</h3>
+        <p class="step-subtext">Anything the guest has asked for, then print the card for signing.</p>
+
+        <div class="field">
+          <label>Special Instruction and Guest Request</label>
+          <textarea id="grc-special" rows="3" autocapitalize="sentences" maxlength="400" enterkeyhint="done"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Printed on the card, above the guest's signature</label>
+          <p class="fixed-remark-preview" id="grc-liability-preview"></p>
+        </div>
+
+        <p class="grc-confirm-note">
+          Completing this checks the guest in and opens the card for printing.
+          The guest signs the printed copy.
+        </p>
+      </div>
+
+      <div class="form-nav" id="grc-form-nav">
+        <button type="button" class="secondary-btn nav-btn" id="grc-step-prev">Back</button>
+        <button type="button" class="primary-btn nav-btn" id="grc-step-next">Next</button>
+        <button type="submit" class="primary-btn nav-btn" id="grc-submit-btn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+          Check In &amp; Print Card
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- SCREEN: printed Guest Registration Card -->
+  <section id="screen-grc-preview" class="screen">
+    <button class="back-btn no-print" data-back="screen-rooms">&larr; Done</button>
+
+    <div id="grc-preview" class="grc-paper">
+      <div class="reservation-header">
+        <img id="grc-prev-logo" src="" alt="" class="reservation-logo" onerror="this.style.display='none'" />
+        <div class="reservation-header-text">
+          <h2 id="grc-prev-hotel-name"></h2>
+          <p id="grc-prev-address"></p>
+          <p id="grc-prev-contact-line"></p>
+        </div>
+      </div>
+      <div class="reservation-header-rule"></div>
+
+      <div class="grc-title-row">
+        <h1>Guest Registration</h1>
+        <div class="grc-no-box">
+          <span>GRC No.</span>
+          <strong id="grc-prev-no"></strong>
+        </div>
+      </div>
+
+      <div class="grc-columns">
+        <div class="grc-col">
+          <div class="grc-row"><span>Guest Name</span><strong id="grc-prev-name"></strong></div>
+          <div class="grc-row"><span>Address</span><strong id="grc-prev-address-val"></strong></div>
+          <div class="grc-row"><span>Country</span><strong id="grc-prev-country"></strong></div>
+          <div class="grc-row"><span>Nationality</span><strong id="grc-prev-nationality"></strong></div>
+          <div class="grc-row"><span>Passport No</span><strong id="grc-prev-passport"></strong></div>
+          <div class="grc-row"><span>NIC No</span><strong id="grc-prev-nic"></strong></div>
+          <div class="grc-row"><span>Phone</span><strong id="grc-prev-phone"></strong></div>
+          <div class="grc-row"><span>E-Mail</span><strong id="grc-prev-email"></strong></div>
+        </div>
+        <div class="grc-col">
+          <div class="grc-row"><span>Previous Destination</span><strong id="grc-prev-prevdest"></strong></div>
+          <div class="grc-row"><span>Next Destination</span><strong id="grc-prev-nextdest"></strong></div>
+          <div class="grc-row"><span>Date of Arrival</span><strong id="grc-prev-arrival"></strong></div>
+          <div class="grc-row"><span>Time</span><strong id="grc-prev-arrival-time"></strong></div>
+          <div class="grc-row"><span>Date of Departure</span><strong id="grc-prev-departure"></strong></div>
+          <div class="grc-row"><span>Time</span><strong id="grc-prev-departure-time"></strong></div>
+
+          <div class="grc-tick-tables">
+            <table class="grc-tick-table">
+              <thead><tr><th colspan="2">Room Type</th></tr></thead>
+              <tbody id="grc-prev-room-types"></tbody>
+            </table>
+            <table class="grc-tick-table">
+              <thead><tr><th colspan="2">Meal Plan</th></tr></thead>
+              <tbody id="grc-prev-meal-plans"></tbody>
+            </table>
+          </div>
+
+          <p class="grc-pax-label">No of Pax</p>
+          <div class="grc-pax-row" id="grc-prev-pax"></div>
+        </div>
+      </div>
+
+      <p class="grc-liability" id="grc-prev-liability"></p>
+      <p class="grc-times">
+        Checkin time <strong id="grc-prev-std-in"></strong>
+        &amp; Checkout time of the Hotel is <strong id="grc-prev-std-out"></strong>
+      </p>
+
+      <div class="grc-bottom">
+        <div class="grc-hotel-use">
+          <p class="grc-section-label">HOTEL USE ONLY</p>
+          <div class="grc-row"><span>No. of Nights</span><strong id="grc-prev-nights"></strong></div>
+          <div class="grc-row"><span>Room No</span><strong id="grc-prev-room-no"></strong></div>
+          <div class="grc-row"><span>Reservation Made by</span><strong id="grc-prev-reservation-by"></strong></div>
+          <div class="grc-row"><span>Travel Agent</span><strong id="grc-prev-travel-agent"></strong></div>
+          <div class="grc-row"><span>Guide / Chauffeur</span><strong id="grc-prev-guide"></strong></div>
+          <div class="grc-row"><span>Contact No</span><strong id="grc-prev-contact"></strong></div>
+          <div class="grc-row"><span>Vehicle No</span><strong id="grc-prev-vehicle"></strong></div>
+        </div>
+        <div class="grc-billing">
+          <div class="grc-signature-block">
+            <div class="grc-signature-line"></div>
+            <p>Guest Signature</p>
+          </div>
+          <div class="grc-row"><span>Voucher No</span><strong id="grc-prev-voucher"></strong></div>
+          <div class="grc-row"><span>Master Bill No</span><strong id="grc-prev-master-bill"></strong></div>
+          <div class="grc-row"><span>Total Amount</span><strong id="grc-prev-total"></strong></div>
+          <div class="grc-signature-block">
+            <div class="grc-signature-line"></div>
+            <p>FOM / Receptionist</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grc-special">
+        <p class="grc-section-label">Special Instruction and Guest Request</p>
+        <p id="grc-prev-special"></p>
+      </div>
+    </div>
+
+    <div class="export-bar no-print">
+      <button class="action-btn" id="grc-print-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+        Print Card
+      </button>
+      <button class="action-btn secondary" id="grc-done-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
+        Done
+      </button>
+    </div>
+  </section>
+
   <section id="screen-reservation-form" class="screen">
     <button class="back-btn" data-back="screen-home">&larr; Back</button>
     <div class="brand small">
@@ -1530,6 +1879,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=79"></script>
+<script type="module" src="js/main.js?v=80"></script>
 </body>
 </html>

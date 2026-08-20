@@ -10,6 +10,7 @@ import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
   isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
 } from "./data/charges.js";
+import { openGrcForm } from "./grc.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -527,81 +528,58 @@ function chargeActivities() {
   renderRoomDetailBody();
 }
 
+// Check-in now runs through the Guest Registration Card. Filling in the
+// card is a legal requirement for every guest, so it isn't a step that
+// follows check-in — it *is* the check-in, and there is deliberately no
+// path that books a villa without one. The old four-field form that lived
+// here would have been that path.
+//
+// The booking is created inside this callback, which the GRC form calls
+// only once the card is complete and valid. Returning the booking id lets
+// the card record store what stay it belongs to.
 function showNewBookingForm() {
   const room = getActiveRoom();
-  const body = document.getElementById("room-detail-body");
-  const today = toDateISO();
-  const tomorrow = toDateISO(new Date(Date.now() + 86400000));
+  if (!room) return;
+  const branch = activeRoomRef.branch;
+  closeRoomDetail();
 
-  body.innerHTML = `
-    <form id="new-booking-form">
-      <div class="field">
-        <label>Guest Name</label>
-        <input type="text" id="nb-guest" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
-      </div>
-      <div class="field">
-        <label>Phone Number</label>
-        <input type="tel" id="nb-phone" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
-      </div>
-      <div class="field">
-        <label for="nb-source">Booking Source</label>
-        <select id="nb-source">
-          ${BOOKING_SOURCES.map(s => `<option value="${s}" ${s === DEFAULT_BOOKING_SOURCE ? "selected" : ""}>${s}</option>`).join("")}
-        </select>
-      </div>
-      <div class="form-grid">
-        <div class="field">
-          <label>Check-in</label>
-          <input type="date" id="nb-checkin" required value="${today}" />
-        </div>
-        <div class="field">
-          <label>Check-out</label>
-          <input type="date" id="nb-checkout" required value="${tomorrow}" />
-          <p class="field-error" id="nb-checkout-error">Check-out must be after check-in</p>
-        </div>
-      </div>
-      <button type="submit" class="primary-btn big">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
-        Check In Guest
-      </button>
-    </form>
-  `;
+  openGrcForm({
+    branch,
+    room,
+    onComplete: (card) => {
+      room.guest = card.guestName;
+      room.phone = card.phone;
+      room.checkin = card.arrivalDate;
+      room.checkout = card.departureDate;
+      // The card's "Reservation Made by" is free text (an OTA, a walk-in,
+      // a name), so it can't drive the booking-source field on its own —
+      // it's kept on the card and the booking keeps the default unless
+      // reception recorded something recognisable.
+      room.source = BOOKING_SOURCES.includes(card.reservationMadeBy)
+        ? card.reservationMadeBy
+        : DEFAULT_BOOKING_SOURCE;
+      room.status = "occupied";
 
-  const nbCheckin = document.getElementById("nb-checkin");
-  const nbCheckout = document.getElementById("nb-checkout");
-  nbCheckin.addEventListener("change", () => { nbCheckout.min = nbCheckin.value; });
-  nbCheckout.min = nbCheckin.value;
-  [nbCheckin, nbCheckout].forEach(input => {
-    input.addEventListener("input", () => {
-      document.getElementById("nb-checkout-error").classList.remove("show");
-      nbCheckout.classList.remove("invalid");
-    });
-  });
-
-  document.getElementById("new-booking-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (nbCheckout.value <= nbCheckin.value) {
-      document.getElementById("nb-checkout-error").classList.add("show");
-      nbCheckout.classList.add("invalid");
-      nbCheckout.focus();
-      return;
-    }
-    room.guest = document.getElementById("nb-guest").value.trim();
-    room.phone = document.getElementById("nb-phone").value.trim();
-    room.checkin = nbCheckin.value;
-    room.checkout = nbCheckout.value;
-    room.source = document.getElementById("nb-source").value || DEFAULT_BOOKING_SOURCE;
-    room.status = "occupied";
-    // Keep the booking's id on the room so check-out / cancel can close the
-    // exact row this check-in opened, rather than re-finding it by matching
-    // guest + villa + dates.
-    const booking = { id: allocateBookingId(), roomId: room.id, guest: room.guest, villa: room.name, branch: activeRoomRef.branch, checkin: room.checkin, checkout: room.checkout, source: room.source, status: "Checked In" };
-    BOOKINGS.push(booking);
-    room.bookingId = booking.id;
-    logRoomActivity(activeRoomRef.branch, room, room.guest, "Check In");
-    showToast(`${room.guest} checked into ${room.name}`);
-    renderRoomDetailBody();
-    rerenderRooms();
+      // Keep the booking's id on the room so check-out / cancel can close
+      // the exact row this check-in opened, rather than re-finding it by
+      // matching guest + villa + dates.
+      const booking = {
+        id: allocateBookingId(),
+        roomId: room.id,
+        guest: room.guest,
+        villa: room.name,
+        branch,
+        checkin: room.checkin,
+        checkout: room.checkout,
+        source: room.source,
+        status: "Checked In",
+      };
+      BOOKINGS.push(booking);
+      room.bookingId = booking.id;
+      logRoomActivity(branch, room, room.guest, "Check In");
+      rerenderRooms();
+      return booking.id;
+    },
   });
 }
 

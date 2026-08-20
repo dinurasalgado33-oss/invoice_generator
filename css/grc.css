@@ -1,0 +1,196 @@
+/* Guest Registration Card — the printed, signed legal document. Shares
+   the letterhead treatment with the reservation confirmation so every
+   guest-facing page from either property reads as the same hotel. */
+
+.grc-paper {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 28px 22px;
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.grc-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0 18px;
+}
+.grc-title-row h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: var(--maroon);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.grc-no-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--maroon);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+.grc-no-box span { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+.grc-no-box strong { font-size: 1rem; color: var(--maroon); }
+
+/* Two columns mirroring the paper original: guest identity on the left,
+   travel and stay on the right. */
+.grc-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 26px;
+}
+.grc-col { min-width: 0; }
+
+.grc-row {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+}
+.grc-row span {
+  flex: 0 0 42%;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+/* min-width:0 lets the value shrink inside its flex row, and
+   overflow-wrap breaks an unbroken string (a long email, a passport
+   number typed without spaces) instead of pushing it off the page. */
+.grc-row strong {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.grc-tick-tables { display: flex; gap: 12px; margin: 14px 0 10px; }
+.grc-tick-table {
+  flex: 1;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.grc-tick-table th {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  text-align: center;
+  color: var(--maroon);
+}
+.grc-tick-table td {
+  border: 1px solid var(--border);
+  padding: 3px 6px;
+}
+.grc-tick { width: 28px; text-align: center; font-weight: 700; color: var(--maroon); }
+
+.grc-pax-label { margin: 8px 0 4px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+.grc-pax-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.grc-pax-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.78rem;
+}
+.grc-pax-cell span { color: var(--text-muted); }
+
+.grc-liability {
+  margin: 18px 0 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+.grc-times { margin: 0 0 18px; font-size: 0.82rem; text-align: center; }
+.grc-times strong { color: var(--maroon); }
+
+.grc-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 26px;
+  border-top: 2px solid var(--gold);
+  padding-top: 14px;
+}
+.grc-section-label {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--maroon);
+}
+.grc-hotel-use, .grc-billing { min-width: 0; }
+
+.grc-signature-block { margin: 18px 0 10px; text-align: center; }
+.grc-signature-line {
+  border-bottom: 1px dotted var(--text-muted);
+  height: 26px;
+  margin-bottom: 4px;
+}
+.grc-signature-block p { margin: 0; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+
+.grc-special { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.grc-special p:last-child {
+  margin: 0;
+  min-height: 34px;
+  font-size: 0.85rem;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Form-side bits */
+.grc-subhead {
+  margin: 16px 0 8px;
+  font-size: 0.85rem;
+  color: var(--maroon);
+}
+.grc-pax-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.grc-pax-grid .field { margin-bottom: 0; }
+.grc-pax-grid input { text-align: center; }
+.grc-confirm-note {
+  margin: 16px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+/* Derived, not typed — read-only fields shouldn't look like fields
+   somebody forgot to fill in. */
+#grc-nights[readonly], #grc-room-no[readonly] {
+  background: var(--bg-alt);
+  color: var(--text-muted);
+}
+
+@media (max-width: 520px) {
+  .grc-paper { padding: 18px 16px 16px; }
+  /* One column on a phone. Two 42%-label rows side by side leave nothing
+     for the value. */
+  .grc-columns, .grc-bottom { grid-template-columns: 1fr; }
+  .grc-pax-grid { grid-template-columns: repeat(2, 1fr); }
+  .grc-tick-tables { flex-direction: column; }
+}
+
+@media print {
+  .grc-paper {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 0.8rem;
+    /* Without this the maroon header and tick marks print as flat grey. */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  /* The card is a single signed page — never let a signature block or the
+     tick tables split across two sheets. */
+  .grc-signature-block, .grc-tick-tables, .grc-bottom { break-inside: avoid; }
+  .grc-columns, .grc-bottom { grid-template-columns: 1fr 1fr; }
+}

@@ -15,6 +15,8 @@ export const screens = {
   reports: document.getElementById("screen-reports"),
   form: document.getElementById("screen-form"),
   preview: document.getElementById("screen-preview"),
+  grcForm: document.getElementById("screen-grc-form"),
+  grcPreview: document.getElementById("screen-grc-preview"),
   reservationForm: document.getElementById("screen-reservation-form"),
   reservationPreview: document.getElementById("screen-reservation-preview"),
 };
@@ -23,6 +25,7 @@ const screenOrder = [
   "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-orders",
   "screen-configure", "screen-menu", "screen-configure-villas", "screen-configure-activities",
   "screen-configure-branch", "screen-configure-conditions",
+  "screen-grc-form", "screen-grc-preview",
   "screen-inventory", "screen-dashboard", "screen-reports", "screen-form", "screen-preview",
   "screen-reservation-form", "screen-reservation-preview",
 ];

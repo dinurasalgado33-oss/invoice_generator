@@ -10,6 +10,7 @@
 import { initInventoryDerived } from "./data/inventory.js";
 import "./navigation.js";
 import "./invoice.js";
+import "./grc.js";
 import "./rooms.js";
 import "./orders.js";
 import "./home.js";
