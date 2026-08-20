@@ -375,6 +375,20 @@ function renderProformaPreview(p) {
   el("pf-prev-closing").textContent = PROFORMA_CLOSING;
 }
 
+// Reopen an agent invoice already issued — same reason as the others: it
+// was previously reachable only at the moment it was generated.
+export function reprintProforma(proformaId) {
+  const p = PROFORMA_INVOICES.find(x => x.id === Number(proformaId));
+  if (!p) {
+    showToast("That invoice is no longer available");
+    return;
+  }
+  renderProformaPreview(p);
+  const btn = document.querySelector("#screen-proforma-preview .back-btn");
+  if (btn) { btn.dataset.back = "screen-guest-history"; btn.textContent = "← Back"; }
+  showScreen("screen-proforma-preview");
+}
+
 el("pf-print-btn").addEventListener("click", () => window.print());
 
 el("pf-image-btn").addEventListener("click", () => {

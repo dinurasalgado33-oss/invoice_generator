@@ -1,0 +1,165 @@
+/* Guest History — one row per stay, with its documents and charges. */
+
+.history-search { margin-bottom: 10px; }
+.history-count {
+  margin: 0 0 12px;
+  font-size: .8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.history-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.history-table { width: 100%; border-collapse: collapse; }
+.history-table th {
+  text-align: left;
+  font-size: .7rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.history-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: .9rem;
+}
+.history-table tbody tr:last-child td { border-bottom: none; }
+
+.stay-no {
+  font-weight: 700;
+  color: var(--maroon);
+  font-variant-numeric: tabular-nums;
+}
+.stay-guest { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.hc-in, .hc-out { white-space: nowrap; color: var(--text-muted); }
+
+/* Status is encoded in colour as well as words, so a row's state reads
+   before it's read. */
+.stay-status {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.stay-status.in { background: var(--maroon); color: var(--gold-light); }
+.stay-status.out { background: var(--bg-alt); color: var(--text-muted); }
+.stay-status.upcoming { background: #fdf3dd; color: #8a5a00; }
+.stay-status.cancelled { background: #fdf2f1; color: var(--danger); }
+
+.doc-btns { display: flex; flex-wrap: wrap; gap: 5px; }
+.doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: .74rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--maroon);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s ease, background .15s ease;
+}
+.doc-btn svg { width: 13px; height: 13px; flex: none; }
+.doc-btn:active { transform: scale(0.96); }
+/* A document a stay doesn't have stays visible but inert — "no
+   reservation for this guest" is information, and hiding the button
+   would leave the row looking inconsistent between stays. */
+.doc-btn.unavailable {
+  opacity: .38;
+  cursor: not-allowed;
+  color: var(--text-muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .doc-btn:not(.unavailable):hover { border-color: var(--maroon); background: var(--bg-alt); }
+}
+
+.extras-btn { width: auto; margin: 0; padding: 6px 12px; font-size: .78rem; white-space: nowrap; }
+.extras-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.history-more-wrap { display: flex; justify-content: center; margin-top: 18px; }
+.history-more-wrap .secondary-btn { width: auto; margin: 0; }
+
+/* ---- Charges sheet ---- */
+.extras-section { margin-bottom: 20px; }
+.extras-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 7px;
+  margin-bottom: 6px;
+  border-bottom: 2px solid var(--gold);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.extras-head strong { color: var(--maroon); font-size: .95rem; letter-spacing: 0; }
+.extras-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.extras-row:last-child { border-bottom: none; }
+.extras-name { display: block; font-size: .9rem; font-weight: 600; overflow-wrap: anywhere; }
+.extras-when { display: block; font-size: .75rem; color: var(--text-muted); margin-top: 1px; }
+.extras-value { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.extras-payout {
+  margin: 8px 0 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.extras-invoice-btn { width: auto; margin: 0; padding: 5px 11px; font-size: .76rem; }
+
+/* Below this the seven columns stop fitting, so each stay becomes a card.
+   Same approach the invoice charges table already uses — a horizontally
+   scrolling table is far worse to operate one-handed than a stack. */
+@media (max-width: 860px) {
+  .history-table, .history-table tbody, .history-table tr, .history-table td { display: block; width: 100%; }
+  .history-table thead { display: none; }
+  .history-table-wrap { overflow: visible; }
+  .history-table tr {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .history-table td { border: none; padding: 3px 0; }
+  .history-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  /* The stay number and guest lead the card, so they don't need a label
+     repeating what is obvious from position. */
+  .history-table td.hc-no::before, .history-table td.hc-guest::before { display: none; }
+  .history-table td.hc-no { display: inline-block; width: auto; margin-right: 8px; }
+  .history-table td.hc-guest { display: inline-block; width: auto; }
+  .history-table td.hc-in, .history-table td.hc-out { display: inline-block; width: 48%; margin-top: 8px; }
+  .history-table td.hc-docs, .history-table td.hc-extra { margin-top: 12px; }
+  .extras-btn { width: 100%; }
+}

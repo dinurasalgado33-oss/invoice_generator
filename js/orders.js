@@ -363,6 +363,12 @@ async function completeOrder(orderId) {
       qty: item.qty,
       branch: order.branch,
       date: today,
+      // Ties the sale to the stay it belongs to. Without it, a guest's
+      // food history could only be guessed from villa + date, which is
+      // wrong the moment two guests use the same villa on the same day.
+      bookingId: room ? (room.bookingId ?? null) : null,
+      roomId: order.roomId ?? null,
+      at: new Date().toISOString(),
       category: "food",
       walkin: Boolean(order.walkin),
       revenue: item.qty * item.price,

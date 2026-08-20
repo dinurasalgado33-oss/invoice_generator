@@ -22,6 +22,7 @@ import "./reports.js";
 import "./reservation.js";
 import "./reservations.js";
 import "./proforma.js";
+import "./history.js";
 import "./branch.js";
 import { restoreSession } from "./auth.js";
 

@@ -6,16 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=92" />
-<link rel="stylesheet" href="css/brand-home.css?v=92" />
-<link rel="stylesheet" href="css/rooms.css?v=92" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=92" />
-<link rel="stylesheet" href="css/invoice.css?v=92" />
-<link rel="stylesheet" href="css/dashboard.css?v=92" />
-<link rel="stylesheet" href="css/reports.css?v=92" />
-<link rel="stylesheet" href="css/reservation.css?v=92" />
-  <link rel="stylesheet" href="css/grc.css?v=92" />
-  <link rel="stylesheet" href="css/proforma.css?v=92" />
+<link rel="stylesheet" href="css/base.css?v=94" />
+<link rel="stylesheet" href="css/brand-home.css?v=94" />
+<link rel="stylesheet" href="css/rooms.css?v=94" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=94" />
+<link rel="stylesheet" href="css/invoice.css?v=94" />
+<link rel="stylesheet" href="css/dashboard.css?v=94" />
+<link rel="stylesheet" href="css/reports.css?v=94" />
+<link rel="stylesheet" href="css/reservation.css?v=94" />
+  <link rel="stylesheet" href="css/grc.css?v=94" />
+  <link rel="stylesheet" href="css/proforma.css?v=94" />
+  <link rel="stylesheet" href="css/history.css?v=94" />
 </head>
 <body>
 
@@ -123,6 +124,14 @@
         <span class="settings-row-text">
           <span class="settings-row-title">Reservation</span>
           <span class="settings-row-sub">Create a confirmation for an upcoming guest</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="qa-history-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Guest History</span>
+          <span class="settings-row-sub">Past stays, their documents and charges</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
@@ -1344,6 +1353,60 @@
   </section>
 
   <!-- SCREEN: Reservation Confirmation form -->
+  <!-- SCREEN: Guest History — every stay, and everything filed against it.
+       Exists because a document was previously only reachable at the
+       moment it was created: leave the page and it was gone. -->
+  <section id="screen-guest-history" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <img id="history-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Guest History — <span id="history-branch-label"></span></h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="input-icon history-search">
+        <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <input type="text" id="history-search" placeholder="Guest name, villa, or stay number" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      </div>
+      <p class="history-count" id="history-count"></p>
+
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th class="hc-no">Stay</th>
+              <th class="hc-guest">Guest</th>
+              <th class="hc-villa">Villa</th>
+              <th class="hc-in">Check-in</th>
+              <th class="hc-out">Check-out</th>
+              <th class="hc-docs">Documents</th>
+              <th class="hc-extra">Activities &amp; Food</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"><!-- injected by JS --></tbody>
+        </table>
+      </div>
+
+      <div class="history-more-wrap">
+        <button type="button" class="secondary-btn" id="history-more-btn" hidden>Show more</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sheet: what a guest ordered and did during their stay -->
+  <div class="room-detail-overlay" id="history-detail-overlay">
+    <div class="room-detail-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="history-detail-title">Activities &amp; Food</h3>
+        <button type="button" class="sheet-icon-btn" id="history-detail-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="room-detail-body" id="history-detail-body"><!-- injected by JS --></div>
+    </div>
+  </div>
+
   <!-- SCREEN: Reservations dashboard — make a new one, or work from the
        list of past reservations (each can raise a travel agent invoice). -->
   <section id="screen-reservations" class="screen">
@@ -2273,6 +2336,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=92"></script>
+<script type="module" src="js/main.js?v=94"></script>
 </body>
 </html>

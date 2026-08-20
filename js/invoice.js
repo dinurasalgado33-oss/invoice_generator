@@ -336,6 +336,88 @@ document.getElementById("invoice-form").addEventListener("keydown", (e) => {
   }
 });
 
+// Renders the printed invoice from a stored record. Shared by generating
+// and by reopening one later from Guest History, so a reopened invoice is
+// the same document the guest was handed, not a reconstruction.
+//
+// The letterhead comes from current branch config rather than the record:
+// if the hotel's phone number changes, a reprint should carry the number
+// that works today. The figures, which are what the guest paid, come
+// entirely from the record and never move.
+function renderInvoicePreview(r) {
+  const branchInfo = BRANCH_INFO[r.branch] || {};
+  document.getElementById("prev-inv-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
+  document.getElementById("prev-inv-address").textContent = branchInfo.address || "";
+  document.getElementById("prev-inv-contact-line").textContent =
+    [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
+  setLogoSrc("prev-inv-logo", appState.selectedBranchLogo);
+  document.getElementById("prev-number").textContent = r.id;
+  document.getElementById("prev-date").textContent = formatDate(r.date);
+
+  document.getElementById("prev-guest-name").textContent = r.guest || "-";
+  document.getElementById("prev-guest-count").textContent = Number(r.guestCount) > 0 ? r.guestCount : "-";
+  document.getElementById("prev-guest-phone").textContent = r.guestPhone || "-";
+  document.getElementById("prev-reg-card").textContent = r.regCardNo || "N/A";
+  document.getElementById("prev-voucher").textContent = r.voucherNo || "N/A";
+  document.getElementById("prev-checkin").textContent = formatDate(r.checkinDate);
+  document.getElementById("prev-checkout").textContent = formatDate(r.checkoutDate);
+
+  const money = (n) => Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById("prev-items-body").innerHTML = (r.items || []).map(it => `
+    <tr>
+      <td>${it.no}</td>
+      <td>${escapeHtml(it.desc)}</td>
+      <td>${escapeHtml(it.qty)}</td>
+      <td>${it.rate ? money(it.rate) : ""}</td>
+      <td>${it.value ? money(it.value) : "-"}</td>
+    </tr>
+  `).join("");
+
+  const currency = r.currency || "LKR";
+  document.getElementById("prev-currency").textContent = currency;
+  document.getElementById("prev-bill-total").textContent = fmt(r.billTotal, currency);
+  document.getElementById("prev-service-charge").textContent = fmt(r.serviceCharge, currency);
+  document.getElementById("prev-gross").textContent = fmt(r.grossAmount, currency);
+  document.getElementById("prev-discount-row").style.display = r.discount ? "" : "none";
+  document.getElementById("prev-discount-label").textContent =
+    r.discountType === "percent" ? `Discount (${r.discountInputRaw}%)` : "Discount";
+  document.getElementById("prev-discount").textContent = r.discount ? "-" + fmt(r.discount, currency) : "";
+  document.getElementById("prev-net").textContent = fmt(r.total, currency);
+  document.getElementById("prev-advance").textContent = r.advance ? fmt(r.advance, currency) : "-";
+  document.getElementById("prev-total").textContent = fmt(r.grandTotal, currency);
+
+  document.getElementById("prev-notes").textContent = INVOICE_REMARK;
+  document.getElementById("prev-staff").textContent = r.staffName || "";
+}
+
+// Reopen an invoice already issued — the guest wants another copy, or
+// staff left the page before printing.
+export function reopenInvoice(invoiceId) {
+  const r = INVOICES.find(i => String(i.id) === String(invoiceId));
+  if (!r) {
+    showToast("That invoice is no longer available");
+    return;
+  }
+  if (!r.items) {
+    // Seeded history predates the full snapshot, so there is no page to
+    // draw — better to say so than to render a blank invoice.
+    showToast(`Invoice #${r.id} was recorded before documents were stored`);
+    return;
+  }
+  renderInvoicePreview(r);
+  setInvoicePreviewReturn("screen-guest-history", "Back");
+  showScreen("screen-preview");
+}
+
+// "New Invoice" after generating one, but a return to the list when the
+// invoice was reopened from Guest History.
+function setInvoicePreviewReturn(screenId, label) {
+  const btn = document.querySelector("#screen-preview .back-btn");
+  if (!btn) return;
+  btn.dataset.back = screenId;
+  btn.textContent = `← ${label}`;
+}
+
 export function resetForm() {
   document.getElementById("invoice-form").reset();
   itemsBody.innerHTML = "";
@@ -375,56 +457,6 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
 
   const { billTotal, serviceCharge, advance, grossAmount, discountType, discountAmount, netAmount, grandTotal } = computeTotals();
 
-  // Header
-  const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
-  document.getElementById("prev-inv-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
-  document.getElementById("prev-inv-address").textContent = branchInfo.address || "";
-  document.getElementById("prev-inv-contact-line").textContent =
-    [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
-  setLogoSrc("prev-inv-logo", appState.selectedBranchLogo);
-  document.getElementById("prev-number").textContent = val("inv-number");
-  document.getElementById("prev-date").textContent = formatDate(document.getElementById("inv-date").value);
-
-  // Guest details
-  document.getElementById("prev-guest-name").textContent = val("guest-name") || "-";
-  document.getElementById("prev-guest-count").textContent = Number(val("guest-count")) > 0 ? val("guest-count") : "-";
-  document.getElementById("prev-guest-phone").textContent = val("guest-phone") || "-";
-  document.getElementById("prev-reg-card").textContent = val("reg-card-no") || "N/A";
-  document.getElementById("prev-voucher").textContent = val("voucher-no") || "N/A";
-  document.getElementById("prev-checkin").textContent = formatDate(document.getElementById("checkin-date").value);
-  document.getElementById("prev-checkout").textContent = formatDate(document.getElementById("checkout-date").value);
-
-  // Items
-  const itemsBodyPrev = document.getElementById("prev-items-body");
-  const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  itemsBodyPrev.innerHTML = items.map(it => `
-    <tr>
-      <td>${it.no}</td>
-      <td>${escapeHtml(it.desc)}</td>
-      <td>${escapeHtml(it.qty)}</td>
-      <td>${it.rate ? money(it.rate) : ""}</td>
-      <td>${it.value ? money(it.value) : "-"}</td>
-    </tr>
-  `).join("");
-
-  // Totals
-  const currency = val("currency") || "LKR";
-  document.getElementById("prev-currency").textContent = currency;
-  document.getElementById("prev-bill-total").textContent = fmt(billTotal, currency);
-  document.getElementById("prev-service-charge").textContent = fmt(serviceCharge, currency);
-  document.getElementById("prev-gross").textContent = fmt(grossAmount, currency);
-  document.getElementById("prev-discount-row").style.display = discountAmount ? "" : "none";
-  document.getElementById("prev-discount-label").textContent = discountType === "percent" ? `Discount (${val("discount-amount")}%)` : "Discount";
-  document.getElementById("prev-discount").textContent = discountAmount ? "-" + fmt(discountAmount, currency) : "";
-  document.getElementById("prev-net").textContent = fmt(netAmount, currency);
-  document.getElementById("prev-advance").textContent = advance ? fmt(advance, currency) : "-";
-  document.getElementById("prev-total").textContent = fmt(grandTotal, currency);
-
-  // Remark + signature. The remark is a fixed policy notice, so it isn't
-  // read from a field — it's the same sentence on every invoice.
-  document.getElementById("prev-notes").textContent = INVOICE_REMARK;
-  document.getElementById("prev-staff").textContent = val("staff-name") || "";
-
   // The record's id is the same number printed on the document — so a
   // paper invoice can always be found in Reports by the number on it,
   // instead of a separate internal counter nobody printed.
@@ -432,7 +464,11 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   // line items later — the dashboard used to infer its room/food/activity
   // split by subtracting food and activity records from the invoice total,
   // which silently broke whenever a charge existed in neither place.
-  INVOICES.push({
+  // The record now holds everything the printed page shows, not just the
+  // totals. Line items, dates, phone, currency and who signed it used to
+  // exist only in the form — so once staff left the preview the document
+  // could never be shown again, and a mis-tap lost a financial record.
+  const record = {
     id: val("inv-number") || String(appState.invoiceCounter),
     roomId: checkoutContext ? checkoutContext.roomId : null,
     bookingId: checkoutContext ? checkoutContext.bookingId : null,
@@ -448,7 +484,25 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     serviceCharge,
     advance,
     categoryTotals: categoryTotals(items),
-  });
+    // ---- everything below exists so the page can be re-rendered ----
+    items,
+    guestCount: val("guest-count"),
+    guestPhone: val("guest-phone"),
+    regCardNo: val("reg-card-no"),
+    voucherNo: val("voucher-no"),
+    checkinDate: document.getElementById("checkin-date").value,
+    checkoutDate: document.getElementById("checkout-date").value,
+    currency: val("currency") || "LKR",
+    discountType,
+    discountInputRaw: val("discount-amount"),
+    billTotal,
+    grossAmount,
+    grandTotal,
+    staffName: val("staff-name") || "",
+  };
+  INVOICES.push(record);
+  renderInvoicePreview(record);
+  setInvoicePreviewReturn("screen-form", "Back");
   checkoutContext = null;
 
   appState.invoiceCounter++;
