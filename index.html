@@ -6,16 +6,16 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=86" />
-<link rel="stylesheet" href="css/brand-home.css?v=86" />
-<link rel="stylesheet" href="css/rooms.css?v=86" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=86" />
-<link rel="stylesheet" href="css/invoice.css?v=86" />
-<link rel="stylesheet" href="css/dashboard.css?v=86" />
-<link rel="stylesheet" href="css/reports.css?v=86" />
-<link rel="stylesheet" href="css/reservation.css?v=86" />
-  <link rel="stylesheet" href="css/grc.css?v=86" />
-  <link rel="stylesheet" href="css/proforma.css?v=86" />
+<link rel="stylesheet" href="css/base.css?v=87" />
+<link rel="stylesheet" href="css/brand-home.css?v=87" />
+<link rel="stylesheet" href="css/rooms.css?v=87" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=87" />
+<link rel="stylesheet" href="css/invoice.css?v=87" />
+<link rel="stylesheet" href="css/dashboard.css?v=87" />
+<link rel="stylesheet" href="css/reports.css?v=87" />
+<link rel="stylesheet" href="css/reservation.css?v=87" />
+  <link rel="stylesheet" href="css/grc.css?v=87" />
+  <link rel="stylesheet" href="css/proforma.css?v=87" />
 </head>
 <body>
 
@@ -1365,6 +1365,13 @@
         </button>
       </div>
 
+      <div class="report-tabs no-print" id="reservations-tabs">
+        <button type="button" class="report-tab active" data-resv-filter="upcoming">Upcoming</button>
+        <button type="button" class="report-tab" data-resv-filter="checkedin">Checked In</button>
+        <button type="button" class="report-tab" data-resv-filter="cancelled">Cancelled</button>
+        <button type="button" class="report-tab" data-resv-filter="all">All</button>
+      </div>
+
       <div class="reservations-list" id="reservations-list"><!-- injected by JS --></div>
     </div>
   </section>
@@ -1626,6 +1633,30 @@
     </div>
   </section>
 
+
+  <!-- Cancellation reason — a separate step so the reason survives, rather
+       than a field inside a confirm dialog people dismiss reflexively. -->
+  <div class="room-detail-overlay" id="resv-cancel-sheet-overlay">
+    <div class="room-detail-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3>Why is it being cancelled?</h3>
+        <button type="button" class="sheet-icon-btn" id="resv-cancel-sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="room-detail-body">
+        <form id="resv-cancel-form">
+          <div class="field">
+            <label>Reason <span class="label-optional">(optional)</span></label>
+            <textarea id="resv-cancel-reason" rows="3" maxlength="300" autocapitalize="sentences" placeholder="e.g. Guest cancelled — flight changed"></textarea>
+          </div>
+          <button type="submit" class="primary-btn big">Confirm Cancellation</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Sheet: edit a cancellation policy line -->
   <div class="room-detail-overlay" id="cancellation-sheet-overlay">
     <div class="room-detail-sheet" role="dialog" aria-modal="true">
@@ -1736,6 +1767,13 @@
       <div class="form-step active" data-step="1">
         <h3 class="section-title first">Who is checking in?</h3>
         <p class="step-subtext">The guest's own details, as they appear on their passport or NIC.</p>
+
+        <!-- Offered only when this villa has a confirmed reservation. -->
+        <div class="field grc-reservation-picker" id="grc-reservation-picker" hidden>
+          <label for="grc-reservation-select">Arriving on a reservation?</label>
+          <select id="grc-reservation-select"></select>
+          <p class="hint">Picking one fills in what the guest already told us, and closes that reservation when you check them in.</p>
+        </div>
 
         <div class="field">
           <label>Guest Name</label>
@@ -2112,6 +2150,7 @@
 
         <label class="field-label-standalone">Pricing</label>
         <div class="ingredient-list" id="resv-villa-list"><!-- villa rows injected by JS --></div>
+        <p class="field-error" id="resv-conflict-error"></p>
         <button type="button" class="secondary-btn" id="resv-add-villa-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
           Add Villa
@@ -2234,6 +2273,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=86"></script>
+<script type="module" src="js/main.js?v=87"></script>
 </body>
 </html>

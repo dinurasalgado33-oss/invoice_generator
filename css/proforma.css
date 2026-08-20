@@ -272,3 +272,32 @@
   background: var(--bg-alt);
   color: var(--text-muted);
 }
+
+/* Reservation status badges */
+.resv-status {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.resv-status.confirmed { color: #2c6b2f; background: #dff3e0; }
+.resv-status.checkedin { color: var(--gold-light); background: var(--maroon); }
+.resv-status.cancelled { color: var(--text-muted); background: var(--bg-alt); }
+/* An arrival date that has passed with nobody checked in is the state
+   most likely to be an oversight, so it is warned about rather than
+   sitting in the list looking normal. */
+.resv-status.overdue { color: #8a5a00; background: #fdf3dd; }
+
+.reservation-card.is-cancelled { opacity: 0.72; }
+.reservation-card-reason {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+.reservation-card-actions .sheet-text-danger-btn { width: 100%; margin-top: 8px; }
+#reservations-tabs { margin-bottom: 14px; }
+.grc-reservation-picker { padding-bottom: 4px; }

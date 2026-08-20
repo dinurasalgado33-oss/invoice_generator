@@ -5,6 +5,8 @@ import {
   nightsBetween, clampMoney, capNumericInput, MAX_COUNT, MAX_MONEY, orDash,
 } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
+import { openReservations, findReservationById, RESERVATION_STATUS } from "./data/reservations.js";
+import { refreshReservationsList } from "./reservations.js";
 import {
   GRC_RECORDS, allocateGrcNo, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
   STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
@@ -24,6 +26,10 @@ let currentStep = 1;
 // done. Set by openGrcForm(); cleared when the card is completed or
 // abandoned, so a stale villa can never be checked into by accident.
 let context = null;
+
+// Confirmed reservations for this villa, offered at the top of the card.
+let matchingReservations = [];
+let linkedReservation = null;
 
 const el = (id) => document.getElementById(id);
 const val = (id) => (el(id).value || "").trim();
@@ -112,6 +118,7 @@ function syncDerivedFields() {
 
 export function openGrcForm({ branch, room, onComplete }) {
   context = { branch, room, onComplete };
+  linkedReservation = null;
 
   el("grc-form").reset();
   document.querySelectorAll("#screen-grc-form .field-error").forEach(e => e.classList.remove("show"));
@@ -119,6 +126,22 @@ export function openGrcForm({ branch, room, onComplete }) {
 
   el("grc-form-villa").textContent = room.name || "Villa";
   setLogoSrc("grc-form-logo", appState.selectedBranchLogo);
+
+  // A guest who reserved ahead already told us most of this. Offering the
+  // matching reservations closes a real gap: before, a reservation and the
+  // check-in that fulfilled it were unrelated records, so the reservation
+  // stayed "upcoming" forever and staff retyped details they already had.
+  matchingReservations = openReservations(branch).filter(r =>
+    (r.villas || []).some(v => v.roomId === room.id));
+  const picker = el("grc-reservation-picker");
+  picker.hidden = matchingReservations.length === 0;
+  if (matchingReservations.length) {
+    el("grc-reservation-select").innerHTML =
+      `<option value="">Walk-in — no reservation</option>` +
+      matchingReservations.map(r =>
+        `<option value="${r.id}">RES-${r.no} · ${escapeHtml(r.guestName)} · ${formatDate(r.checkinDate)}</option>`
+      ).join("");
+  }
 
   el("grc-room-type").innerHTML = ROOM_TYPES.map(t => `<option value="${t}">${t}</option>`).join("");
   el("grc-meal-plan").innerHTML = MEAL_PLANS.map(m => `<option value="${m}">${m}</option>`).join("");
@@ -138,6 +161,33 @@ export function openGrcForm({ branch, room, onComplete }) {
   setStep(1);
   showScreen("screen-grc-form");
 }
+
+// Picking a reservation fills in what the guest already told us when they
+// booked. Everything stays editable — the reservation is a starting point,
+// not a lock, since details change between booking and arrival.
+el("grc-reservation-select").addEventListener("change", (e) => {
+  const id = Number(e.target.value);
+  linkedReservation = id ? findReservationById(id) : null;
+  if (!linkedReservation) return;
+
+  const r = linkedReservation;
+  el("grc-guest-name").value = r.guestName || "";
+  el("grc-phone").value = r.contact || "";
+  el("grc-arrival-date").value = r.checkinDate || "";
+  el("grc-arrival-time").value = r.checkinTime || DEFAULT_ARRIVAL_TIME;
+  el("grc-departure-date").value = r.checkoutDate || "";
+  el("grc-departure-time").value = r.checkoutTime || DEFAULT_DEPARTURE_TIME;
+  el("grc-adults").value = String(r.adults ?? 1);
+  el("grc-children").value = String(r.children ?? 0);
+  el("grc-reservation-by").value = `RES-${r.no}`;
+  // The reservation's booking type is the meal plan on the card, when it
+  // matches one the card knows about.
+  if (MEAL_PLANS.includes(r.bookingType)) el("grc-meal-plan").value = r.bookingType;
+
+  el("grc-guest-name-error").classList.remove("show");
+  syncDerivedFields();
+  showToast(`Filled in from RES-${r.no}`);
+});
 
 el("grc-step-next").addEventListener("click", () => {
   if (!validateStep(currentStep)) return;
@@ -234,6 +284,8 @@ el("grc-form").addEventListener("submit", (e) => {
     masterBillNo: val("grc-master-bill"),
     totalAmount: clampMoney(el("grc-total-amount").value),
     specialInstructions: val("grc-special"),
+    reservationId: linkedReservation ? linkedReservation.id : null,
+    reservationNo: linkedReservation ? linkedReservation.no : null,
     createdAt: new Date().toISOString(),
   };
 
@@ -242,6 +294,15 @@ el("grc-form").addEventListener("submit", (e) => {
   const bookingId = context.onComplete(record);
   record.bookingId = bookingId ?? null;
   GRC_RECORDS.push(record);
+
+  // The reservation is fulfilled the moment the guest is checked in — it
+  // stops being an outstanding promise, and the villa is no longer
+  // reserved for those nights because it is now occupied for them.
+  if (linkedReservation) {
+    linkedReservation.status = RESERVATION_STATUS.CHECKED_IN;
+    linkedReservation.bookingId = record.bookingId;
+    refreshReservationsList();
+  }
 
   renderGrcPreview(record);
   context = null;

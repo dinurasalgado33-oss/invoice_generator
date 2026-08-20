@@ -3,7 +3,9 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { RESERVATIONS, allocateReservationNo } from "./data/reservations.js";
+import {
+  RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS,
+} from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
 
 // Guest counts are printed on a document handed to the guest, so a stray
@@ -62,6 +64,7 @@ function resetReservationForm() {
   document.getElementById("resv-guest-name").classList.remove("invalid");
   document.getElementById("resv-checkout-date-error").classList.remove("show");
   document.getElementById("resv-checkout-date").classList.remove("invalid");
+  document.getElementById("resv-conflict-error").classList.remove("show");
 }
 
 document.getElementById("resv-add-villa-btn").addEventListener("click", () => addVillaRow());
@@ -162,6 +165,28 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     })
     .filter(Boolean);
 
+  // Nothing stopped the same villa being promised to two guests over the
+  // same nights. Checked here rather than on the villa picker because the
+  // dates can change after the villa was chosen.
+  const conflicts = findConflicts({
+    branch: appState.selectedBranch,
+    villas,
+    checkinDate,
+    checkoutDate,
+  });
+  if (conflicts.length) {
+    const detail = conflicts.map(c =>
+      `${c.villas.map(v => v.name).join(", ")} — RES-${c.reservation.no} (${c.reservation.guestName}, ${formatDate(c.reservation.checkinDate)} → ${formatDate(c.reservation.checkoutDate)})`
+    ).join("; ");
+    const errorEl = document.getElementById("resv-conflict-error");
+    errorEl.textContent = `Already reserved: ${detail}`;
+    errorEl.classList.add("show");
+    errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    isGeneratingReservation = false;
+    return;
+  }
+  document.getElementById("resv-conflict-error").classList.remove("show");
+
   // Header
   document.getElementById("resv-prev-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
   document.getElementById("resv-prev-address").textContent = branchInfo.address || "";
@@ -222,6 +247,11 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     nights,
     bookingType: document.getElementById("resv-booking-type").value.trim(),
     villas,
+    status: RESERVATION_STATUS.CONFIRMED,
+    // Set when the guest actually arrives and a GRC turns this into a stay.
+    bookingId: null,
+    cancelledAt: null,
+    cancelReason: "",
     createdAt: new Date().toISOString(),
   });
   refreshReservationsList();
