@@ -9,6 +9,7 @@ import { openReservations, findReservationById, RESERVATION_STATUS } from "./dat
 import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { BOOKING_SOURCES } from "./data/charges.js";
+import { queueWelcomeEmail } from "./data/guest-email.js";
 import {
   GRC_RECORDS, allocateGrcNo, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
   STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
@@ -78,6 +79,15 @@ function validateStep(step) {
       return false;
     }
     el("grc-id-error").classList.remove("show");
+
+    // The welcome e-mail carries the menu, so a blank address is a guest
+    // who silently gets nothing. Not required outright — plenty of guests
+    // genuinely have no e-mail — but it cannot be skipped by accident.
+    if (!val("grc-email") && !el("grc-no-email").checked) {
+      return showError("grc-email-error", "grc-email");
+    }
+    el("grc-email-error").classList.remove("show");
+    el("grc-email").classList.remove("invalid");
   }
 
   if (step === 2) {
@@ -239,6 +249,17 @@ el("grc-step-next").addEventListener("click", () => {
 });
 el("grc-step-prev").addEventListener("click", () => setStep(currentStep - 1));
 
+["grc-email", "grc-no-email"].forEach(id => {
+  el(id).addEventListener("input", () => {
+    el("grc-email-error").classList.remove("show");
+    el("grc-email").classList.remove("invalid");
+  });
+  el(id).addEventListener("change", () => {
+    el("grc-email-error").classList.remove("show");
+    el("grc-email").classList.remove("invalid");
+  });
+});
+
 ["grc-arrival-date", "grc-departure-date"].forEach(id => {
   el(id).addEventListener("change", syncDerivedFields);
   el(id).addEventListener("input", () => {
@@ -305,6 +326,7 @@ el("grc-form").addEventListener("submit", (e) => {
     nicNo: val("grc-nic"),
     phone: val("grc-phone"),
     email: val("grc-email"),
+    noEmail: el("grc-no-email").checked,
     previousDestination: val("grc-prev-destination"),
     nextDestination: val("grc-next-destination"),
     arrivalDate: arrival,
@@ -341,6 +363,18 @@ el("grc-form").addEventListener("submit", (e) => {
   const bookingId = context.onComplete(record, linkedReservation);
   record.bookingId = bookingId ?? null;
   GRC_RECORDS.push(record);
+
+  // Queued, not sent: sending is the server's job. A guest with no address
+  // gets a row marked "No e-mail" rather than no row, so the question
+  // "why did this one get nothing" always has an answer.
+  queueWelcomeEmail({
+    bookingId: record.bookingId,
+    grcNo: record.grcNo,
+    branch: context.branch,
+    guestName: record.guestName,
+    email: record.email,
+    noEmail: record.noEmail,
+  });
 
   // The reservation is fulfilled the moment the guest is checked in — it
   // stops being an outstanding promise, and the villa is no longer

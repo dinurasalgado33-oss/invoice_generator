@@ -186,3 +186,21 @@
 /* A counter sale, not a stay — teal keeps it visibly a different kind of
    row from the checked-in/checked-out sequence around it. */
 .stay-status.walkin { background: #e6f2f1; color: #1f6b63; }
+
+/* Whether the guest's welcome e-mail got out. A bounce is otherwise
+   invisible until the guest mentions it at checkout. */
+.email-status {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.email-status.sent { background: #e6f2ea; color: #2c6b3f; }
+.email-status.queued { background: #fdf3dd; color: #8a5a00; }
+.email-status.failed { background: #fdf2f1; color: var(--danger); }
+.email-status.skipped { background: var(--bg-alt); color: var(--text-muted); }

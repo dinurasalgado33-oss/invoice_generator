@@ -4,6 +4,7 @@ import { escapeHtml, formatDate, fmtLKR, setLogoSrc, showToast, orDash, setBranc
 import { BOOKINGS, INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./data/reports.js";
 import { findGrcByBookingId } from "./data/grc.js";
 import { RESERVATIONS, PROFORMA_INVOICES } from "./data/reservations.js";
+import { emailForBooking, EMAIL_STATUS } from "./data/guest-email.js";
 import { reprintGrc } from "./grc.js";
 import { reprintReservation } from "./reservation.js";
 import { reopenInvoice } from "./invoice.js";
@@ -126,6 +127,25 @@ function docIcon(kind) {
   return icons[kind] || "";
 }
 
+// Whether the guest's welcome e-mail got out. Shown here because a bounce
+// is invisible otherwise — nobody finds out until the guest mentions it.
+// Nothing is shown for a walk-in, which has no card and no address.
+function emailPill(b) {
+  if (b.walkInInvoiceId) return "";
+  const row = emailForBooking(b.id);
+  if (!row) return "";
+  const cls = {
+    [EMAIL_STATUS.SENT]: "sent",
+    [EMAIL_STATUS.QUEUED]: "queued",
+    [EMAIL_STATUS.FAILED]: "failed",
+    [EMAIL_STATUS.SKIPPED]: "skipped",
+  }[row.status] || "queued";
+  const title = row.status === EMAIL_STATUS.FAILED && row.error
+    ? `Menu e-mail failed: ${row.error}`
+    : row.email ? `Menu e-mail ${row.status.toLowerCase()} — ${row.email}` : "Guest has no e-mail address";
+  return `<span class="email-status ${cls}" title="${escapeHtml(title)}">${escapeHtml(row.status)}</span>`;
+}
+
 function statusPill(b) {
   const map = {
     "Checked In": "in",
@@ -183,6 +203,7 @@ function renderHistory() {
         <td class="hc-guest" data-label="Guest">
           <span class="stay-guest">${escapeHtml(orDash(b.guest))}</span>
           ${statusPill(b)}
+          ${emailPill(b)}
         </td>
         <!-- Villa and both dates on one line. Split across three labelled
              cells they took four lines of a phone card to say something a
