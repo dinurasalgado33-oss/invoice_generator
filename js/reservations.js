@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, setLogoSrc, showToast, orDash, todayISO } from "./utils.js";
+import { escapeHtml, formatDate, setLogoSrc, showToast, orDash, todayISO, setBranchLabel } from "./utils.js";
 import {
   RESERVATIONS, proformasForReservation, findReservationById, RESERVATION_STATUS,
 } from "./data/reservations.js";
@@ -235,7 +235,7 @@ function promptCancelReason() {
 }
 
 export function openReservationsScreen() {
-  document.getElementById("reservations-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("reservations-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("reservations-logo", appState.selectedBranchLogo);
   searchQuery = "";
   document.getElementById("reservations-search").value = "";

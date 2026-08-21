@@ -158,3 +158,22 @@ export function showToast(message) {
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => toast.classList.remove("show"), 2500);
 }
+
+// Writes a screen heading's property name twice — full and short — and lets
+// CSS choose. "Room Map — Wilpattu Forest Retreat" does not wrap, so on a
+// phone it pushed the whole page sideways: five screens scrolled
+// horizontally, including Room Map and the checkout form, which are the two
+// reception uses most. Both spellings live in the DOM so the choice costs
+// nothing at resize and needs no re-render.
+export function setBranchLabel(id, fullName, shortName) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = "";
+  const full = document.createElement("span");
+  full.className = "bl-full";
+  full.textContent = fullName || "";
+  const short = document.createElement("span");
+  short.className = "bl-short";
+  short.textContent = shortName || fullName || "";
+  el.append(full, short);
+}

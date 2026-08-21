@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=110" />
-<link rel="stylesheet" href="css/brand-home.css?v=110" />
-<link rel="stylesheet" href="css/rooms.css?v=110" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=110" />
-<link rel="stylesheet" href="css/invoice.css?v=110" />
-<link rel="stylesheet" href="css/dashboard.css?v=110" />
-<link rel="stylesheet" href="css/reports.css?v=110" />
-<link rel="stylesheet" href="css/reservation.css?v=110" />
-  <link rel="stylesheet" href="css/grc.css?v=110" />
-  <link rel="stylesheet" href="css/proforma.css?v=110" />
-  <link rel="stylesheet" href="css/history.css?v=110" />
+<link rel="stylesheet" href="css/base.css?v=111" />
+<link rel="stylesheet" href="css/brand-home.css?v=111" />
+<link rel="stylesheet" href="css/rooms.css?v=111" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=111" />
+<link rel="stylesheet" href="css/invoice.css?v=111" />
+<link rel="stylesheet" href="css/dashboard.css?v=111" />
+<link rel="stylesheet" href="css/reports.css?v=111" />
+<link rel="stylesheet" href="css/reservation.css?v=111" />
+  <link rel="stylesheet" href="css/grc.css?v=111" />
+  <link rel="stylesheet" href="css/proforma.css?v=111" />
+  <link rel="stylesheet" href="css/history.css?v=111" />
 </head>
 <body>
 
@@ -451,6 +451,11 @@
             <textarea id="condition-text" rows="4" required enterkeyhint="done"></textarea>
             <p class="field-error" id="condition-text-error">Enter the condition text</p>
           </div>
+          <label class="inline-check">
+            <input type="checkbox" id="condition-hide-guest" />
+            Hide from guest copies of agent bookings
+          </label>
+          <p class="hint">Tick for anything about payment. A guest booking through an agent settles with the agent, so a condition asking them to pay the hotel contradicts their confirmation.</p>
           <button type="submit" class="primary-btn big">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
             Save Condition
@@ -2358,6 +2363,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=110"></script>
+<script type="module" src="js/main.js?v=111"></script>
 </body>
 </html>

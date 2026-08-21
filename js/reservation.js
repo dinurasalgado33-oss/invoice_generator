@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT } from "./utils.js";
+import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT, setBranchLabel } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import {
@@ -101,7 +101,7 @@ export function openReservationForm(reservationId = null) {
   const existing = reservationId != null ? findReservationById(reservationId) : null;
   editingReservationId = existing ? existing.id : null;
 
-  document.getElementById("resv-form-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("resv-form-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("resv-form-logo", appState.selectedBranchLogo);
   resetReservationForm();
   if (existing) fillReservationForm(existing);
@@ -227,10 +227,6 @@ function validateReservationForm() {
 // config rather than being frozen into the record: if the hotel's phone
 // number or bank account changes, a reprint should carry the number that
 // works today, not the one that was right in March.
-// A currency name, or a figure written like money. Deliberately broad: on
-// the guest's copy of an agent booking, a stray amount is worse than a
-// condition that goes unprinted.
-const MENTIONS_MONEY = /\b(?:LKR|USD|EUR|GBP|Rs\.?)\b|\d{1,3},\d{3}|\d+\s*\/=/i;
 
 // hidePrices produces the guest's copy of an agent booking. The guest paid
 // the agent, and what the agent pays the hotel is not their business — a
@@ -282,14 +278,14 @@ function renderReservationPreview(r, { hidePrices = false } = {}) {
   document.getElementById("resv-prev-bank").textContent = branchInfo.bankName || "-";
   document.getElementById("resv-prev-bank-branch").textContent = branchInfo.bankBranch || "-";
 
-  // On the guest's copy, a condition naming an amount ("Required LKR 5,000
-  // of advance payment to confirm the booking") flatly contradicts the note
-  // above it saying nothing is due to the hotel — and it is addressed to
-  // whoever made the booking, which here is the agent. Conditions carrying
-  // a money figure are dropped; the rest — check-in times, ID, house rules
-  // — are exactly what the guest still needs.
+  // A condition ticked "hide from guest copies" is left off the guest's
+  // copy of an agent booking. Payment terms are the case that matters: a
+  // guest booking through an agent settles with the agent, so a condition
+  // asking them to pay the hotel contradicts the note above it. This was a
+  // regex hunting for currency in the wording, which guessed at the
+  // manager's phrasing; the tick makes it their decision.
   const conditions = (RESERVATION_CONDITIONS[r.branch] || [])
-    .filter(c => !(hidePrices && MENTIONS_MONEY.test(c.text || "")));
+    .filter(c => !(hidePrices && c.hideFromGuest));
   document.getElementById("resv-prev-conditions").innerHTML = conditions
     .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
     `<p class="room-detail-empty">No conditions set.</p>`;

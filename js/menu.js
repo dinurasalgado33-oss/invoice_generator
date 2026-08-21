@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, setLogoSrc, showToast } from "./utils.js";
+import { escapeHtml, fmtLKR, setLogoSrc, showToast, setBranchLabel } from "./utils.js";
 import { MENU_ITEMS, MENU_CATEGORIES, allocateDishId, allocateDishNumber } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
@@ -283,7 +283,7 @@ menuSearchClearBtn.addEventListener("click", () => {
 });
 
 document.getElementById("open-menu-btn").addEventListener("click", () => {
-  document.getElementById("menu-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("menu-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("menu-logo", appState.selectedBranchLogo);
 
   // Fresh screen, fresh search.

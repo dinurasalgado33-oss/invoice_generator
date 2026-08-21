@@ -33,17 +33,17 @@ export const BRANCH_INFO = {
 // Order is the order they print in.
 export const RESERVATION_CONDITIONS = {
   "Wilpattu": [
-    { id: 1, text: "Required LKR 5,000 of advance payment to confirm the booking" },
+    { id: 1, text: "Required LKR 5,000 of advance payment to confirm the booking", hideFromGuest: true },
     { id: 2, text: "Up to 11 Years: Infant / Child sharing parent's room would be 100% complimentary for first 2 children and 25% of the Double room rate applicable per additional child." },
     { id: 3, text: "The reservation is valid only for 1 days after issuing." },
-    { id: 4, text: "Once payment is made, kindly share the slip or confirmation for our records." },
+    { id: 4, text: "Once payment is made, kindly share the slip or confirmation for our records.", hideFromGuest: true },
     { id: 5, text: "Please note that a 10% service charge will be added to all BB (Bed & Breakfast), HB (Half Board), and FB (Full Board) bookings." },
   ],
   "Arugam Bay": [
-    { id: 101, text: "Required LKR 5,000 of advance payment to confirm the booking" },
+    { id: 101, text: "Required LKR 5,000 of advance payment to confirm the booking", hideFromGuest: true },
     { id: 102, text: "Up to 11 Years: Infant / Child sharing parent's room would be 100% complimentary for first 2 children and 25% of the Double room rate applicable per additional child." },
     { id: 103, text: "The reservation is valid only for 1 days after issuing." },
-    { id: 104, text: "Once payment is made, kindly share the slip or confirmation for our records." },
+    { id: 104, text: "Once payment is made, kindly share the slip or confirmation for our records.", hideFromGuest: true },
     { id: 105, text: "Please note that a 10% service charge will be added to all BB (Bed & Breakfast), HB (Half Board), and FB (Full Board) bookings." },
   ],
 };

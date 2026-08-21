@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber, clampMoney, capNumericInput, MAX_COUNT, MAX_MONEY } from "./utils.js";
+import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber, clampMoney, capNumericInput, MAX_COUNT, MAX_MONEY, setBranchLabel } from "./utils.js";
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
@@ -614,7 +614,7 @@ lowFilterBtn.addEventListener("click", () => {
 // same screen; the caller says where Back should return to, since a static
 // data-back would strand whoever came in the other way.
 export function openInventoryScreen(backTarget = "screen-home") {
-  document.getElementById("inventory-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("inventory-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("inventory-logo", appState.selectedBranchLogo);
   document.querySelector("#screen-inventory .back-btn").dataset.back = backTarget;
 

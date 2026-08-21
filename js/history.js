@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmtLKR, setLogoSrc, showToast, orDash } from "./utils.js";
+import { escapeHtml, formatDate, fmtLKR, setLogoSrc, showToast, orDash, setBranchLabel } from "./utils.js";
 import { BOOKINGS, INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./data/reports.js";
 import { findGrcByBookingId } from "./data/grc.js";
 import { RESERVATIONS, PROFORMA_INVOICES } from "./data/reservations.js";
@@ -332,7 +332,7 @@ function openExtras(bookingId) {
 
 
 export function openGuestHistory() {
-  document.getElementById("history-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("history-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("history-logo", appState.selectedBranchLogo);
   searchQuery = "";
   shown = PAGE;

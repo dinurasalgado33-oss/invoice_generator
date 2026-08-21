@@ -572,3 +572,13 @@ select {
 /* The chip's own remove button must stay above the chip body, or the
    expanded area sits under it and swallows nothing. */
 .food-order-chip-remove::after { z-index: 1; }
+
+/* Screen headings name the property twice — full and short — and the
+   viewport picks. "Room Map — Wilpattu Forest Retreat" does not wrap, so on
+   a phone it pushed five screens sideways, including Room Map and the
+   checkout form. Both are in the DOM, so nothing re-renders on rotate. */
+.bl-short { display: none; }
+@media (max-width: 480px) {
+  .bl-full { display: none; }
+  .bl-short { display: inline; }
+}

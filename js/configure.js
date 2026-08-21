@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, setLogoSrc, showToast, clampMoney, capNumericInput, MAX_MONEY } from "./utils.js";
+import { escapeHtml, fmtLKR, setLogoSrc, showToast, clampMoney, capNumericInput, MAX_MONEY, setBranchLabel } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, allocateActivityId, clampHotelIncome } from "./data/activities.js";
 import { CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel } from "./data/charges.js";
@@ -104,13 +104,13 @@ document.getElementById("villa-rate-form").addEventListener("submit", (e) => {
 });
 
 document.getElementById("open-configure-btn").addEventListener("click", () => {
-  document.getElementById("configure-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-logo", appState.selectedBranchLogo);
   showScreen("screen-configure");
 });
 
 document.getElementById("open-configure-villas-btn").addEventListener("click", () => {
-  document.getElementById("configure-villas-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-villas-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-villas-logo", appState.selectedBranchLogo);
   renderVillaList();
   showScreen("screen-configure-villas");
@@ -265,7 +265,7 @@ document.getElementById("activity-delete-btn").addEventListener("click", async (
 });
 
 document.getElementById("open-configure-activities-btn").addEventListener("click", () => {
-  document.getElementById("configure-activities-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-activities-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-activities-logo", appState.selectedBranchLogo);
   renderActivityList();
   showScreen("screen-configure-activities");
@@ -306,7 +306,7 @@ document.getElementById("branch-details-form").addEventListener("submit", (e) =>
 });
 
 document.getElementById("open-configure-branch-btn").addEventListener("click", () => {
-  document.getElementById("configure-branch-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-branch-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-branch-logo", appState.selectedBranchLogo);
   loadBranchDetailsForm();
   showScreen("screen-configure-branch");
@@ -349,6 +349,7 @@ function openConditionSheet(conditionId = null) {
 
   document.getElementById("condition-sheet-title").textContent = condition ? "Edit Condition" : "Add Condition";
   document.getElementById("condition-text").value = condition ? condition.text : "";
+  document.getElementById("condition-hide-guest").checked = Boolean(condition && condition.hideFromGuest);
   document.getElementById("condition-delete-btn").style.display = condition ? "" : "none";
   document.getElementById("condition-text-error").classList.remove("show");
   document.getElementById("condition-text").classList.remove("invalid");
@@ -382,12 +383,13 @@ document.getElementById("condition-form").addEventListener("submit", (e) => {
     return;
   }
 
+  const hideFromGuest = document.getElementById("condition-hide-guest").checked;
   if (editingConditionId) {
     const condition = branchConditions().find(c => c.id === editingConditionId);
-    if (condition) condition.text = text;
+    if (condition) { condition.text = text; condition.hideFromGuest = hideFromGuest; }
     showToast("Condition updated");
   } else {
-    branchConditions().push({ id: allocateConditionId(), text });
+    branchConditions().push({ id: allocateConditionId(), text, hideFromGuest });
     showToast("Condition added");
   }
 
@@ -416,7 +418,7 @@ document.getElementById("condition-delete-btn").addEventListener("click", async 
 });
 
 document.getElementById("open-configure-conditions-btn").addEventListener("click", () => {
-  document.getElementById("configure-conditions-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-conditions-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-conditions-logo", appState.selectedBranchLogo);
   renderConditionList();
   showScreen("screen-configure-conditions");
@@ -613,20 +615,20 @@ document.getElementById("notice-delete-btn").addEventListener("click", async () 
 });
 
 document.getElementById("open-configure-proforma-btn").addEventListener("click", () => {
-  document.getElementById("configure-proforma-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-proforma-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-proforma-logo", appState.selectedBranchLogo);
   showScreen("screen-configure-proforma");
 });
 
 document.getElementById("open-configure-cancellation-btn").addEventListener("click", () => {
-  document.getElementById("configure-cancellation-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-cancellation-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-cancellation-logo", appState.selectedBranchLogo);
   renderCancellationList();
   showScreen("screen-configure-cancellation");
 });
 
 document.getElementById("open-configure-notices-btn").addEventListener("click", () => {
-  document.getElementById("configure-notices-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("configure-notices-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-notices-logo", appState.selectedBranchLogo);
   renderNoticesList();
   showScreen("screen-configure-notices");

@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, setLogoSrc, showToast, todayISO } from "./utils.js";
+import { escapeHtml, fmtLKR, setLogoSrc, showToast, todayISO, setBranchLabel } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { MENU_ITEMS } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
@@ -422,7 +422,7 @@ document.querySelectorAll("#orders-nav .report-tab").forEach(tab => {
 });
 
 document.getElementById("qa-food-order-btn").addEventListener("click", () => {
-  document.getElementById("orders-branch-label").textContent = appState.selectedBranchLabel;
+  setBranchLabel("orders-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("orders-logo", appState.selectedBranchLogo);
   resetCreateView();
   switchOrdersView("create");
