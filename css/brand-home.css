@@ -479,3 +479,8 @@
 }
 
 .dash-coming-soon { display: block; margin: 0 16px 16px; text-align: center; }
+
+/* A stay past its checkout date. Not an error — a prompt: the villa is
+   still tied up and no bill has been raised. */
+.today-checkout-row.is-overdue { border-left: 3px solid var(--danger); }
+.today-checkout-bill-badge.overdue { background: var(--danger); color: #fff; }

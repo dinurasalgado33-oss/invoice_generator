@@ -383,3 +383,16 @@
   .list-group-row:hover { background: #ece7db; }
   .list-group-add-btn:hover { color: var(--maroon); }
 }
+
+/* A dish the manager has not priced yet. Dimmed and un-orderable rather
+   than hidden — staff need to see the kitchen can make it, and that the
+   reason they can't ring it up is a missing price, not a missing dish. */
+.food-order-row.is-unpriced { opacity: .62; }
+.food-order-row.is-unpriced .food-order-price { color: var(--danger); font-weight: 600; }
+.food-order-unpriced-note {
+  font-size: .72rem;
+  color: var(--text-muted);
+  text-align: right;
+  max-width: 120px;
+  line-height: 1.25;
+}

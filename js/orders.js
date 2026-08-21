@@ -84,17 +84,23 @@ function renderDishList() {
   const list = document.getElementById("order-dish-list");
   list.innerHTML = matches.map(dish => {
     const qty = currentOrderSelection[dish.id] || 0;
+    // A dish with no price could be added, cooked and served, and the order
+    // total simply read LKR 0 — nothing stopped it and nothing said so.
+    // You cannot sell something that has no price, so it is offered as
+    // unavailable with the reason, rather than silently billing nothing.
+    const unpriced = !(dish.price > 0);
     return `
-      <div class="food-order-row">
+      <div class="food-order-row ${unpriced ? "is-unpriced" : ""}">
         <div class="food-order-info">
           <span class="food-order-name"><span class="food-order-number">#${dish.number}</span>${escapeHtml(dish.name)}</span>
-          <span class="food-order-price">${fmtLKR(dish.price)}</span>
+          <span class="food-order-price">${unpriced ? "No price set" : fmtLKR(dish.price)}</span>
         </div>
+        ${unpriced ? `<span class="food-order-unpriced-note">A manager can set the price in Menu</span>` : `
         <div class="food-order-qty-stepper">
           <button type="button" class="stepper-input-btn order-qty-minus" data-dish-id="${dish.id}" aria-label="Remove one ${escapeHtml(dish.name)}">&minus;</button>
           <span class="food-order-qty-value" id="order-qty-${dish.id}">${qty}</span>
           <button type="button" class="stepper-input-btn order-qty-plus" data-dish-id="${dish.id}" aria-label="Add one ${escapeHtml(dish.name)}">+</button>
-        </div>
+        </div>`}
       </div>
     `;
   }).join("") || `<p class="room-detail-empty">No dishes match “${escapeHtml(orderSearchQuery)}”.</p>`;

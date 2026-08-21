@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
-import { INVOICES, FOOD_ORDER_RECORDS, BOOKINGS, countsAsRevenue } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG, USAGE_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
@@ -187,6 +187,12 @@ function computeInventorySpend(range) {
     .reduce((sum, r) => sum + r.totalCost, 0);
 }
 
+function computeProviderPayouts(range) {
+  return ACTIVITY_RECORDS
+    .filter(r => inRange(r.date, range) && matchesBranch(r.branch) && countsAsRevenue(r))
+    .reduce((sum, r) => sum + (r.payout || 0), 0);
+}
+
 function computeSummary(range) {
   const invoices = INVOICES.filter(inv => inRange(inv.date, range) && matchesBranch(inv.branch) && inv.status === "Active");
   const revenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -194,8 +200,16 @@ function computeSummary(range) {
   const avg = count ? revenue / count : 0;
   const occupancy = computeOccupancy(range);
   const inventorySpend = computeInventorySpend(range);
-  const profit = revenue - inventorySpend;
-  return { revenue, count, avg, occupancy, inventorySpend, profit };
+  // Safaris, transport and tickets are sold on the guest’s behalf: the
+  // full price is on their invoice, but most of it is handed to the jeep
+  // operator or driver. The dashboard already shows this as "Payable to
+  // Providers" — leaving it out of profit meant the two manager screens
+  // contradicted each other, and on the staff’s own numbers (378k of
+  // safaris grossed, 57k kept) profit was overstated by the largest
+  // single amount in the business.
+  const providerPayouts = computeProviderPayouts(range);
+  const profit = revenue - inventorySpend - providerPayouts;
+  return { revenue, count, avg, occupancy, inventorySpend, providerPayouts, profit };
 }
 
 function computeOccupancy(range) {
@@ -252,7 +266,7 @@ function renderSummary(range) {
         <span class="kpi-pill-label">Occupancy</span>
         <span class="kpi-pill-value">${occupancy}%</span>
       </div>
-      <div class="kpi-pill" title="Revenue minus Inventory Spend for this period">
+      <div class="kpi-pill" title="Revenue minus Inventory Spend and money payable to safari/transport providers, for this period">
         <span class="kpi-pill-label">Est. Profit</span>
         <span class="kpi-pill-value ${profit < 0 ? "kpi-value-negative" : ""}">${fmtLKR(profit)}</span>
       </div>

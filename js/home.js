@@ -8,28 +8,42 @@ export function renderHomeDashboard() {
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   const today = todayISO();
 
-  const checkoutsToday = rooms.filter(r => r.status === "occupied" && r.checkout === today);
+  // Was `r.checkout === today` — an exact match, so a stay that overran
+  // dropped off this panel entirely. The one screen that tells reception
+  // who is leaving went quiet precisely when a guest was overdue, and the
+  // villa sat "occupied" indefinitely with nobody prompted to close it.
+  // Overdue stays are the ones that need attention most, so they lead.
+  const due = rooms
+    .filter(r => r.status === "occupied" && r.checkout && r.checkout <= today)
+    .sort((a, b) => (a.checkout < b.checkout ? -1 : 1));
+  const overdueCount = due.filter(r => r.checkout < today).length;
 
   const list = document.getElementById("today-checkouts-list");
-  if (!checkoutsToday.length) {
+  if (!due.length) {
     list.innerHTML = `<p class="room-detail-empty">No checkouts today.</p>`;
   } else {
     // data-room-id, NOT the array index. openRoomDetail() looks the villa
     // up by id, so passing an index opened the wrong villa where ids and
     // positions happen to line up, and threw outright where they don't
     // (Wilpattu's ids start at 7, so every row here failed).
-    list.innerHTML = checkoutsToday.map(r => `
-      <div class="today-checkout-row" data-room-id="${r.id}">
+    list.innerHTML = due.map(r => {
+      const late = r.checkout < today;
+      const days = late
+        ? Math.round((new Date(today + "T00:00:00") - new Date(r.checkout + "T00:00:00")) / 86400000)
+        : 0;
+      return `
+      <div class="today-checkout-row ${late ? "is-overdue" : ""}" data-room-id="${r.id}">
         <span class="today-checkout-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
         </span>
         <div class="today-checkout-info">
           <div class="today-checkout-row-name">${escapeHtml(orDash(r.guest))}</div>
-          <div class="today-checkout-row-villa">${escapeHtml(r.name || "Unnamed villa")}</div>
+          <div class="today-checkout-row-villa">${escapeHtml(r.name || "Unnamed villa")}${
+            late ? ` &middot; due ${days} day${days === 1 ? "" : "s"} ago` : ""}</div>
         </div>
-        <span class="today-checkout-bill-badge">Bill</span>
-      </div>
-    `).join("");
+        <span class="today-checkout-bill-badge ${late ? "overdue" : ""}">${late ? "Overdue" : "Bill"}</span>
+      </div>`;
+    }).join("");
     list.querySelectorAll(".today-checkout-row").forEach(row => {
       row.addEventListener("click", () => {
         renderRooms();
@@ -39,8 +53,10 @@ export function renderHomeDashboard() {
     });
   }
 
-  if (checkoutsToday.length) {
-    showToast(`${checkoutsToday.length} checkout${checkoutsToday.length === 1 ? "" : "s"} today`);
+  if (overdueCount) {
+    showToast(`${overdueCount} stay${overdueCount === 1 ? "" : "s"} past checkout`);
+  } else if (due.length) {
+    showToast(`${due.length} checkout${due.length === 1 ? "" : "s"} today`);
   }
 }
 
