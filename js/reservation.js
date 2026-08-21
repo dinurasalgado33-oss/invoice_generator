@@ -4,7 +4,7 @@ import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDate
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import {
-  RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS,
+  RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
 } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
 
@@ -69,14 +69,101 @@ function resetReservationForm() {
 
 document.getElementById("resv-add-villa-btn").addEventListener("click", () => addVillaRow());
 
+// Which reservation is being corrected, or null when making a new one.
+// This is for fixing a reservation that was entered wrongly — it keeps the
+// same RES number and overwrites the record, rather than issuing a
+// revision, because the case it exists for is a mistake caught before the
+// document has gone anywhere.
+let editingReservationId = null;
+
+function fillReservationForm(r) {
+  document.getElementById("resv-title").value = r.title || "";
+  resvGuestNameInput.value = r.guestName || "";
+  document.getElementById("resv-adults").value = r.adults ?? "";
+  document.getElementById("resv-children").value = r.children ?? "";
+  document.getElementById("resv-contact").value = r.contact || "";
+  resvCheckinDateInput.value = r.checkinDate || "";
+  document.getElementById("resv-checkin-time").value = r.checkinTime || "14:00";
+  resvCheckoutDateInput.value = r.checkoutDate || "";
+  document.getElementById("resv-checkout-time").value = r.checkoutTime || "11:00";
+  document.getElementById("resv-booking-type").value = r.bookingType || "";
+
+  villaList.innerHTML = "";
+  const villas = (r.villas || []).filter(v => v.roomId != null);
+  if (villas.length) villas.forEach(v => addVillaRow(v.roomId));
+  else addVillaRow();
+}
+
 // Opened from the Reservations screen rather than straight off the home
 // quick action — that now lands on the list, since a reservation is a
 // record staff come back to, not just a document they print once.
-export function openReservationForm() {
+export function openReservationForm(reservationId = null) {
+  const existing = reservationId != null ? findReservationById(reservationId) : null;
+  editingReservationId = existing ? existing.id : null;
+
   document.getElementById("resv-form-branch-label").textContent = appState.selectedBranchLabel;
   setLogoSrc("resv-form-logo", appState.selectedBranchLogo);
   resetReservationForm();
+  if (existing) fillReservationForm(existing);
+
+  // The heading and the button have to say which of the two jobs this is,
+  // or a correction looks exactly like making a second reservation.
+  document.getElementById("resv-form-heading").textContent =
+    existing ? `Correct RES-${existing.no}` : "New Reservation";
+  document.getElementById("resv-submit-btn").textContent =
+    existing ? "Save Changes" : "Generate Confirmation";
+
   showScreen("screen-reservation-form");
+}
+
+// An agent's invoice and the reservation behind it must never disagree
+// about who is coming, when, or which villas. The invoice never let staff
+// type those in the first place — it takes them from the reservation — so
+// the only way they could drift was a reservation corrected afterwards.
+// This pulls the derived fields back into step.
+//
+// Agreed rates are deliberately left alone: in a foreign currency the rate
+// is what the agent contracted, which the reservation never knew. Nights
+// and totals recompute around it. A line whose villa was dropped from the
+// reservation is removed, since the invoice may not name a villa the guest
+// no longer has.
+function syncProformasToReservation(r) {
+  const affected = PROFORMA_INVOICES.filter(p => p.reservationId === r.id);
+  if (!affected.length) return;
+
+  const stillBooked = new Set((r.villas || []).map(v => v.roomId));
+  affected.forEach(p => {
+    p.guestName = r.guestName;
+    p.guestTotal = r.guestTotal;
+    p.contact = r.contact;
+    p.checkinDate = r.checkinDate;
+    p.checkoutDate = r.checkoutDate;
+    p.nights = r.nights;
+
+    const villaById = new Map((r.villas || []).map(v => [v.roomId, v]));
+    p.items = (p.items || [])
+      .filter(it => stillBooked.has(it.roomId))
+      .map((it, i) => {
+        const villa = villaById.get(it.roomId);
+        const nights = r.nights || it.nights || 1;
+        return {
+          ...it,
+          no: i + 1,
+          desc: r.bookingType ? `${villa.name} (${r.bookingType})` : villa.name,
+          qty: `${nights} Night${nights === 1 ? "" : "s"}`,
+          nights,
+          value: clampMoney(it.rate * nights),
+        };
+      });
+
+    p.billTotal = p.items.reduce((s, it) => s + it.value, 0);
+    const discount = Math.min(clampMoney(p.discount), p.billTotal);
+    p.discount = discount;
+    p.gross = p.billTotal;
+    p.net = p.billTotal - discount;
+    p.grandTotal = p.net - clampMoney(p.advance);
+    p.correctedAt = new Date().toISOString();
+  });
 }
 
 // Distinct from utils.js's nightsBetween(), which returns 1 for a
@@ -220,7 +307,11 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   if (!validateReservationForm()) return;
   isGeneratingReservation = true;
 
-  const reservationId = allocateReservationNo();
+  // A correction keeps its own number. Allocating unconditionally would
+  // burn a fresh one on every edit, leaving gaps that look like deleted
+  // reservations.
+  const existing = editingReservationId != null ? findReservationById(editingReservationId) : null;
+  const reservationId = existing ? existing.id : allocateReservationNo();
   const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
   const title = document.getElementById("resv-title").value;
   const guestName = resvGuestNameInput.value.trim();
@@ -245,11 +336,15 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   // Nothing stopped the same villa being promised to two guests over the
   // same nights. Checked here rather than on the villa picker because the
   // dates can change after the villa was chosen.
+  // ignoreId keeps a reservation from clashing with itself when it's being
+  // corrected — without it, changing a guest's name would be refused
+  // because those villas are "already reserved", by this very record.
   const conflicts = findConflicts({
     branch: appState.selectedBranch,
     villas,
     checkinDate,
     checkoutDate,
+    ignoreId: editingReservationId,
   });
   if (conflicts.length) {
     const detail = conflicts.map(c =>
@@ -285,19 +380,38 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     nights,
     bookingType: document.getElementById("resv-booking-type").value.trim(),
     villas,
-    status: RESERVATION_STATUS.CONFIRMED,
+    // A correction must not resurrect a cancelled reservation, un-link a
+    // stay that has already started, or reset when it was taken.
+    status: existing ? existing.status : RESERVATION_STATUS.CONFIRMED,
     // Set when the guest actually arrives and a GRC turns this into a stay.
-    bookingId: null,
-    cancelledAt: null,
-    cancelReason: "",
-    createdAt: new Date().toISOString(),
+    bookingId: existing ? existing.bookingId : null,
+    cancelledAt: existing ? existing.cancelledAt : null,
+    cancelReason: existing ? existing.cancelReason : "",
+    createdAt: existing ? existing.createdAt : new Date().toISOString(),
+    correctedAt: existing ? new Date().toISOString() : null,
   };
-  RESERVATIONS.push(record);
+
+  if (existing) {
+    // Overwrite in place so every reference to this reservation — the
+    // agent's invoice, a linked check-in — keeps pointing at one record.
+    Object.assign(existing, record);
+    syncProformasToReservation(existing);
+  } else {
+    RESERVATIONS.push(record);
+  }
   refreshReservationsList();
 
   renderReservationPreview(record);
   setPreviewReturn("screen-reservation-form", "Edit");
-  showToast("Reservation confirmation generated");
+  const syncedInvoices = existing
+    ? PROFORMA_INVOICES.filter(p => p.reservationId === existing.id).length
+    : 0;
+  showToast(existing
+    ? `RES-${record.no} updated${syncedInvoices ? ` — agent invoice updated too` : ""}`
+    : "Reservation confirmation generated");
+  // Cleared here, not in openReservationForm: leaving it set would make the
+  // next new reservation silently overwrite the one just corrected.
+  editingReservationId = null;
   showScreen("screen-reservation-preview");
   // Re-armed on the next task, not inline: requestSubmit() dispatches
   // synchronously, so clearing it here would let a burst of taps through.
