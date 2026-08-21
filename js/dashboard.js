@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, toDateISO, showToast } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
-import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue, invoiceLKR } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { CHARGE_CATEGORY_LABELS } from "./data/charges.js";
 
@@ -49,7 +49,7 @@ function renderDashboard(branch) {
   const thisMonthKey = monthKey(toDateISO(now));
 
   const monthInvoices = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active" && monthKey(inv.date) === thisMonthKey);
-  const revenue = monthInvoices.reduce((s, inv) => s + inv.total, 0);
+  const revenue = monthInvoices.reduce((s, inv) => s + invoiceLKR(inv), 0);
   const invoiceCount = monthInvoices.length;
   const avgInvoice = invoiceCount ? revenue / invoiceCount : 0;
   const occupancy = computeMonthlyOccupancy(branch, now.getFullYear(), now.getMonth());
@@ -76,7 +76,7 @@ function renderDashboard(branch) {
     if (inv.categoryTotals) {
       splitKeys.forEach(k => { split[k] += inv.categoryTotals[k] || 0; });
     } else {
-      uncategorised += inv.total;
+      uncategorised += invoiceLKR(inv);
     }
   });
   split.villa += uncategorised;
@@ -148,7 +148,7 @@ function renderDashboard(branch) {
   }
   const monthlyValues = months.map(m =>
     INVOICES.filter(inv => inv.branch === branch && inv.status === "Active" && monthKey(inv.date) === m.key)
-      .reduce((s, inv) => s + inv.total, 0)
+      .reduce((s, inv) => s + invoiceLKR(inv), 0)
   );
 
   if (lineChart) lineChart.destroy();

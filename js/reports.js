@@ -1,7 +1,7 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
-import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue } from "./data/reports.js";
+import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue, invoiceLKR } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG, USAGE_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
@@ -121,6 +121,15 @@ function matchesSearch(text) {
 }
 
 // ---------- Filtered datasets ----------
+// A bill raised in USD must not print as "LKR 500". Shows what the guest
+// was actually charged, with the LKR the reports counted it as alongside.
+function invoiceAmountLabel(inv) {
+  if (!inv.currency || inv.currency === "LKR") return fmtLKR(inv.total);
+  const amount = `${inv.currency} ${Number(inv.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const lkr = invoiceLKR(inv);
+  return lkr > 0 ? `${amount} (${fmtLKR(lkr)})` : amount;
+}
+
 function getFilteredInvoices(range) {
   return INVOICES
     .filter(inv => inRange(inv.date, range) && matchesBranch(inv.branch) && matchesSearch(inv.guest + " " + inv.id))
@@ -195,7 +204,7 @@ function computeProviderPayouts(range) {
 
 function computeSummary(range) {
   const invoices = INVOICES.filter(inv => inRange(inv.date, range) && matchesBranch(inv.branch) && inv.status === "Active");
-  const revenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
+  const revenue = invoices.reduce((sum, inv) => sum + invoiceLKR(inv), 0);
   const count = invoices.length;
   const avg = count ? revenue / count : 0;
   const occupancy = computeOccupancy(range);
@@ -241,7 +250,7 @@ function computeOccupancy(range) {
 function computeBranchTotals(range) {
   return BRANCHES.map(branch => {
     const invoices = INVOICES.filter(inv => inRange(inv.date, range) && inv.branch === branch && inv.status === "Active");
-    return { branch, revenue: invoices.reduce((s, inv) => s + inv.total, 0), count: invoices.length };
+    return { branch, revenue: invoices.reduce((s, inv) => s + invoiceLKR(inv), 0), count: invoices.length };
   });
 }
 
@@ -329,7 +338,7 @@ function renderInvoicesTab(range) {
   const rows = getFilteredInvoices(range);
   if (!rows.length) return emptyState();
 
-  const grandTotal = rows.filter(r => r.status === "Active").reduce((s, r) => s + r.total, 0);
+  const grandTotal = rows.filter(r => r.status === "Active").reduce((s, r) => s + invoiceLKR(r), 0);
 
   const list = rows.map(inv => {
     const isVoid = inv.status === "Void";
@@ -349,7 +358,7 @@ function renderInvoicesTab(range) {
           <span class="report-row-sub">${escapeHtml(inv.branch)} &middot; ${formatDate(inv.date)}</span>
         </div>
         <div class="report-row-end">
-          <span class="report-row-amount">${fmtLKR(inv.total)}</span>
+          <span class="report-row-amount">${invoiceAmountLabel(inv)}</span>
           <span class="stock-badge ${isVoid ? "low" : ""}">${inv.status}</span>
           ${voidBtn}
         </div>
@@ -861,14 +870,15 @@ function getExportRows() {
       // keeps by hand, so an exported month can be reconciled against
       // their spreadsheet line for line.
       headers: [
-        "Invoice #", "Guest", "Branch", "Date", "Source", "Total (LKR)",
+        "Invoice #", "Guest", "Branch", "Date", "Source", "Currency", "Total (billed)", "Rate", "Total (LKR)",
         "Villa", "Food", "Safari", "Transport", "Ticket", "Other",
         "Service Charge", "Status", "Void Reason", "Voided By",
       ],
       rows: getFilteredInvoices(range).map(r => {
         const c = r.categoryTotals || {};
         return [
-          r.id, r.guest, r.branch, r.date, r.source || "", r.total,
+          r.id, r.guest, r.branch, r.date, r.source || "", r.currency || "LKR", r.total,
+          r.exchangeRate || 1, invoiceLKR(r),
           c.villa || 0, c.food || 0, c.safari || 0, c.transport || 0, c.ticket || 0, c.other || 0,
           r.serviceCharge || 0, r.status, r.voidReason || "", r.voidedBy || "",
         ];
@@ -1007,7 +1017,7 @@ function openVoidSheet(invoiceId) {
   voidingInvoiceId = inv.id;
 
   document.getElementById("void-sheet-summary").textContent =
-    `#${inv.id} — ${inv.guest} · ${inv.branch} · ${formatDate(inv.date)} · ${fmtLKR(inv.total)}`;
+    `#${inv.id} — ${inv.guest} · ${inv.branch} · ${formatDate(inv.date)} · ${invoiceAmountLabel(inv)}`;
   document.getElementById("void-reason").value = "";
   document.getElementById("void-sheet-overlay").classList.add("open");
 }
@@ -1032,7 +1042,7 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
   const reason = document.getElementById("void-reason").value.trim();
   const ok = await confirmAction({
     title: "Void this invoice?",
-    message: `#${inv.id} for ${inv.guest} (${fmtLKR(inv.total)}) will stop counting toward revenue. This can't be undone.`,
+    message: `#${inv.id} for ${inv.guest} (${invoiceAmountLabel(inv)}) will stop counting toward revenue. This can't be undone.`,
     confirmLabel: "Void Invoice",
     tone: "danger",
   });

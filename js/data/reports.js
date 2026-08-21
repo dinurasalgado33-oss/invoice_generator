@@ -79,3 +79,16 @@ export function writeOffStayRecords(bookingId, reason) {
 export function countsAsRevenue(record) {
   return !record.writtenOff;
 }
+
+// What an invoice is worth in LKR — the single figure every revenue total
+// reads, so a bill raised in USD can never be counted as though the number
+// on it were rupees. A foreign bill carries the rate that was used when it
+// was raised; converting at today's rate would quietly restate last month's
+// takings every time the rupee moved.
+export function invoiceLKR(inv) {
+  if (!inv) return 0;
+  const amount = inv.total || 0;
+  if (!inv.currency || inv.currency === "LKR") return amount;
+  const rate = Number(inv.exchangeRate) || 0;
+  return amount * rate;
+}

@@ -78,6 +78,41 @@ document.getElementById("fixed-remark-preview").textContent = INVOICE_REMARK;
 document.getElementById("currency").innerHTML =
   CURRENCIES.map(c => `<option value="${c}">${c}</option>`).join("");
 
+// A bill in a foreign currency has to record the rate it was converted at.
+// Without it the dashboard added USD 500 to LKR revenue as five hundred
+// rupees — right on the printed invoice, wrong on every management figure,
+// and nothing on the guest's copy would ever show it.
+function syncExchangeRateField() {
+  const currency = document.getElementById("currency").value || "LKR";
+  const foreign = currency !== "LKR";
+  document.getElementById("exchange-rate-field").hidden = !foreign;
+  document.getElementById("exchange-rate-label").textContent = foreign ? `(1 ${currency} = ? LKR)` : "";
+  if (!foreign) {
+    document.getElementById("exchange-rate").value = "";
+    document.getElementById("exchange-rate-error").classList.remove("show");
+    document.getElementById("exchange-rate").classList.remove("invalid");
+  }
+  updateExchangeHint();
+}
+
+function updateExchangeHint() {
+  const currency = document.getElementById("currency").value || "LKR";
+  const hint = document.getElementById("exchange-rate-hint");
+  if (currency === "LKR") { hint.textContent = ""; return; }
+  const rate = clampMoney(document.getElementById("exchange-rate").value);
+  const { grandTotal } = computeTotals();
+  hint.textContent = rate > 0
+    ? `Reports will count this bill as ${fmt(grandTotal * rate, "LKR")}.`
+    : "The guest is billed in " + currency + "; reports need the rate to count it.";
+}
+
+document.getElementById("currency").addEventListener("change", syncExchangeRateField);
+document.getElementById("exchange-rate").addEventListener("input", () => {
+  document.getElementById("exchange-rate-error").classList.remove("show");
+  document.getElementById("exchange-rate").classList.remove("invalid");
+  updateExchangeHint();
+});
+
 const itemsBody = document.getElementById("items-body");
 
 function renumberRows() {
@@ -439,6 +474,10 @@ export function resetForm() {
   document.getElementById("inv-number").value = String(appState.invoiceCounter);
   document.getElementById("inv-date").value = toDateISO();
   document.getElementById("currency").value = "LKR";
+  document.getElementById("exchange-rate").value = "";
+  document.getElementById("exchange-rate-field").hidden = true;
+  document.getElementById("exchange-rate-error").classList.remove("show");
+  document.getElementById("exchange-rate").classList.remove("invalid");
   // form.reset() restores the checkbox's HTML default (checked), but the
   // readOnly state it drives is a DOM property reset doesn't touch.
   document.getElementById("service-charge-auto").checked = true;
@@ -467,6 +506,19 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     goToStep(2);
     return;
   }
+
+  // A foreign bill with no rate would be counted at face value — USD 500
+  // added to LKR revenue as five hundred rupees. Refused rather than
+  // guessed at, since the app has no way to know the rate.
+  const chosenCurrency = val("currency") || "LKR";
+  if (chosenCurrency !== "LKR" && clampMoney(document.getElementById("exchange-rate").value) <= 0) {
+    document.getElementById("exchange-rate-error").classList.add("show");
+    document.getElementById("exchange-rate").classList.add("invalid");
+    goToStep(1);
+    document.getElementById("exchange-rate").focus();
+    return;
+  }
+
   isSubmitting = true;
 
   const { billTotal, serviceCharge, advance, grossAmount, discountType, discountAmount, netAmount, grandTotal } = computeTotals();
@@ -507,6 +559,10 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     checkinDate: document.getElementById("checkin-date").value,
     checkoutDate: document.getElementById("checkout-date").value,
     currency: val("currency") || "LKR",
+    // Stamped at billing time, not looked up later: converting an old bill
+    // at today's rate would restate last month's takings every time the
+    // rupee moved.
+    exchangeRate: (val("currency") || "LKR") === "LKR" ? 1 : clampMoney(document.getElementById("exchange-rate").value),
     discountType,
     discountInputRaw: val("discount-amount"),
     billTotal,
