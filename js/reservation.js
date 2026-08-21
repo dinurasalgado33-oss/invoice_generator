@@ -227,8 +227,29 @@ function validateReservationForm() {
 // config rather than being frozen into the record: if the hotel's phone
 // number or bank account changes, a reprint should carry the number that
 // works today, not the one that was right in March.
-function renderReservationPreview(r) {
+// A currency name, or a figure written like money. Deliberately broad: on
+// the guest's copy of an agent booking, a stray amount is worse than a
+// condition that goes unprinted.
+const MENTIONS_MONEY = /\b(?:LKR|USD|EUR|GBP|Rs\.?)\b|\d{1,3},\d{3}|\d+\s*\/=/i;
+
+// hidePrices produces the guest's copy of an agent booking. The guest paid
+// the agent, and what the agent pays the hotel is not their business — a
+// confirmation showing the hotel's rate tells them exactly what the agent
+// marked up. Villas and dates still confirm, which is the reassurance the
+// guest actually wants.
+function renderReservationPreview(r, { hidePrices = false } = {}) {
   const branchInfo = BRANCH_INFO[r.branch] || {};
+
+  document.getElementById("resv-prev-pricing-section").hidden = hidePrices;
+  // Bank details go too: paying the hotel direct is exactly the confusion
+  // this document has to avoid.
+  document.getElementById("resv-prev-payment-section").hidden = hidePrices;
+  document.getElementById("resv-prev-agent-note-section").hidden = !hidePrices;
+  if (hidePrices) {
+    document.getElementById("resv-prev-agent-villas").innerHTML =
+      (r.villas || []).map(v => `<p>${escapeHtml(v.name || "-")}</p>`).join("") ||
+      `<p class="room-detail-empty">No villas added.</p>`;
+  }
 
   document.getElementById("resv-prev-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
   document.getElementById("resv-prev-address").textContent = branchInfo.address || "";
@@ -261,7 +282,14 @@ function renderReservationPreview(r) {
   document.getElementById("resv-prev-bank").textContent = branchInfo.bankName || "-";
   document.getElementById("resv-prev-bank-branch").textContent = branchInfo.bankBranch || "-";
 
-  const conditions = RESERVATION_CONDITIONS[r.branch] || [];
+  // On the guest's copy, a condition naming an amount ("Required LKR 5,000
+  // of advance payment to confirm the booking") flatly contradicts the note
+  // above it saying nothing is due to the hotel — and it is addressed to
+  // whoever made the booking, which here is the agent. Conditions carrying
+  // a money figure are dropped; the rest — check-in times, ID, house rules
+  // — are exactly what the guest still needs.
+  const conditions = (RESERVATION_CONDITIONS[r.branch] || [])
+    .filter(c => !(hidePrices && MENTIONS_MONEY.test(c.text || "")));
   document.getElementById("resv-prev-conditions").innerHTML = conditions
     .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
     `<p class="room-detail-empty">No conditions set.</p>`;
@@ -272,13 +300,13 @@ function renderReservationPreview(r) {
 // changes nothing.
 // Reachable from the Reservations list and from Guest History — the
 // caller says which, so Back cannot land on a screen nobody came from.
-export function reprintReservation(reservationId, returnTo = "screen-reservations") {
+export function reprintReservation(reservationId, returnTo = "screen-reservations", { hidePrices = false } = {}) {
   const r = RESERVATIONS.find(x => x.id === reservationId);
   if (!r) {
     showToast("That reservation is no longer available");
     return;
   }
-  renderReservationPreview(r);
+  renderReservationPreview(r, { hidePrices });
   // Arriving from the list, "Edit" would drop the user on a blank form —
   // the form holds no state for an already-issued reservation. Send them
   // back where they came from instead.
@@ -401,7 +429,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   }
   refreshReservationsList();
 
-  renderReservationPreview(record);
+  renderReservationPreview(record, { hidePrices: false });
   setPreviewReturn("screen-reservation-form", "Edit");
   const syncedInvoices = existing
     ? PROFORMA_INVOICES.filter(p => p.reservationId === existing.id).length

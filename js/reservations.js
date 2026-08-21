@@ -136,6 +136,10 @@ function renderReservationsList() {
           <button type="button" class="secondary-btn reservation-view-invoice-btn" data-proforma-id="${issued[issued.length - 1].id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
             View Agent Invoice
+          </button>
+          <button type="button" class="secondary-btn reservation-guest-copy-btn" data-reservation-id="${r.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            Guest Confirmation
           </button>` : `
           <button type="button" class="secondary-btn reservation-invoice-btn" data-reservation-id="${r.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
@@ -151,6 +155,12 @@ function renderReservationsList() {
   });
   list.querySelectorAll(".reservation-view-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => reprintProforma(Number(btn.dataset.proformaId), "screen-reservations"));
+  });
+  // The guest's copy of an agent booking: same confirmation, no rates and
+  // no bank details, since they settle with the agent.
+  list.querySelectorAll(".reservation-guest-copy-btn").forEach(btn => {
+    btn.addEventListener("click", () =>
+      reprintReservation(Number(btn.dataset.reservationId), "screen-reservations", { hidePrices: true }));
   });
   list.querySelectorAll(".reservation-edit-btn").forEach(btn => {
     btn.addEventListener("click", () => openReservationForm(Number(btn.dataset.reservationId)));

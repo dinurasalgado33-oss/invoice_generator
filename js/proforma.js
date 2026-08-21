@@ -20,8 +20,38 @@ import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 
 let sourceReservation = null;
 
+// Which invoice is being corrected, or null when raising a new one. Same
+// reasoning as the reservation form: this exists for an invoice entered
+// wrongly, so it overwrites in place and keeps its number rather than
+// issuing a revision.
+let editingProformaId = null;
+
+// Which invoice the printed preview is currently showing, so Correct knows
+// what to reopen. Declared here rather than beside its button: it is read
+// by renderProformaPreview, which sits higher up the file.
+let previewedProformaId = null;
+
 const el = (id) => document.getElementById(id);
 const val = (id) => (el(id).value || "").trim();
+
+// What this agent was last charged for this villa, in this currency.
+// Foreign-currency rates are contracted per agent and the reservation
+// never knows them, so staff were retyping the same figure every time —
+// and a mistyped rate on an agent's invoice is the error that costs money.
+// Suggested, never forced: the field stays editable.
+export function lastAgentRate(travelAgent, roomId, currency) {
+  const agent = (travelAgent || "").trim().toLowerCase();
+  if (!agent) return null;
+  for (let i = PROFORMA_INVOICES.length - 1; i >= 0; i--) {
+    const p = PROFORMA_INVOICES[i];
+    if (p.id === editingProformaId) continue;
+    if ((p.travelAgent || "").trim().toLowerCase() !== agent) continue;
+    if (p.currency !== currency) continue;
+    const line = (p.items || []).find(it => it.roomId === roomId && it.rate > 0);
+    if (line) return line.rate;
+  }
+  return null;
+}
 
 // Agent invoices are issued in a foreign currency, so amounts are shown
 // as plain numbers with the currency named once at the top — printing
@@ -71,8 +101,18 @@ function addItemRow(roomId = null, nights = 1) {
   // field is left for staff to fill with the contracted rate.
   function onVillaChange() {
     const villa = villas.find(v => String(v.roomId) === villaSelect.value);
-    rateInput.value = villa && isLocalCurrency() ? villa.rate : "";
+    rateInput.value = villa ? inheritedRate(villa) : "";
     recalc();
+  }
+
+  // In LKR the reservation's own rate is authoritative. In a foreign
+  // currency it means nothing, so fall back to whatever this agent was
+  // last charged for this villa — a suggestion staff can overwrite, not a
+  // figure the app insists on.
+  function inheritedRate(villa) {
+    if (isLocalCurrency()) return villa.rate;
+    const remembered = lastAgentRate(val("pf-travel-agent"), villa.roomId, el("pf-currency").value);
+    return remembered ?? "";
   }
 
   function recalc() {
@@ -90,15 +130,25 @@ function addItemRow(roomId = null, nights = 1) {
   row._applyCurrency = () => {
     const villa = villas.find(v => String(v.roomId) === villaSelect.value);
     rateInput.readOnly = isLocalCurrency();
-    if (isLocalCurrency()) {
-      rateInput.value = villa ? villa.rate : "";
-    } else {
-      // Deliberately cleared, not converted: the app doesn't know today's
-      // rate, and an LKR figure printed under a "Value (USD)" heading is a
-      // wrong invoice rather than an approximate one.
-      rateInput.value = "";
-    }
+    // Never converted: the app doesn't know today's exchange rate, and an
+    // LKR figure printed under a "Value (USD)" heading is a wrong invoice
+    // rather than an approximate one. Either the reservation's LKR rate,
+    // or what this agent last paid in this currency, or blank.
+    rateInput.value = villa ? inheritedRate(villa) : "";
     recalc();
+  };
+
+  // Called once the agent's name is settled. Only fills a rate that is
+  // still blank — a figure staff have already typed is the agreed one for
+  // this booking and must not be replaced by an older invoice's.
+  row._fillRememberedRate = () => {
+    const villa = villas.find(v => String(v.roomId) === villaSelect.value);
+    if (!villa || isLocalCurrency() || clampMoney(rateInput.value) > 0) return false;
+    const remembered = lastAgentRate(val("pf-travel-agent"), villa.roomId, el("pf-currency").value);
+    if (remembered == null) return false;
+    rateInput.value = remembered;
+    recalc();
+    return true;
   };
 
   if (roomId != null) villaSelect.value = String(roomId);
@@ -174,6 +224,7 @@ function updateTotals() {
 }
 
 export function openProformaForm(reservationId) {
+  editingProformaId = null;
   const res = findReservationById(reservationId);
   if (!res) {
     showToast("That reservation is no longer available");
@@ -216,6 +267,59 @@ export function openProformaForm(reservationId) {
 
   el("pf-discount").value = "0";
   el("pf-advance").value = "0";
+  applyFormMode();
+  updateTotals();
+  showScreen("screen-proforma-form");
+}
+
+function applyFormMode() {
+  const editing = editingProformaId != null;
+  el("proforma-form-heading").textContent = editing
+    ? `Correct Agent Invoice TRA-${editingProformaId}`
+    : "Invoice for Travel Agent / Guide";
+  el("pf-submit-label").textContent = editing ? "Save Changes" : "Generate Proforma Invoice";
+}
+
+// Correcting an invoice raised wrongly. The reservation behind it still
+// supplies the dates and villas — those are never editable here — so this
+// only reopens what staff actually chose: the agent, currency, rates,
+// nights, discount, advance and remark.
+export function openProformaEdit(proformaId) {
+  const p = PROFORMA_INVOICES.find(x => x.id === Number(proformaId));
+  if (!p) {
+    showToast("That invoice is no longer available");
+    return;
+  }
+  const res = findReservationById(p.reservationId);
+  if (!res) {
+    showToast("The reservation behind this invoice is gone");
+    return;
+  }
+  openProformaForm(res.id);
+  editingProformaId = p.id;
+
+  el("pf-travel-agent").value = p.travelAgent || "";
+  el("pf-voucher-no").value = p.voucherNo || "";
+  el("pf-currency").value = p.currency || DEFAULT_PROFORMA_CURRENCY;
+  el("pf-remark").value = p.remark || "";
+  el("pf-discount").value = String(p.discount || 0);
+  el("pf-advance").value = String(p.advance || 0);
+
+  // Rebuilt from the saved lines so the agreed rates come back exactly as
+  // they were invoiced, not re-inherited from the villa.
+  itemsBody().innerHTML = "";
+  (p.items || []).forEach(it => addItemRow(it.roomId, it.nights || 1));
+  [...itemsBody().querySelectorAll("tr")].forEach((row, i) => {
+    const saved = (p.items || [])[i];
+    if (!saved) return;
+    const rateInput = row.querySelector(".pf-item-rate");
+    rateInput.readOnly = isLocalCurrency();
+    rateInput.value = saved.rate;
+    rateInput.dispatchEvent(new Event("input"));
+  });
+
+  el("pf-rate-note").hidden = isLocalCurrency();
+  applyFormMode();
   updateTotals();
   showScreen("screen-proforma-form");
 }
@@ -240,6 +344,20 @@ el("pf-travel-agent").addEventListener("input", () => {
   el("pf-travel-agent-error").classList.remove("show");
   el("pf-travel-agent").classList.remove("invalid");
 });
+
+// Recognising the agent is what makes the remembered rate available, so the
+// rows are refreshed once the name is settled rather than on every keystroke.
+el("pf-travel-agent").addEventListener("change", applyRememberedRates);
+el("pf-travel-agent").addEventListener("blur", applyRememberedRates);
+
+function applyRememberedRates() {
+  if (isLocalCurrency()) return;
+  let filled = 0;
+  [...itemsBody().querySelectorAll("tr")].forEach(row => {
+    if (row._fillRememberedRate && row._fillRememberedRate()) filled++;
+  });
+  if (filled) showToast(`Rates filled from this agent's last invoice`);
+}
 
 let isSubmitting = false;
 
@@ -270,8 +388,14 @@ el("proforma-form").addEventListener("submit", (e) => {
   isSubmitting = true;
 
   const res = sourceReservation;
+  // A correction keeps its number, for the same reason a reservation does:
+  // allocating on every edit would leave gaps that read as invoices someone
+  // deleted.
+  const existing = editingProformaId != null
+    ? PROFORMA_INVOICES.find(x => x.id === editingProformaId)
+    : null;
   const record = {
-    id: allocateProformaNo(),
+    id: existing ? existing.id : allocateProformaNo(),
     reservationId: res.id,
     reservationNo: res.no,
     branch: res.branch,
@@ -295,7 +419,14 @@ el("proforma-form").addEventListener("submit", (e) => {
     remark: val("pf-remark"),
     createdAt: new Date().toISOString(),
   };
-  PROFORMA_INVOICES.push(record);
+  if (existing) {
+    // Overwrite in place, preserving when it was first raised.
+    record.createdAt = existing.createdAt;
+    record.correctedAt = new Date().toISOString();
+    Object.assign(existing, record);
+  } else {
+    PROFORMA_INVOICES.push(record);
+  }
 
   renderProformaPreview(record);
   // Reset explicitly: a reprint from Guest History mutates this button,
@@ -305,11 +436,15 @@ el("proforma-form").addEventListener("submit", (e) => {
   refreshReservationsList();
   sourceReservation = null;
   isSubmitting = false;
-  showToast(`Proforma invoice raised for ${record.travelAgent}`);
+  showToast(existing
+    ? `Agent invoice TRA-${record.id} updated`
+    : `Proforma invoice raised for ${record.travelAgent}`);
+  editingProformaId = null;
   showScreen("screen-proforma-preview");
 });
 
 function renderProformaPreview(p) {
+  previewedProformaId = p.id;
   const info = BRANCH_INFO[p.branch] || {};
   el("pf-prev-hotel-name").textContent = info.hotelName || appState.selectedBranchLabel;
   el("pf-prev-address").textContent = info.address || "";
@@ -397,6 +532,11 @@ export function reprintProforma(proformaId, returnTo = "screen-reservations") {
 }
 
 el("pf-print-btn").addEventListener("click", () => window.print());
+
+el("pf-correct-btn").addEventListener("click", () => {
+  if (previewedProformaId == null) return;
+  openProformaEdit(previewedProformaId);
+});
 
 el("pf-done-btn").addEventListener("click", async () => {
   const { openReservationsScreen } = await import("./reservations.js");

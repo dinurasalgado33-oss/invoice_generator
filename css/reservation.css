@@ -187,3 +187,12 @@
     print-color-adjust: exact;
   }
 }
+
+/* Guest's copy of an agent booking — villas confirmed, money left out. */
+.reservation-agent-villas p { margin: 2px 0; font-weight: 600; }
+.reservation-agent-note {
+  margin: 10px 0 0;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}

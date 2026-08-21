@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=108" />
-<link rel="stylesheet" href="css/brand-home.css?v=108" />
-<link rel="stylesheet" href="css/rooms.css?v=108" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=108" />
-<link rel="stylesheet" href="css/invoice.css?v=108" />
-<link rel="stylesheet" href="css/dashboard.css?v=108" />
-<link rel="stylesheet" href="css/reports.css?v=108" />
-<link rel="stylesheet" href="css/reservation.css?v=108" />
-  <link rel="stylesheet" href="css/grc.css?v=108" />
-  <link rel="stylesheet" href="css/proforma.css?v=108" />
-  <link rel="stylesheet" href="css/history.css?v=108" />
+<link rel="stylesheet" href="css/base.css?v=110" />
+<link rel="stylesheet" href="css/brand-home.css?v=110" />
+<link rel="stylesheet" href="css/rooms.css?v=110" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=110" />
+<link rel="stylesheet" href="css/invoice.css?v=110" />
+<link rel="stylesheet" href="css/dashboard.css?v=110" />
+<link rel="stylesheet" href="css/reports.css?v=110" />
+<link rel="stylesheet" href="css/reservation.css?v=110" />
+  <link rel="stylesheet" href="css/grc.css?v=110" />
+  <link rel="stylesheet" href="css/proforma.css?v=110" />
+  <link rel="stylesheet" href="css/history.css?v=110" />
 </head>
 <body>
 
@@ -1447,7 +1447,7 @@
     <button class="back-btn" data-back="screen-reservations">&larr; Back</button>
     <div class="brand small">
       <img id="proforma-form-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
-      <h2>Invoice for Travel Agent / Guide</h2>
+      <h2 id="proforma-form-heading">Invoice for Travel Agent / Guide</h2>
     </div>
 
     <form id="proforma-form">
@@ -1524,7 +1524,7 @@
 
       <button type="submit" class="primary-btn big" id="pf-submit-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
-        Generate Proforma Invoice
+        <span id="pf-submit-label">Generate Proforma Invoice</span>
       </button>
     </form>
   </section>
@@ -1635,6 +1635,10 @@
       <button class="action-btn secondary" id="pf-image-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
         Save as Image
+      </button>
+      <button class="action-btn secondary" id="pf-correct-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+        Correct
       </button>
       <button class="action-btn secondary" id="pf-done-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
@@ -2288,7 +2292,7 @@
             <div class="reservation-row"><span>Booking type</span><strong id="resv-prev-booking-type"></strong></div>
           </section>
 
-          <section class="reservation-section">
+          <section class="reservation-section" id="resv-prev-pricing-section">
             <h3>Pricing</h3>
             <table class="reservation-pricing-table">
               <thead><tr><th>Villa name</th><th>Rate per 1 night</th></tr></thead>
@@ -2296,7 +2300,13 @@
             </table>
           </section>
 
-          <section class="reservation-section">
+          <section class="reservation-section" id="resv-prev-agent-note-section" hidden>
+            <h3>Villas Reserved</h3>
+            <div id="resv-prev-agent-villas" class="reservation-agent-villas"></div>
+            <p class="reservation-agent-note">All charges for this stay are settled with your travel agent. No payment is due to the hotel on arrival.</p>
+          </section>
+
+          <section class="reservation-section" id="resv-prev-payment-section">
             <h3>Payment Details</h3>
             <div class="reservation-bank-box">
               <div class="reservation-row"><span>Account Name</span><strong id="resv-prev-bank-account-name"></strong></div>
@@ -2348,6 +2358,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=108"></script>
+<script type="module" src="js/main.js?v=110"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash, toDateISO } from "./utils.js";
+import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash, toDateISO, clampMoney } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, clampHotelIncome } from "./data/activities.js";
 import { resetForm, addItemRow, clearItems, onAfterGenerate, setCheckoutContext } from "./invoice.js";
@@ -182,10 +182,17 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
         </button>
+        ${roomsOnStay(activeRoomRef.branch, room).length > 1 ? `
+        <button type="button" class="secondary-btn" id="release-villa-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M15 20v-6H9v6" /></svg>
+          Release just this villa
+        </button>` : ""}
         <button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
       document.getElementById("cancel-checkin-btn").addEventListener("click", cancelCheckIn);
+      const releaseBtn = document.getElementById("release-villa-btn");
+      if (releaseBtn) releaseBtn.addEventListener("click", releaseVilla);
       // Reopens the signed card for this stay. Deliberately here rather
       // than on the villa card in the grid — that card is itself a
       // <button>, and a button inside a button is invalid markup with
@@ -273,6 +280,70 @@ async function startInterimInvoice() {
 // Which villa's tab is sitting on the invoice form, waiting to find out
 // whether it becomes an invoice or gets abandoned.
 let interimRef = null;
+
+// A party booked two villas and halfway through only needs one. Frees the
+// villa for someone else while the rest of the stay carries on untouched.
+//
+// The nights already used go onto the party's running tab rather than
+// producing an invoice now, so they still leave with a single bill — one
+// guest, one document, which is what checkout already promises.
+async function releaseVilla() {
+  const room = getActiveRoom();
+  const stay = roomsOnStay(activeRoomRef.branch, room);
+  if (stay.length < 2) return;
+
+  // Charged to the villas the party keeps, so releasing this one can't
+  // take its own charges with it.
+  const remaining = stay.filter(r => r.id !== room.id);
+  const nightsUsed = Math.max(1, nightsBetween(room.checkin, todayISO()));
+  const charge = clampMoney(nightsUsed * (room.rate || 0));
+
+  const ok = await confirmAction({
+    title: `Release ${room.name}?`,
+    message: `${room.name} becomes available for other guests. ${nightsUsed} night${nightsUsed === 1 ? "" : "s"} already used (${fmtLKR(charge)}) goes onto ${room.guest}'s bill, and ${remaining.map(r => r.name).join(", ")} carr${remaining.length === 1 ? "ies" : "y"} on as normal.`,
+    confirmLabel: "Release Villa",
+    tone: "safe",
+  });
+  if (!ok) return;
+
+  const booking = BOOKINGS.find(b => b.id === room.bookingId);
+  const keeper = remaining[0];
+  if (charge > 0) {
+    chargeRoom(keeper, `${room.name} — ${nightsUsed} night${nightsUsed === 1 ? "" : "s"} (released ${formatDate(todayISO())})`,
+      nightsUsed, room.rate || 0, "villa");
+  }
+
+  // The booking has to stop claiming this villa, or checkout would sweep
+  // it back in and free a villa somebody else has since been given.
+  if (booking && Array.isArray(booking.roomIds)) {
+    booking.roomIds = booking.roomIds.filter(id => id !== room.id);
+    booking.villa = remaining.map(r => r.name).join(" + ");
+  }
+
+  // Anything already on this villa's own tab — food sent to that villa, a
+  // safari charged from it — belongs to the party, not to the room. Moved
+  // across rather than deleted, or releasing a villa would quietly wipe
+  // charges the guest has genuinely run up.
+  const carriedOver = room.pendingCharges || [];
+  if (carriedOver.length) {
+    if (!keeper.pendingCharges) keeper.pendingCharges = [];
+    keeper.pendingCharges.push(...carriedOver);
+  }
+
+  logRoomActivity(activeRoomRef.branch, room, room.guest, "Villa Released");
+  room.status = "available";
+  delete room.guest;
+  delete room.phone;
+  delete room.checkin;
+  delete room.checkout;
+  delete room.source;
+  delete room.pendingCharges;
+  delete room.bookingId;
+
+  showToast(`${room.name} released — ${fmtLKR(charge)} added to the bill`);
+  closeRoomDetail();
+  rerenderRooms();
+}
 
 // Undo a mistaken check-in — clears the room back to available without
 // generating an invoice, discarding whatever was on the tab.
