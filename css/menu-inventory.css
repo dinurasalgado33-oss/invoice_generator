@@ -415,3 +415,45 @@
   line-height: 1.35;
   margin-top: 2px;
 }
+
+/* Menu PDFs — two per property, matching the printed booklets. */
+.digital-menu-panel {
+  background: var(--white);
+  border: 1.5px solid var(--gold);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 16px;
+}
+.digital-menu-title { margin: 0; font-weight: 700; color: var(--maroon); font-size: 1rem; }
+.digital-menu-sub { margin: 2px 0 0; font-size: 0.82rem; color: var(--text-muted); }
+.menu-pdf-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.menu-pdf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+}
+.menu-pdf-meta { display: flex; flex-direction: column; min-width: 0; }
+.menu-pdf-name { font-weight: 700; font-size: 0.92rem; color: var(--text); }
+.menu-pdf-count { font-size: 0.76rem; color: var(--text-muted); }
+.menu-pdf-actions { display: flex; gap: 8px; flex: none; }
+.menu-pdf-actions button {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1.5px solid var(--maroon);
+  background: var(--white);
+  color: var(--maroon);
+}
+.menu-pdf-actions .menu-pdf-open { background: var(--maroon); color: var(--gold-light); }
+.menu-pdf-actions button:disabled { opacity: .6; cursor: default; }
+.digital-menu-panel .hint { margin: 10px 0 0; }

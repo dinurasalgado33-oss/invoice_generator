@@ -15,6 +15,7 @@ import "./rooms.js";
 import "./orders.js";
 import "./home.js";
 import "./menu.js";
+import "./menu-publish.js";
 import "./configure.js";
 import "./inventory.js";
 import "./dashboard.js";
