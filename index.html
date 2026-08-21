@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=112" />
-<link rel="stylesheet" href="css/brand-home.css?v=112" />
-<link rel="stylesheet" href="css/rooms.css?v=112" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=112" />
-<link rel="stylesheet" href="css/invoice.css?v=112" />
-<link rel="stylesheet" href="css/dashboard.css?v=112" />
-<link rel="stylesheet" href="css/reports.css?v=112" />
-<link rel="stylesheet" href="css/reservation.css?v=112" />
-  <link rel="stylesheet" href="css/grc.css?v=112" />
-  <link rel="stylesheet" href="css/proforma.css?v=112" />
-  <link rel="stylesheet" href="css/history.css?v=112" />
+<link rel="stylesheet" href="css/base.css?v=113" />
+<link rel="stylesheet" href="css/brand-home.css?v=113" />
+<link rel="stylesheet" href="css/rooms.css?v=113" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=113" />
+<link rel="stylesheet" href="css/invoice.css?v=113" />
+<link rel="stylesheet" href="css/dashboard.css?v=113" />
+<link rel="stylesheet" href="css/reports.css?v=113" />
+<link rel="stylesheet" href="css/reservation.css?v=113" />
+  <link rel="stylesheet" href="css/grc.css?v=113" />
+  <link rel="stylesheet" href="css/proforma.css?v=113" />
+  <link rel="stylesheet" href="css/history.css?v=113" />
 </head>
 <body>
 
@@ -648,6 +648,11 @@
             <label>Dish Name</label>
             <input type="text" id="dish-name" required autocapitalize="words" enterkeyhint="next" />
             <p class="field-error" id="dish-name-error">A dish with this name already exists</p>
+          </div>
+          <div class="field">
+            <label>Description <span class="label-optional">optional</span></label>
+            <input type="text" id="dish-description" autocapitalize="sentences" enterkeyhint="next" placeholder="e.g. Milk Rice · Chicken Curry · Katta Sambol" />
+            <p class="hint">The small line the printed menu sets under the dish name. Kept apart from the name so a bill reads "Sri Lankan I", not the whole contents list.</p>
           </div>
           <div class="form-grid">
             <div class="field">
@@ -2372,6 +2377,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=112"></script>
+<script type="module" src="js/main.js?v=113"></script>
 </body>
 </html>

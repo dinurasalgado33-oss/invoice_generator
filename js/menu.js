@@ -152,6 +152,7 @@ function openDishSheet(id, presetCategory = null) {
 
   document.getElementById("dish-sheet-title").textContent = dish ? `Edit Dish #${dish.number}` : "Add Dish";
   document.getElementById("dish-name").value = dish ? dish.name : "";
+  document.getElementById("dish-description").value = dish ? (dish.description || "") : "";
   document.getElementById("dish-price").value = dish ? dish.price : "";
   populateCategorySelect(dish ? dish.category : (presetCategory || MENU_CATEGORIES[0]));
   document.getElementById("dish-delete-btn").style.display = dish ? "" : "none";
@@ -215,6 +216,7 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
   const name = document.getElementById("dish-name").value.trim();
   const category = document.getElementById("dish-category").value;
   const price = parseFloat(document.getElementById("dish-price").value) || 0;
+  const description = document.getElementById("dish-description").value.trim();
   if (!name) return;
 
   const duplicate = MENU_ITEMS.some(d => d.id !== editingDishId && d.branch === appState.selectedBranch && d.name.trim().toLowerCase() === name.toLowerCase());
@@ -234,10 +236,10 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
 
   if (editingDishId) {
     const dish = MENU_ITEMS.find(d => d.id === editingDishId);
-    Object.assign(dish, { name, category, price, ingredients });
+    Object.assign(dish, { name, category, price, description, ingredients });
     showToast(`${name} updated`);
   } else {
-    MENU_ITEMS.push({ id: allocateDishId(), number: allocateDishNumber(appState.selectedBranch), name, category, price, ingredients, branch: appState.selectedBranch });
+    MENU_ITEMS.push({ id: allocateDishId(), number: allocateDishNumber(appState.selectedBranch), name, category, price, description, ingredients, branch: appState.selectedBranch });
     showToast(`${name} added`);
   }
 

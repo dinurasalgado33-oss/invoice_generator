@@ -93,6 +93,7 @@ function renderDishList() {
       <div class="food-order-row ${unpriced ? "is-unpriced" : ""}">
         <div class="food-order-info">
           <span class="food-order-name"><span class="food-order-number">#${dish.number}</span>${escapeHtml(dish.name)}</span>
+          ${dish.description ? `<span class="food-order-desc">${escapeHtml(dish.description)}</span>` : ""}
           <span class="food-order-price">${unpriced ? "No price set" : fmtLKR(dish.price)}</span>
         </div>
         ${unpriced ? `<span class="food-order-unpriced-note">A manager can set the price in Menu</span>` : `

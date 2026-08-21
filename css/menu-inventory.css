@@ -396,3 +396,22 @@
   max-width: 120px;
   line-height: 1.25;
 }
+
+/* "optional" beside a field label — quieter than the label itself. */
+.label-optional {
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* What the printed menu sets under a dish name — the same line, so staff
+   reading the order screen see what the guest is reading. */
+.food-order-desc {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}

@@ -5,11 +5,22 @@
 // silently the moment anything was renamed.)
 
 // Each branch runs its own menu — Arugam Bay is an à la carte beach-hotel
-// menu, Wilpattu is its own full-board price list — so dishes are scoped
-// by `branch` rather than shared across both. Category names are kept
-// as each source menu phrased them (e.g. "Soup" vs "Soups", "Dessert" vs
-// "Desserts") rather than force-merged, since the two branches' menus
-// are otherwise unrelated.
+// menu, Wilpattu is its own price list — so dishes are scoped by `branch`
+// rather than shared across both. Category names are kept as each source
+// menu phrases them (e.g. "Soup" vs "Soups") rather than force-merged,
+// since the two branches' menus are otherwise unrelated.
+
+// `description` is the line the printed menus set in small italics under a
+// dish name — "· Milk Rice · Chicken Curry · Katta Sambol". It is held
+// apart from `name` because the printed menu sets the two differently, and
+// because a bill wants the name alone: "Sri Lankan I", not the whole
+// contents list. Empty for most dishes, which print as a single line.
+
+// Transcribed from the hotel's own menus (Arugam Bay main + cocktail,
+// Wilpattu "2026-07-01 updated menu"). Where a printed menu contradicted
+// itself the corrected reading is used and noted; those are the only
+// departures from the paper.
+
 export const MENU_CATEGORIES = [
   // Arugam Bay
   "Breakfast - Sri Lankan",
@@ -33,10 +44,11 @@ export const MENU_CATEGORIES = [
   "Milkshake & Juices - Milkshake",
   "Milkshake & Juices - Smoothies",
   "Milkshake & Juices - Fresh Juice",
+  "Cocktails",
+  "Mocktails",
   // Wilpattu
   "Fresh Juice",
   "Soft Drinks",
-  "Alcoholic Beverages",
   "Hot Beverages",
   "Packages & Snack Packs",
   "Breakfast",
@@ -46,205 +58,279 @@ export const MENU_CATEGORIES = [
   "Desserts",
 ];
 
-// Ingredients are intentionally left empty across the board — being filled
-// in gradually as real recipe/stock data comes in.
-//
-// Price 0 below is a placeholder, not a real price — a handful of Arugam
-// Bay items (Cheese & Creamy Pasta, all five Spaghetti variants) had no
-// price listed in the source extract at all. Fix those before relying on
-// Food Order to bill them.
+const AB = "Arugam Bay";
+const WP = "Wilpattu";
+
+// id is the internal key; number is what the printed menu and the staff
+// screens show, counted per branch.
+function dish(id, number, name, category, price, branch, description = "") {
+  return { id, number, name, category, price, description, ingredients: [], branch };
+}
+
 export const MENU_ITEMS = [
-  // ---- Arugam Bay Beachfront Hotel ----
-  { id: 1, number: 1, name: "Sri Lankan I (Milk Rice, Chicken Curry, Katta Sambol, Tea or Coffee)", category: "Breakfast - Sri Lankan", price: 1850, ingredients: [], branch: "Arugam Bay" },
-  { id: 2, number: 2, name: "Sri Lankan II (Roti, Katta Sambol, Chicken Curry, Dhal Curry, Tea or Coffee)", category: "Breakfast - Sri Lankan", price: 1850, ingredients: [], branch: "Arugam Bay" },
-  { id: 3, number: 3, name: "Indian Breakfast (Thosa x4, Red & Green Chutney, Tea or Coffee)", category: "Breakfast - Indian", price: 1850, ingredients: [], branch: "Arugam Bay" },
-  { id: 4, number: 4, name: "English Breakfast (Toast x2, Grilled Sausage x3, Egg, Fruit Plate, Fruit Juice)", category: "Breakfast - English", price: 1850, ingredients: [], branch: "Arugam Bay" },
+  // ================= Arugam Bay Beachfront Hotel =================
+  // "All prices are in Sri Lankan Rupees (LKR)"
+  // "Our seafood is sourced fresh on the day — kindly place seafood
+  //  orders at least 4 hours in advance."
 
-  { id: 5, number: 5, name: "Chicken Soup", category: "Soup", price: 990, ingredients: [], branch: "Arugam Bay" },
-  { id: 6, number: 6, name: "Vegetable Soup", category: "Soup", price: 990, ingredients: [], branch: "Arugam Bay" },
-  { id: 7, number: 7, name: "Mushroom Soup", category: "Soup", price: 990, ingredients: [], branch: "Arugam Bay" },
+  // ---- Breakfast ----
+  dish(1, 1, "Sri Lankan I", "Breakfast - Sri Lankan", 1850, AB,
+    "Milk Rice · Chicken Curry · Katta Sambol · Tea or Coffee"),
+  dish(2, 2, "Sri Lankan II", "Breakfast - Sri Lankan", 1850, AB,
+    "Roti · Katta Sambol · Chicken Curry · Dhal Curry · Tea or Coffee"),
+  dish(3, 3, "Indian Breakfast", "Breakfast - Indian", 1850, AB,
+    "Thosa (04) · Red & Green Chutney · Tea or Coffee"),
+  dish(4, 4, "English Breakfast", "Breakfast - English", 1850, AB,
+    "Toast Bread (02) · Grilled Sausage (03) · Egg (01) – Omelette, Scrambled, Boiled or Poached · Fruit Plate · Fruit Juice"),
 
-  { id: 8, number: 8, name: "Fried Egg Omelette", category: "Side Dishes", price: 600, ingredients: [], branch: "Arugam Bay" },
-  { id: 9, number: 9, name: "French Fries", category: "Side Dishes", price: 1100, ingredients: [], branch: "Arugam Bay" },
-  { id: 10, number: 10, name: "Grilled Sausage", category: "Side Dishes", price: 1350, ingredients: [], branch: "Arugam Bay" },
-  { id: 11, number: 11, name: "Fried Chicken", category: "Side Dishes", price: 1400, ingredients: [], branch: "Arugam Bay" },
-  { id: 12, number: 12, name: "Chicken Devilled", category: "Side Dishes", price: 1450, ingredients: [], branch: "Arugam Bay" },
-  { id: 13, number: 13, name: "Fried Pork", category: "Side Dishes", price: 1750, ingredients: [], branch: "Arugam Bay" },
-  { id: 14, number: 14, name: "Pork Devilled", category: "Side Dishes", price: 1850, ingredients: [], branch: "Arugam Bay" },
-  { id: 15, number: 15, name: "Beef Fried", category: "Side Dishes", price: 1800, ingredients: [], branch: "Arugam Bay" },
-  { id: 16, number: 16, name: "Beef Devilled", category: "Side Dishes", price: 1900, ingredients: [], branch: "Arugam Bay" },
+  // ---- Soup ----
+  dish(5, 5, "Chicken Soup", "Soup", 990, AB),
+  dish(6, 6, "Vegetable Soup", "Soup", 990, AB),
+  dish(7, 7, "Mushroom Soup", "Soup", 990, AB),
 
-  { id: 17, number: 17, name: "Vegetable Fried Rice", category: "Main Courses - Rice", price: 950, ingredients: [], branch: "Arugam Bay" },
-  { id: 18, number: 18, name: "Egg Fried Rice", category: "Main Courses - Rice", price: 1000, ingredients: [], branch: "Arugam Bay" },
-  { id: 19, number: 19, name: "Chicken Fried Rice", category: "Main Courses - Rice", price: 1150, ingredients: [], branch: "Arugam Bay" },
-  { id: 20, number: 20, name: "Pork Fried Rice", category: "Main Courses - Rice", price: 1400, ingredients: [], branch: "Arugam Bay" },
-  { id: 21, number: 21, name: "Beef Fried Rice", category: "Main Courses - Rice", price: 1400, ingredients: [], branch: "Arugam Bay" },
+  // ---- Side Dishes ----
+  dish(8, 8, "Fried Egg Omelette", "Side Dishes", 600, AB),
+  dish(9, 9, "French Fries", "Side Dishes", 1100, AB),
+  dish(10, 10, "Grilled Sausage", "Side Dishes", 1350, AB),
+  dish(11, 11, "Fried Chicken", "Side Dishes", 1400, AB),
+  dish(12, 12, "Chicken Devilled", "Side Dishes", 1450, AB),
+  dish(13, 13, "Fried Pork", "Side Dishes", 1750, AB),
+  dish(14, 14, "Pork Devilled", "Side Dishes", 1850, AB),
+  dish(15, 15, "Beef Fried", "Side Dishes", 1800, AB),
+  dish(16, 16, "Beef Devilled", "Side Dishes", 1900, AB),
 
-  { id: 22, number: 22, name: "Vegetable Kottu", category: "Main Courses - Kottu", price: 950, ingredients: [], branch: "Arugam Bay" },
-  { id: 23, number: 23, name: "Egg Kottu", category: "Main Courses - Kottu", price: 1000, ingredients: [], branch: "Arugam Bay" },
-  { id: 24, number: 24, name: "Chicken Kottu", category: "Main Courses - Kottu", price: 1200, ingredients: [], branch: "Arugam Bay" },
-  { id: 25, number: 25, name: "Beef Kottu", category: "Main Courses - Kottu", price: 1500, ingredients: [], branch: "Arugam Bay" },
-  { id: 26, number: 26, name: "Pork Kottu", category: "Main Courses - Kottu", price: 1500, ingredients: [], branch: "Arugam Bay" },
+  // ---- Main Courses (per person) ----
+  dish(17, 17, "Vegetable Fried Rice", "Main Courses - Rice", 950, AB),
+  dish(18, 18, "Egg Fried Rice", "Main Courses - Rice", 1000, AB),
+  dish(19, 19, "Chicken Fried Rice", "Main Courses - Rice", 1150, AB),
+  dish(20, 20, "Pork Fried Rice", "Main Courses - Rice", 1400, AB),
+  dish(21, 21, "Beef Fried Rice", "Main Courses - Rice", 1400, AB),
 
-  { id: 27, number: 27, name: "Vegetable Noodles", category: "Main Courses - Noodles", price: 800, ingredients: [], branch: "Arugam Bay" },
-  { id: 28, number: 28, name: "Egg Noodles", category: "Main Courses - Noodles", price: 850, ingredients: [], branch: "Arugam Bay" },
-  { id: 29, number: 29, name: "Chicken Noodles", category: "Main Courses - Noodles", price: 1000, ingredients: [], branch: "Arugam Bay" },
-  { id: 30, number: 30, name: "Pork Noodles", category: "Main Courses - Noodles", price: 1200, ingredients: [], branch: "Arugam Bay" },
-  { id: 31, number: 31, name: "Beef Noodles", category: "Main Courses - Noodles", price: 1200, ingredients: [], branch: "Arugam Bay" },
+  dish(22, 22, "Vegetable Kottu", "Main Courses - Kottu", 950, AB),
+  dish(23, 23, "Egg Kottu", "Main Courses - Kottu", 1000, AB),
+  // Settles the 1,200 / 1,500 disagreement in the old spreadsheet: the
+  // printed menu prices Chicken Kottu at 1,200, with Beef and Pork at 1,500.
+  dish(24, 24, "Chicken Kottu", "Main Courses - Kottu", 1200, AB),
+  dish(25, 25, "Beef Kottu", "Main Courses - Kottu", 1500, AB),
+  dish(26, 26, "Pork Kottu", "Main Courses - Kottu", 1500, AB),
 
-  { id: 32, number: 32, name: "Vegetable Pasta", category: "Main Courses - Pasta", price: 1000, ingredients: [], branch: "Arugam Bay" },
-  { id: 33, number: 33, name: "Egg Pasta", category: "Main Courses - Pasta", price: 1100, ingredients: [], branch: "Arugam Bay" },
-  { id: 34, number: 34, name: "Chicken Pasta", category: "Main Courses - Pasta", price: 1200, ingredients: [], branch: "Arugam Bay" },
-  { id: 35, number: 35, name: "Pork Pasta", category: "Main Courses - Pasta", price: 1400, ingredients: [], branch: "Arugam Bay" },
-  { id: 36, number: 36, name: "Beef Pasta", category: "Main Courses - Pasta", price: 1400, ingredients: [], branch: "Arugam Bay" },
-  { id: 37, number: 37, name: "Cheese & Creamy Pasta (Extra Cheese: +LKR 300)", category: "Main Courses - Pasta", price: 0, ingredients: [], branch: "Arugam Bay" },
+  dish(27, 27, "Vegetable Noodles", "Main Courses - Noodles", 800, AB),
+  dish(28, 28, "Egg Noodles", "Main Courses - Noodles", 850, AB),
+  dish(29, 29, "Chicken Noodles", "Main Courses - Noodles", 1000, AB),
+  dish(30, 30, "Pork Noodles", "Main Courses - Noodles", 1200, AB),
+  dish(31, 31, "Beef Noodles", "Main Courses - Noodles", 1200, AB),
 
-  { id: 38, number: 38, name: "Vegetable Spaghetti", category: "Main Courses - Spaghetti", price: 0, ingredients: [], branch: "Arugam Bay" },
-  { id: 39, number: 39, name: "Egg Spaghetti", category: "Main Courses - Spaghetti", price: 0, ingredients: [], branch: "Arugam Bay" },
-  { id: 40, number: 40, name: "Chicken Spaghetti", category: "Main Courses - Spaghetti", price: 0, ingredients: [], branch: "Arugam Bay" },
-  { id: 41, number: 41, name: "Pork Spaghetti", category: "Main Courses - Spaghetti", price: 0, ingredients: [], branch: "Arugam Bay" },
-  { id: 42, number: 42, name: "Beef Spaghetti", category: "Main Courses - Spaghetti", price: 0, ingredients: [], branch: "Arugam Bay" },
+  dish(32, 32, "Vegetable Pasta", "Main Courses - Pasta", 1000, AB),
+  dish(33, 33, "Egg Pasta", "Main Courses - Pasta", 1100, AB),
+  dish(34, 34, "Chicken Pasta", "Main Courses - Pasta", 1200, AB),
+  dish(35, 35, "Pork Pasta", "Main Courses - Pasta", 1400, AB),
+  dish(36, 36, "Beef Pasta", "Main Courses - Pasta", 1400, AB),
+  // The printed menu prints "XXX" against this one — still genuinely
+  // unpriced, so it stays at 0 and the app refuses to put it on a bill.
+  dish(37, 37, "Cheese & Creamy Pasta", "Main Courses - Pasta", 0, AB,
+    "extra cheese +300"),
 
-  { id: 43, number: 43, name: "Rice & Curry (Kiri Samba, Dhal Curry, Crab/Prawn Curry, Papadum, 1 Vegetable Pot)", category: "Main Courses - Lunch & Dinner (Rice & Curry)", price: 1950, ingredients: [], branch: "Arugam Bay" },
-  { id: 44, number: 44, name: "Rice & Curry (3 Curries)", category: "Main Courses - Lunch & Dinner (Rice & Curry)", price: 2150, ingredients: [], branch: "Arugam Bay" },
-  { id: 45, number: 45, name: "Rice & Curry (4 Curries)", category: "Main Courses - Lunch & Dinner (Rice & Curry)", price: 2500, ingredients: [], branch: "Arugam Bay" },
-  { id: 46, number: 46, name: "Rice & Curry (5 Curries)", category: "Main Courses - Lunch & Dinner (Rice & Curry)", price: 2700, ingredients: [], branch: "Arugam Bay" },
+  dish(38, 38, "Vegetable Spaghetti", "Main Courses - Spaghetti", 1100, AB),
+  dish(39, 39, "Egg Spaghetti", "Main Courses - Spaghetti", 1200, AB),
+  dish(40, 40, "Chicken Spaghetti", "Main Courses - Spaghetti", 1300, AB),
+  dish(41, 41, "Pork Spaghetti", "Main Courses - Spaghetti", 1500, AB),
+  dish(42, 42, "Beef Spaghetti", "Main Courses - Spaghetti", 1500, AB),
 
-  { id: 47, number: 47, name: "Seafood Combo (Hot Butter Cuttlefish, Prawn Devilled, Crumb Fried Fish x3, Prawn Cutlets, Egg Rice, Sauces)", category: "Seafood & Mixed Grill", price: 8000, ingredients: [], branch: "Arugam Bay" },
-  { id: 48, number: 48, name: "Mixed Grill Seafood Combo (Lobster, Seafood Kebab x4, Jumbo Prawn x4, Crumb Fried Prawn x8, Grilled Cuttlefish x4, Sauces)", category: "Seafood & Mixed Grill", price: 8000, ingredients: [], branch: "Arugam Bay" },
+  // The printed menu garbles these four: it lists "3 Curries / 4 Curries /
+  // 5 Curries" under each of the last three and reuses number 45 twice.
+  // The prices are unambiguous, so each is given its own curry count.
+  dish(43, 43, "Rice & Curry", "Main Courses - Lunch & Dinner (Rice & Curry)", 1950, AB,
+    "Kiri Samba · Dhal Curry · One Vegetable Pot · Crab / Prawn Curry · Papadum — includes Prawn Curry (08) and Crab Curry (01)"),
+  dish(44, 44, "Rice & Curry — 3 Curries", "Main Courses - Lunch & Dinner (Rice & Curry)", 2150, AB,
+    "Kiri Samba · Dhal Curry · Crab / Prawn Curry · Papadum — includes Prawn Curry (08) and Crab Curry (01)"),
+  dish(45, 45, "Rice & Curry — 4 Curries", "Main Courses - Lunch & Dinner (Rice & Curry)", 2500, AB,
+    "Kiri Samba · Dhal Curry · Crab / Prawn Curry · Papadum — includes Prawn Curry (08) and Crab Curry (01)"),
+  dish(46, 46, "Rice & Curry — 5 Curries", "Main Courses - Lunch & Dinner (Rice & Curry)", 2700, AB,
+    "Kiri Samba · Dhal Curry · Crab / Prawn Curry · Papadum — includes Prawn Curry (08) and Crab Curry (01)"),
 
-  { id: 49, number: 49, name: "Vegetable Chop Suey", category: "Vegetarian", price: 1300, ingredients: [], branch: "Arugam Bay" },
-  { id: 50, number: 50, name: "Boiled Vegetable & Mashed Potato", category: "Vegetarian", price: 1800, ingredients: [], branch: "Arugam Bay" },
+  // Printed as 44 and 45, colliding with the Rice & Curry numbers above.
+  // Renumbered so no two dishes on one menu share a number.
+  dish(47, 47, "Seafood Combo", "Seafood & Mixed Grill", 8000, AB,
+    "Hot Butter Cuttlefish · Prawn Devilled · Bread Crumb Fried Fish Slice (03) · Prawn Cutlets · Egg Rice · Ketchup & Chilli Paste"),
+  dish(48, 48, "Mixed Grill Seafood Combo", "Seafood & Mixed Grill", 8000, AB,
+    "Lobster (01) · Seafood Kebab (04) · Jumbo Prawn (04) · Crumb Fried Prawn (08) · Grilled Cuttlefish (04) · Butter Sauce, Tomato Sauce & Lemon Slice"),
 
-  { id: 51, number: 51, name: "Egg Sandwich with Fries & Ketchup", category: "Sandwiches & Burgers - Sandwich", price: 1100, ingredients: [], branch: "Arugam Bay" },
-  { id: 52, number: 52, name: "Chicken Sandwich", category: "Sandwiches & Burgers - Sandwich", price: 1300, ingredients: [], branch: "Arugam Bay" },
-  { id: 53, number: 53, name: "Tuna Sandwich", category: "Sandwiches & Burgers - Sandwich", price: 1500, ingredients: [], branch: "Arugam Bay" },
+  dish(49, 49, "Vegetable Chop Suey", "Vegetarian", 1300, AB),
+  dish(50, 50, "Boiled Vegetable & Mashed Potato", "Vegetarian", 1800, AB),
 
-  { id: 54, number: 54, name: "Chicken Burger with Fries & Ketchup", category: "Sandwiches & Burgers - Burger", price: 1800, ingredients: [], branch: "Arugam Bay" },
-  { id: 55, number: 55, name: "Beef Burger with Fries & Ketchup", category: "Sandwiches & Burgers - Burger", price: 1900, ingredients: [], branch: "Arugam Bay" },
-  { id: 56, number: 56, name: "Submarine", category: "Sandwiches & Burgers - Burger", price: 1900, ingredients: [], branch: "Arugam Bay" },
+  // ---- Sandwiches & Burgers ----
+  dish(51, 51, "Egg Sandwich with Fries & Ketchup", "Sandwiches & Burgers - Sandwich", 1100, AB),
+  dish(52, 52, "Chicken Sandwich", "Sandwiches & Burgers - Sandwich", 1300, AB),
+  dish(53, 53, "Tuna Sandwich", "Sandwiches & Burgers - Sandwich", 1500, AB),
+  dish(54, 54, "Chicken Burger with Fries & Ketchup", "Sandwiches & Burgers - Burger", 1800, AB),
+  dish(55, 55, "Beef Burger with Fries & Ketchup", "Sandwiches & Burgers - Burger", 1900, AB),
+  dish(56, 56, "Submarine", "Sandwiches & Burgers - Burger", 1900, AB),
 
-  { id: 57, number: 57, name: "Chocolate Ice Cream", category: "Dessert", price: 450, ingredients: [], branch: "Arugam Bay" },
-  { id: 58, number: 58, name: "Vanilla Ice Cream", category: "Dessert", price: 450, ingredients: [], branch: "Arugam Bay" },
-  { id: 59, number: 59, name: "Fresh Yogurt (Vanilla, Honey Ice Cream & Cashew)", category: "Dessert", price: 1800, ingredients: [], branch: "Arugam Bay" },
+  // ---- Dessert ----
+  dish(57, 57, "Chocolate Ice Cream", "Dessert", 450, AB),
+  dish(58, 58, "Vanilla Ice Cream", "Dessert", 450, AB),
+  dish(59, 59, "Fresh Yogurt", "Dessert", 1800, AB,
+    "Special Vanilla, Honey Ice Cream & Cashew"),
 
-  { id: 60, number: 60, name: "Black Tea", category: "Beverages - Hot Beverages", price: 250, ingredients: [], branch: "Arugam Bay" },
-  { id: 61, number: 61, name: "Ginger Tea", category: "Beverages - Hot Beverages", price: 300, ingredients: [], branch: "Arugam Bay" },
-  { id: 62, number: 62, name: "Milk Tea", category: "Beverages - Hot Beverages", price: 350, ingredients: [], branch: "Arugam Bay" },
-  { id: 63, number: 63, name: "Black Coffee", category: "Beverages - Hot Beverages", price: 400, ingredients: [], branch: "Arugam Bay" },
-  { id: 64, number: 64, name: "Milk Coffee", category: "Beverages - Hot Beverages", price: 450, ingredients: [], branch: "Arugam Bay" },
-  { id: 65, number: 65, name: "Hot Chocolate", category: "Beverages - Hot Beverages", price: 550, ingredients: [], branch: "Arugam Bay" },
+  // ---- Beverages ----
+  dish(60, 60, "Black Tea", "Beverages - Hot Beverages", 250, AB),
+  dish(61, 61, "Ginger Tea", "Beverages - Hot Beverages", 300, AB),
+  dish(62, 62, "Milk Tea", "Beverages - Hot Beverages", 350, AB),
+  dish(63, 63, "Black Coffee", "Beverages - Hot Beverages", 400, AB),
+  dish(64, 64, "Milk Coffee", "Beverages - Hot Beverages", 450, AB),
+  dish(65, 65, "Hot Chocolate", "Beverages - Hot Beverages", 550, AB),
 
-  { id: 66, number: 66, name: "Coca-Cola", category: "Beverages - Soft Drinks", price: 250, ingredients: [], branch: "Arugam Bay" },
-  { id: 67, number: 67, name: "Sprite", category: "Beverages - Soft Drinks", price: 250, ingredients: [], branch: "Arugam Bay" },
-  { id: 68, number: 68, name: "Ginger Beer", category: "Beverages - Soft Drinks", price: 250, ingredients: [], branch: "Arugam Bay" },
-  { id: 69, number: 69, name: "Soda", category: "Beverages - Soft Drinks", price: 250, ingredients: [], branch: "Arugam Bay" },
-  { id: 70, number: 70, name: "Snack Mix Fruit", category: "Beverages - Soft Drinks", price: 250, ingredients: [], branch: "Arugam Bay" },
-  { id: 71, number: 71, name: "Water Bottle", category: "Beverages - Soft Drinks", price: 200, ingredients: [], branch: "Arugam Bay" },
+  dish(66, 66, "Coca-Cola", "Beverages - Soft Drinks", 250, AB),
+  dish(67, 67, "Sprite", "Beverages - Soft Drinks", 250, AB),
+  dish(68, 68, "Ginger Beer", "Beverages - Soft Drinks", 250, AB),
+  dish(69, 69, "Soda", "Beverages - Soft Drinks", 250, AB),
+  dish(70, 70, "Snack Mix Fruit", "Beverages - Soft Drinks", 250, AB),
+  dish(71, 71, "Water Bottle", "Beverages - Soft Drinks", 200, AB),
 
-  { id: 72, number: 72, name: "Vanilla Milkshake", category: "Milkshake & Juices - Milkshake", price: 1400, ingredients: [], branch: "Arugam Bay" },
-  { id: 73, number: 73, name: "Strawberry Milkshake", category: "Milkshake & Juices - Milkshake", price: 1400, ingredients: [], branch: "Arugam Bay" },
-  { id: 74, number: 74, name: "Chocolate Milkshake", category: "Milkshake & Juices - Milkshake", price: 1400, ingredients: [], branch: "Arugam Bay" },
+  dish(72, 72, "Vanilla Milkshake", "Milkshake & Juices - Milkshake", 1100, AB),
+  dish(73, 73, "Strawberry Milkshake", "Milkshake & Juices - Milkshake", 1100, AB),
+  dish(74, 74, "Chocolate Milkshake", "Milkshake & Juices - Milkshake", 1100, AB),
 
-  { id: 75, number: 75, name: "Banana Smoothie", category: "Milkshake & Juices - Smoothies", price: 1100, ingredients: [], branch: "Arugam Bay" },
-  { id: 76, number: 76, name: "Pineapple Smoothie", category: "Milkshake & Juices - Smoothies", price: 1100, ingredients: [], branch: "Arugam Bay" },
-  { id: 77, number: 77, name: "Mango Smoothie", category: "Milkshake & Juices - Smoothies", price: 1100, ingredients: [], branch: "Arugam Bay" },
+  dish(75, 75, "Banana Smoothie", "Milkshake & Juices - Smoothies", 1400, AB),
+  dish(76, 76, "Pineapple Smoothie", "Milkshake & Juices - Smoothies", 1400, AB),
+  dish(77, 77, "Mango Smoothie", "Milkshake & Juices - Smoothies", 1400, AB),
 
-  { id: 78, number: 78, name: "Papaya Juice", category: "Milkshake & Juices - Fresh Juice", price: 880, ingredients: [], branch: "Arugam Bay" },
-  { id: 79, number: 79, name: "Banana Juice", category: "Milkshake & Juices - Fresh Juice", price: 880, ingredients: [], branch: "Arugam Bay" },
-  { id: 80, number: 80, name: "Pineapple Juice", category: "Milkshake & Juices - Fresh Juice", price: 880, ingredients: [], branch: "Arugam Bay" },
-  { id: 81, number: 81, name: "Watermelon Juice", category: "Milkshake & Juices - Fresh Juice", price: 880, ingredients: [], branch: "Arugam Bay" },
-  { id: 82, number: 82, name: "Lemon Juice", category: "Milkshake & Juices - Fresh Juice", price: 880, ingredients: [], branch: "Arugam Bay" },
-  { id: 83, number: 83, name: "Mango Juice", category: "Milkshake & Juices - Fresh Juice", price: 880, ingredients: [], branch: "Arugam Bay" },
+  dish(78, 78, "Papaya Juice", "Milkshake & Juices - Fresh Juice", 880, AB),
+  dish(79, 79, "Banana Juice", "Milkshake & Juices - Fresh Juice", 880, AB),
+  dish(80, 80, "Pineapple Juice", "Milkshake & Juices - Fresh Juice", 880, AB),
+  dish(81, 81, "Watermelon Juice", "Milkshake & Juices - Fresh Juice", 880, AB),
+  dish(82, 82, "Lemon Juice", "Milkshake & Juices - Fresh Juice", 880, AB),
+  dish(83, 83, "Mango Juice", "Milkshake & Juices - Fresh Juice", 880, AB),
 
-  // ---- Leopard Inn Wilpattu (updated 2026-07-01 price list) ----
-  { id: 84, number: 1, name: "Papaya Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 85, number: 2, name: "Orange Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 86, number: 3, name: "Banana Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 87, number: 4, name: "Pineapple Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 88, number: 5, name: "King Coconut", category: "Fresh Juice", price: 980, ingredients: [], branch: "Wilpattu" },
-  { id: 89, number: 6, name: "Watermelon Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 90, number: 7, name: "Apple Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 91, number: 8, name: "Lemon Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
-  { id: 92, number: 9, name: "Mango Juice", category: "Fresh Juice", price: 880, ingredients: [], branch: "Wilpattu" },
+  // ---- Cocktail menu (its own printed booklet, numbered 1-8 there) ----
+  // These existed only on paper: staff had no way to ring up a single
+  // drink from this menu.
+  dish(84, 84, "Tropical Moon", "Cocktails", 850, AB,
+    "Red Rum · Pineapple Juice · Passion fruit Juice"),
+  dish(85, 85, "Screwdriver", "Cocktails", 950, AB,
+    "Vodka · Orange Juice"),
+  dish(86, 86, "Cuba Libra", "Cocktails", 1200, AB,
+    "Red Rum · Fresh Lime · Top with Coke"),
+  dish(87, 87, "Mojito", "Cocktails", 1200, AB,
+    "Red Rum · Fresh Lime · Mint Leaves · Top with Sprite"),
+  dish(88, 88, "Salt SaDi Cocktail", "Cocktails", 1400, AB,
+    "Beer · Sprite · Fresh Lime · Ice Cube"),
+  dish(89, 89, "Sugar SaDi Cocktail", "Cocktails", 1400, AB,
+    "Beer · Sprite · Fresh Lime · Ice Cube"),
+  dish(90, 90, "Chilli SaDi Cocktail", "Cocktails", 1400, AB,
+    "Beer · Sprite · Fresh Lime · Ice Cube"),
+  dish(91, 91, "Leopard Inn Special (Cocktail)", "Cocktails", 1500, AB,
+    "Vodka · Fresh Lime · Top with Sprite"),
 
-  { id: 93, number: 10, name: "Coca-Cola", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 94, number: 11, name: "Sprite", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 95, number: 12, name: "Ginger Beer", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 96, number: 13, name: "Bottled Smack Mixed Fruit", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 97, number: 14, name: "Soda", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 98, number: 15, name: "Water Bottle", category: "Soft Drinks", price: 200, ingredients: [], branch: "Wilpattu" },
+  // The printed menu gives the cocktail and the mocktail the same name.
+  // Kept apart here, or a staff member searching "Leopard Inn Special"
+  // has no way to tell which drink they are ringing up.
+  dish(92, 92, "Leopard Inn Special (Mocktail)", "Mocktails", 1500, AB,
+    "Fresh Lime · Sugar Syrup · Top with Sprite"),
+  dish(93, 93, "Virgin Pina Colada", "Mocktails", 1500, AB,
+    "Pineapple Juice · Coconut Milk"),
 
-  { id: 99, number: 16, name: "Black Coffee", category: "Hot Beverages", price: 400, ingredients: [], branch: "Wilpattu" },
-  { id: 100, number: 17, name: "Milk Coffee", category: "Hot Beverages", price: 450, ingredients: [], branch: "Wilpattu" },
-  { id: 101, number: 18, name: "Black Tea", category: "Hot Beverages", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 102, number: 19, name: "Milk Tea", category: "Hot Beverages", price: 350, ingredients: [], branch: "Wilpattu" },
-  { id: 103, number: 20, name: "Ginger Tea", category: "Hot Beverages", price: 300, ingredients: [], branch: "Wilpattu" },
-  { id: 104, number: 21, name: "Hot Chocolate", category: "Hot Beverages", price: 500, ingredients: [], branch: "Wilpattu" },
+  // ===================== Wilpattu Forest Retreat =====================
+  // From the "2026-07-01 updated menu", numbered 1-68 there.
 
-  { id: 105, number: 22, name: "Leopard Inn Tea/Coffee Package (Tea/Coffee, Sponge Cake, Chinese Roll)", category: "Packages & Snack Packs", price: 650, ingredients: [], branch: "Wilpattu" },
-  { id: 106, number: 23, name: "Safari Tea Pack (Tea/Coffee x2, Sponge Cake x2, Chinese Roll x2, Water Bottle 500ml)", category: "Packages & Snack Packs", price: 1300, ingredients: [], branch: "Wilpattu" },
-  { id: 107, number: 24, name: "Safari/Boat Ride Snack Pack (Sponge Cake x2, Nick Nack Chocolate x2, Gold Mari/Hawaiian Cookies x2, Mix Fruit Juice 200ml x2, Water Bottle 500ml, Malibun Chickbits 80g)", category: "Packages & Snack Packs", price: 1500, ingredients: [], branch: "Wilpattu" },
+  // ---- Cold Beverages ----
+  dish(101, 1, "Papaya Juice", "Fresh Juice", 880, WP),
+  dish(102, 2, "Orange Juice", "Fresh Juice", 880, WP),
+  dish(103, 3, "Banana Juice", "Fresh Juice", 880, WP),
+  dish(104, 4, "Pineapple Juice", "Fresh Juice", 880, WP),
+  dish(105, 5, "King Coconut", "Fresh Juice", 980, WP),
+  dish(106, 6, "Watermelon Juice", "Fresh Juice", 880, WP),
+  dish(107, 7, "Apple Juice", "Fresh Juice", 880, WP),
+  dish(108, 8, "Lemon Juice", "Fresh Juice", 880, WP),
+  dish(109, 9, "Mango Juice", "Fresh Juice", 880, WP),
 
-  { id: 108, number: 25, name: "English Breakfast (Toast Bread, 3 Grilled Sausages, Egg, Juice, Fruit Plate)", category: "Breakfast", price: 1850, ingredients: [], branch: "Wilpattu" },
-  { id: 109, number: 26, name: "Sri Lankan Breakfast Option 1 (10 String Hoppers, Chicken Curry, Dhal Curry, Pol Sambol, Tea/Coffee)", category: "Breakfast", price: 1750, ingredients: [], branch: "Wilpattu" },
-  { id: 110, number: 27, name: "Sri Lankan Breakfast Option 2 (4 Rotti, Katta/Pol Sambol, Chicken Curry, Dhal Curry, Tea/Coffee)", category: "Breakfast", price: 1750, ingredients: [], branch: "Wilpattu" },
-  { id: 111, number: 28, name: "Sri Lankan Breakfast Option 3 (Mung Bean, Scraped Coconut, Katta Sambol, Sugar, Tea/Coffee)", category: "Breakfast", price: 1750, ingredients: [], branch: "Wilpattu" },
-  { id: 112, number: 29, name: "Indian Breakfast (Chapathi x4, Chicken Curry, Potato, Masala Tea/Coffee)", category: "Breakfast", price: 1750, ingredients: [], branch: "Wilpattu" },
+  dish(110, 10, "Coca-Cola", "Soft Drinks", 250, WP),
+  dish(111, 11, "Sprite", "Soft Drinks", 250, WP),
+  dish(112, 12, "Ginger Beer", "Soft Drinks", 250, WP),
+  dish(113, 13, "Bottled Snack Mixed Fruit", "Soft Drinks", 250, WP),
+  dish(114, 14, "Soda", "Soft Drinks", 250, WP),
+  dish(115, 15, "Water Bottle", "Soft Drinks", 200, WP),
 
-  { id: 113, number: 30, name: "Egg Fried Rice", category: "Lunch & Dinner - Main Courses", price: 950, ingredients: [], branch: "Wilpattu" },
-  { id: 114, number: 31, name: "Chicken Fried Rice", category: "Lunch & Dinner - Main Courses", price: 1050, ingredients: [], branch: "Wilpattu" },
-  { id: 115, number: 32, name: "Vegetable Fried Rice", category: "Lunch & Dinner - Main Courses", price: 900, ingredients: [], branch: "Wilpattu" },
-  { id: 116, number: 33, name: "Pork Fried Rice", category: "Lunch & Dinner - Main Courses", price: 1300, ingredients: [], branch: "Wilpattu" },
-  { id: 117, number: 34, name: "Beef Fried Rice", category: "Lunch & Dinner - Main Courses", price: 1400, ingredients: [], branch: "Wilpattu" },
-  { id: 118, number: 35, name: "Chopsuey Rice", category: "Lunch & Dinner - Main Courses", price: 1400, ingredients: [], branch: "Wilpattu" },
-  { id: 119, number: 36, name: "Boiled Vegetables", category: "Lunch & Dinner - Main Courses", price: 1100, ingredients: [], branch: "Wilpattu" },
-  { id: 120, number: 37, name: "Vegetable Chopsuey", category: "Lunch & Dinner - Main Courses", price: 1000, ingredients: [], branch: "Wilpattu" },
-  { id: 121, number: 38, name: "Vegetable Pasta", category: "Lunch & Dinner - Main Courses", price: 1000, ingredients: [], branch: "Wilpattu" },
-  { id: 122, number: 39, name: "Egg Pasta", category: "Lunch & Dinner - Main Courses", price: 1100, ingredients: [], branch: "Wilpattu" },
-  { id: 123, number: 40, name: "Chicken Pasta", category: "Lunch & Dinner - Main Courses", price: 1200, ingredients: [], branch: "Wilpattu" },
-  { id: 124, number: 41, name: "Spaghetti", category: "Lunch & Dinner - Main Courses", price: 1050, ingredients: [], branch: "Wilpattu" },
-  { id: 125, number: 42, name: "Vegetable Kottu", category: "Lunch & Dinner - Main Courses", price: 900, ingredients: [], branch: "Wilpattu" },
-  { id: 126, number: 43, name: "Egg Kottu", category: "Lunch & Dinner - Main Courses", price: 1000, ingredients: [], branch: "Wilpattu" },
-  { id: 127, number: 44, name: "Chicken Kottu", category: "Lunch & Dinner - Main Courses", price: 1200, ingredients: [], branch: "Wilpattu" },
-  { id: 128, number: 45, name: "Vegetable Noodles", category: "Lunch & Dinner - Main Courses", price: 750, ingredients: [], branch: "Wilpattu" },
-  { id: 129, number: 46, name: "Egg Noodles", category: "Lunch & Dinner - Main Courses", price: 850, ingredients: [], branch: "Wilpattu" },
-  { id: 130, number: 47, name: "Chicken Noodles", category: "Lunch & Dinner - Main Courses", price: 990, ingredients: [], branch: "Wilpattu" },
+  // ---- Hot Beverages ----
+  dish(116, 16, "Black Coffee", "Hot Beverages", 400, WP),
+  dish(117, 17, "Milk Coffee", "Hot Beverages", 450, WP),
+  dish(118, 18, "Black Tea", "Hot Beverages", 250, WP),
+  dish(119, 19, "Milk Tea", "Hot Beverages", 350, WP),
+  dish(120, 20, "Ginger Tea", "Hot Beverages", 300, WP),
+  dish(121, 21, "Hot Chocolate", "Hot Beverages", 500, WP),
 
-  { id: 131, number: 48, name: "Rice & Curry Option 1 (Kiri Samba, Dhal Curry, 1 Vegetable Pot, Papadam, Meat)", category: "Lunch & Dinner - Rice & Curry", price: 1950, ingredients: [], branch: "Wilpattu" },
-  { id: 132, number: 49, name: "Rice & Curry Option 2 (Kiri Samba, Curry Dhal, Pol Sambol, 2 Vegetable Pots, Papadam, Meat)", category: "Lunch & Dinner - Rice & Curry", price: 2150, ingredients: [], branch: "Wilpattu" },
-  { id: 133, number: 50, name: "Rice & Curry Option 3 (Kiri Samba, Cashew Curry, Dhal Curry, Pol Sambol, 2 Vegetable Pots, Papadam, Meat)", category: "Lunch & Dinner - Rice & Curry", price: 2500, ingredients: [], branch: "Wilpattu" },
+  // ---- Packages & Snack Packs ----
+  dish(122, 22, "Leopard Inn Tea/Coffee Package", "Packages & Snack Packs", 650, WP,
+    "Tea/Coffee ×1 · Sponge Cake ×1 · Chinese Roll ×1"),
+  dish(123, 23, "Safari / Boat Rides Snack Pack", "Packages & Snack Packs", 1500, WP,
+    "Sponge Cake ×2 · Nick Nack Chocolate ×2 · Gold Mari / Hawaiian Cookies ×2 · Mix Fruit Juice 200ml ×2 · Water Bottle 500ml ×1 · Malibun Chickbits 80g ×1"),
+  dish(124, 24, "Safari Tea Pack", "Packages & Snack Packs", 1300, WP,
+    "Tea/Coffee ×2 · Sponge Cake ×2 · Chinese Roll ×2 · Water Bottle 500ml ×1"),
 
-  { id: 134, number: 51, name: "Chicken Devel", category: "Side Dishes", price: 1450, ingredients: [], branch: "Wilpattu" },
-  { id: 135, number: 52, name: "Fried Chicken", category: "Side Dishes", price: 1400, ingredients: [], branch: "Wilpattu" },
-  { id: 136, number: 53, name: "Pork Devel", category: "Side Dishes", price: 1850, ingredients: [], branch: "Wilpattu" },
-  { id: 137, number: 54, name: "Fried Pork", category: "Side Dishes", price: 1750, ingredients: [], branch: "Wilpattu" },
-  { id: 138, number: 55, name: "Beef Devel", category: "Side Dishes", price: 1900, ingredients: [], branch: "Wilpattu" },
-  { id: 139, number: 56, name: "Fried Beef", category: "Side Dishes", price: 1800, ingredients: [], branch: "Wilpattu" },
-  { id: 140, number: 57, name: "Grilled Sausages", category: "Side Dishes", price: 1350, ingredients: [], branch: "Wilpattu" },
-  { id: 141, number: 58, name: "Egg Omelette (3 Eggs)", category: "Side Dishes", price: 600, ingredients: [], branch: "Wilpattu" },
-  { id: 142, number: 59, name: "French Fries", category: "Side Dishes", price: 1100, ingredients: [], branch: "Wilpattu" },
-  { id: 143, number: 60, name: "Egg Sandwich", category: "Side Dishes", price: 600, ingredients: [], branch: "Wilpattu" },
+  // ---- Breakfast (per person) ----
+  dish(125, 25, "English Breakfast", "Breakfast", 1850, WP,
+    "Toast Bread · 3 Grilled Sausages · Egg (Boiled, Scrambled or Omelette) · Juice · Fruit Plate"),
+  dish(126, 26, "Sri Lankan Breakfast — String Hoppers", "Breakfast", 1750, WP,
+    "10 String Hoppers · Chicken Curry · Dhal Curry · Pol Sambol · Tea/Coffee"),
+  dish(127, 27, "Sri Lankan Breakfast — Rotti", "Breakfast", 1750, WP,
+    "4 Rotti Pieces · Katta/Pol Sambol · Chicken Curry · Dhal Curry · Tea/Coffee"),
+  dish(128, 28, "Sri Lankan Breakfast — Mung Bean", "Breakfast", 1750, WP,
+    "Mung Bean · Scraped Coconut · Katta Sambol · Sugar · Tea/Coffee"),
+  dish(129, 29, "Indian Breakfast", "Breakfast", 1750, WP,
+    "Chapathi 04 · Chicken Curry · Potato · Masala Tea/Coffee"),
 
-  { id: 144, number: 61, name: "Chicken Soup", category: "Soups", price: 990, ingredients: [], branch: "Wilpattu" },
-  { id: 145, number: 62, name: "Vegetable Soup", category: "Soups", price: 990, ingredients: [], branch: "Wilpattu" },
-  { id: 146, number: 63, name: "Mushroom Soup", category: "Soups", price: 990, ingredients: [], branch: "Wilpattu" },
+  // ---- Lunch & Dinner, Main Courses (per person) ----
+  dish(130, 30, "Egg Fried Rice", "Lunch & Dinner - Main Courses", 950, WP),
+  dish(131, 31, "Chicken Fried Rice", "Lunch & Dinner - Main Courses", 1050, WP),
+  dish(132, 32, "Vegetable Fried Rice", "Lunch & Dinner - Main Courses", 900, WP),
+  dish(133, 33, "Pork Fried Rice", "Lunch & Dinner - Main Courses", 1300, WP),
+  dish(134, 34, "Beef Fried Rice", "Lunch & Dinner - Main Courses", 1400, WP),
+  dish(135, 35, "Chopsuey Rice", "Lunch & Dinner - Main Courses", 1400, WP),
+  dish(136, 36, "Boiled Vegetables", "Lunch & Dinner - Main Courses", 1100, WP),
+  dish(137, 37, "Vegetable Chopsuey", "Lunch & Dinner - Main Courses", 1000, WP),
+  dish(138, 38, "Vegetable Pasta", "Lunch & Dinner - Main Courses", 1000, WP),
+  dish(139, 39, "Egg Pasta", "Lunch & Dinner - Main Courses", 1100, WP),
+  dish(140, 40, "Chicken Pasta", "Lunch & Dinner - Main Courses", 1200, WP),
+  dish(141, 41, "Spaghetti", "Lunch & Dinner - Main Courses", 1050, WP),
+  dish(142, 42, "Vegetable Kottu", "Lunch & Dinner - Main Courses", 900, WP),
+  dish(143, 43, "Egg Kottu", "Lunch & Dinner - Main Courses", 1000, WP),
+  dish(144, 44, "Chicken Kottu", "Lunch & Dinner - Main Courses", 1200, WP),
+  dish(145, 45, "Vegetable Noodles", "Lunch & Dinner - Main Courses", 750, WP),
+  dish(146, 46, "Egg Noodles", "Lunch & Dinner - Main Courses", 850, WP),
+  dish(147, 47, "Chicken Noodles", "Lunch & Dinner - Main Courses", 990, WP),
 
-  { id: 147, number: 64, name: "Chocolate Ice-Cream (3 Scoops)", category: "Desserts", price: 450, ingredients: [], branch: "Wilpattu" },
-  { id: 148, number: 65, name: "Vanilla Ice-Cream (3 Scoops)", category: "Desserts", price: 450, ingredients: [], branch: "Wilpattu" },
-  { id: 149, number: 66, name: "Watalappam", category: "Desserts", price: 450, ingredients: [], branch: "Wilpattu" },
-  { id: 150, number: 67, name: "Fresh Sri Lankan Curd", category: "Desserts", price: 450, ingredients: [], branch: "Wilpattu" },
-  { id: 151, number: 68, name: "Fresh Yogurt", category: "Desserts", price: 250, ingredients: [], branch: "Wilpattu" },
-  // Sold at Wilpattu and priced on the staff's own menu sheet, but missing
-  // from the .txt the rest of this list came from — so they were being
-  // billed as one-off custom lines with a hand-typed price.
-  { id: 152, number: 69, name: "Pepsi", category: "Soft Drinks", price: 250, ingredients: [], branch: "Wilpattu" },
-  { id: 153, number: 70, name: "Beer", category: "Alcoholic Beverages", price: 1000, ingredients: [], branch: "Wilpattu" },
-  { id: 154, number: 71, name: "Steam Rice", category: "Lunch & Dinner - Main Courses", price: 450, ingredients: [], branch: "Wilpattu" },
-  { id: 155, number: 72, name: "Kottu Roti", category: "Lunch & Dinner - Main Courses", price: 1500, ingredients: [], branch: "Wilpattu" },
-  { id: 156, number: 73, name: "Pork Curry", category: "Lunch & Dinner - Main Courses", price: 1450, ingredients: [], branch: "Wilpattu" },
-  { id: 157, number: 74, name: "Beef Curry", category: "Lunch & Dinner - Main Courses", price: 1600, ingredients: [], branch: "Wilpattu" },
-  { id: 158, number: 75, name: "Cheese Pasta", category: "Lunch & Dinner - Main Courses", price: 1200, ingredients: [], branch: "Wilpattu" },
+  // ---- Rice & Curry (per person) ----
+  // Portion sizes printed alongside: beef 100g, pork 150g, chicken 150g.
+  dish(148, 48, "Rice & Curry — One Vegetable Pot", "Lunch & Dinner - Rice & Curry", 1950, WP,
+    "Kiri Samba · Dhal Curry · One Vegetable Pot · Papadam · Meat (Beef/Pork/Chicken)"),
+  dish(149, 49, "Rice & Curry — Two Vegetable Pots", "Lunch & Dinner - Rice & Curry", 2150, WP,
+    "Kiri Samba · Dhal Curry · Pol Sambol · Two Vegetable Pots · Papadam · Meat (Beef/Pork/Chicken)"),
+  dish(150, 50, "Rice & Curry — Cashew", "Lunch & Dinner - Rice & Curry", 2500, WP,
+    "Kiri Samba · Cashew Curry · Dhal Curry · Pol Sambol · Two Vegetable Pots · Papadam · Meat (Beef/Pork/Chicken)"),
+
+  // ---- Side Dishes ---- (meat portion 300g)
+  dish(151, 51, "Chicken Devel", "Side Dishes", 1450, WP),
+  dish(152, 52, "Fried Chicken", "Side Dishes", 1400, WP),
+  dish(153, 53, "Pork Devel", "Side Dishes", 1850, WP),
+  dish(154, 54, "Fried Pork", "Side Dishes", 1750, WP),
+  dish(155, 55, "Beef Devel", "Side Dishes", 1900, WP),
+  dish(156, 56, "Fried Beef", "Side Dishes", 1800, WP),
+  dish(157, 57, "Grilled Sausages", "Side Dishes", 1350, WP),
+  dish(158, 58, "Egg Omelette (3 Eggs)", "Side Dishes", 600, WP),
+  dish(159, 59, "French Fries", "Side Dishes", 1100, WP),
+  dish(160, 60, "Egg Sandwich", "Side Dishes", 600, WP),
+
+  // ---- Soups ----
+  dish(161, 61, "Chicken Soup", "Soups", 990, WP),
+  dish(162, 62, "Vegetable Soup", "Soups", 990, WP),
+  dish(163, 63, "Mushroom Soup", "Soups", 990, WP),
+
+  // ---- Desserts ----
+  dish(164, 64, "Chocolate Ice Cream (3 Scoops)", "Desserts", 450, WP),
+  dish(165, 65, "Vanilla Ice Cream (3 Scoops)", "Desserts", 450, WP),
+  dish(166, 66, "Watalappam", "Desserts", 450, WP),
+  dish(167, 67, "Fresh Sri Lankan Curd", "Desserts", 450, WP),
+  dish(168, 68, "Fresh Yogurt", "Desserts", 250, WP),
 ];
 
 // Derived from the data rather than hardcoded — a literal here silently
