@@ -88,16 +88,12 @@ function renderReservationsList() {
 
   list.innerHTML = rows.map(r => {
     const issued = proformasForReservation(r.id);
-    // Re-invoicing is legitimate (an amended stay, a corrected agent rate),
-    // so this isn't a blocker — staff just need to see one already went
-    // out, or they'll issue a duplicate without knowing.
-    // ...and it has to open, not just announce itself. An agent invoice
-    // raised before arrival has no booking behind it yet, so Guest History
-    // can't reach it either — this card was the only place it existed, and
-    // the only button on offer generated a second one.
+    // A label again, not a button: the card's main action below now opens
+    // the invoice, so making the badge do it too was two controls for one
+    // job. It still has to be here — it's how staff know one already went
+    // out rather than issuing a duplicate.
     const issuedTag = issued.length
-      ? `<button type="button" class="reservation-issued" data-open-proforma="${issued[issued.length - 1].id}"
-                 title="Open the agent invoice already raised">${issued.length} agent invoice${issued.length === 1 ? "" : "s"}</button>`
+      ? `<span class="reservation-issued">${issued.length} agent invoice${issued.length === 1 ? "" : "s"}</span>`
       : "";
     const villas = (r.villas || []).map(v => v.name).filter(Boolean).join(", ");
     // Only a standing reservation can be cancelled. Cancelling an already
@@ -132,10 +128,15 @@ function renderReservationsList() {
         ${villas ? `<p class="reservation-card-villas">${escapeHtml(villas)}</p>` : ""}
         ${r.cancelReason ? `<p class="reservation-card-reason">Cancelled: ${escapeHtml(r.cancelReason)}</p>` : ""}
         <div class="reservation-card-actions">
+          ${issued.length ? `
+          <button type="button" class="secondary-btn reservation-view-invoice-btn" data-proforma-id="${issued[issued.length - 1].id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+            View Agent Invoice
+          </button>` : `
           <button type="button" class="secondary-btn reservation-invoice-btn" data-reservation-id="${r.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
-            ${issued.length ? "Generate Another Agent Invoice" : "Generate Invoice for Guide"}
-          </button>
+            Generate Invoice for Guide
+          </button>`}
         </div>
       </div>
     `;
@@ -144,8 +145,8 @@ function renderReservationsList() {
   list.querySelectorAll(".reservation-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => openProformaForm(Number(btn.dataset.reservationId)));
   });
-  list.querySelectorAll("[data-open-proforma]").forEach(btn => {
-    btn.addEventListener("click", () => reprintProforma(Number(btn.dataset.openProforma), "screen-reservations"));
+  list.querySelectorAll(".reservation-view-invoice-btn").forEach(btn => {
+    btn.addEventListener("click", () => reprintProforma(Number(btn.dataset.proformaId), "screen-reservations"));
   });
   list.querySelectorAll(".reservation-print-btn").forEach(btn => {
     btn.addEventListener("click", () => reprintReservation(Number(btn.dataset.reservationId), "screen-reservations"));

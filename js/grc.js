@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import {
   escapeHtml, formatDate, fmtLKR, setLogoSrc, showToast, toDateISO,
-  nightsBetween, clampMoney, capNumericInput, MAX_COUNT, MAX_MONEY, orDash,
+  nightsBetween, clampMoney, capNumericInput, MAX_COUNT, orDash,
 } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
 import { openReservations, findReservationById, RESERVATION_STATUS } from "./data/reservations.js";
@@ -119,6 +119,26 @@ function villaNamesForStay() {
   return names.length ? names.join(" + ") : context.room.name;
 }
 
+// The villas this card covers, each with the nightly rate it should be
+// charged at. A linked reservation carries its own rate snapshot, which is
+// what the guest was actually quoted — using today's configured rate
+// instead would quietly re-price a stay that was agreed weeks ago.
+function villaRatesForStay() {
+  if (!context) return [];
+  if (linkedReservation && (linkedReservation.villas || []).length) {
+    return linkedReservation.villas.map(v => ({ name: v.name, rate: clampMoney(v.rate) }));
+  }
+  return [{ name: context.room.name, rate: clampMoney(context.room.rate) }];
+}
+
+// Room charge for the whole stay: every villa's nightly rate times the
+// nights. Same arithmetic the reservation uses, so the card, the
+// confirmation and the eventual invoice all say the same number.
+function stayTotal(nights) {
+  if (!nights) return 0;
+  return villaRatesForStay().reduce((sum, v) => sum + v.rate * nights, 0);
+}
+
 function syncDerivedFields() {
   const arrival = val("grc-arrival-date");
   const departure = val("grc-departure-date");
@@ -128,6 +148,16 @@ function syncDerivedFields() {
   // is one document for the whole party, so naming only the villa staff
   // happened to start from would understate what they were given.
   el("grc-room-no").value = villaNamesForStay();
+
+  // Total was a free number field: staff had to work out rate × nights in
+  // their head and type it onto a document the guest signs. It is derived
+  // now, and shows its working so the figure can be checked at a glance.
+  const villas = villaRatesForStay();
+  const total = stayTotal(nights);
+  el("grc-total-amount").value = nights ? fmtLKR(total) : "—";
+  el("grc-total-basis").textContent = nights
+    ? villas.map(v => `${v.name} ${fmtLKR(v.rate)} × ${nights} night${nights === 1 ? "" : "s"}`).join("  +  ")
+    : "Set the arrival and departure dates to work out the total.";
 }
 
 export function openGrcForm({ branch, room, onComplete }) {
@@ -230,7 +260,6 @@ el("grc-guest-name").addEventListener("input", () => {
   el(id).addEventListener("input", () => el("grc-pax-error").classList.remove("show"));
   capNumericInput(el(id), MAX_COUNT);
 });
-capNumericInput(el("grc-total-amount"), MAX_MONEY);
 
 // Enter advances rather than submitting early — the submit button is the
 // one that checks the guest in, so it must be pressed deliberately.
@@ -296,7 +325,9 @@ el("grc-form").addEventListener("submit", (e) => {
     vehicleNo: val("grc-vehicle-no"),
     voucherNo: val("grc-voucher-no"),
     masterBillNo: val("grc-master-bill"),
-    totalAmount: clampMoney(el("grc-total-amount").value),
+    // Recomputed rather than read back off the field, which now holds a
+    // formatted string ("LKR 75,000.00") that would not parse cleanly.
+    totalAmount: stayTotal(nightsBetween(arrival, departure)),
     specialInstructions: val("grc-special"),
     reservationId: linkedReservation ? linkedReservation.id : null,
     reservationNo: linkedReservation ? linkedReservation.no : null,

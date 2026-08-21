@@ -531,9 +531,15 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   showScreen("screen-preview");
 });
 
-document.getElementById("new-invoice-btn").addEventListener("click", () => {
+// "Done", not "New Invoice": finishing a bill almost never means starting
+// another one from scratch, and reception works out of the Reservations
+// screen. Imported here rather than at the top because reservations.js
+// reaches back into this module — a static import would close the cycle
+// at load time.
+document.getElementById("new-invoice-btn").addEventListener("click", async () => {
   resetForm();
-  showScreen("screen-form");
+  const { openReservationsScreen } = await import("./reservations.js");
+  openReservationsScreen();
 });
 
 // Export actions

@@ -1,10 +1,13 @@
 import { appState } from "./state.js";
-import { showScreen } from "./navigation.js";
+import { showScreen, onScreenEnter } from "./navigation.js";
 import { escapeHtml, showToast, todayISO, orDash } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { renderRooms, openRoomDetail } from "./rooms.js";
 
-export function renderHomeDashboard() {
+// announce: only the first render after picking a branch says it out loud.
+// This also runs on every return to the home screen, and a toast on each
+// one would be noise.
+export function renderHomeDashboard({ announce = false } = {}) {
   const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
   const today = todayISO();
 
@@ -53,6 +56,7 @@ export function renderHomeDashboard() {
     });
   }
 
+  if (!announce) return;
   if (overdueCount) {
     showToast(`${overdueCount} stay${overdueCount === 1 ? "" : "s"} past checkout`);
   } else if (due.length) {
@@ -105,3 +109,8 @@ window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
 if (navigator.connection) navigator.connection.addEventListener("change", updateConnectionStatus);
 updateConnectionStatus();
+
+// Keeps the checkout list honest: a villa checked out or a check-in
+// cancelled removes its card the next time home is shown, instead of
+// leaving a stale row that reopens a villa nobody is staying in.
+onScreenEnter("screen-home", () => renderHomeDashboard());

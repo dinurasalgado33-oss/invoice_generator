@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=105" />
-<link rel="stylesheet" href="css/brand-home.css?v=105" />
-<link rel="stylesheet" href="css/rooms.css?v=105" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=105" />
-<link rel="stylesheet" href="css/invoice.css?v=105" />
-<link rel="stylesheet" href="css/dashboard.css?v=105" />
-<link rel="stylesheet" href="css/reports.css?v=105" />
-<link rel="stylesheet" href="css/reservation.css?v=105" />
-  <link rel="stylesheet" href="css/grc.css?v=105" />
-  <link rel="stylesheet" href="css/proforma.css?v=105" />
-  <link rel="stylesheet" href="css/history.css?v=105" />
+<link rel="stylesheet" href="css/base.css?v=106" />
+<link rel="stylesheet" href="css/brand-home.css?v=106" />
+<link rel="stylesheet" href="css/rooms.css?v=106" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=106" />
+<link rel="stylesheet" href="css/invoice.css?v=106" />
+<link rel="stylesheet" href="css/dashboard.css?v=106" />
+<link rel="stylesheet" href="css/reports.css?v=106" />
+<link rel="stylesheet" href="css/reservation.css?v=106" />
+  <link rel="stylesheet" href="css/grc.css?v=106" />
+  <link rel="stylesheet" href="css/proforma.css?v=106" />
+  <link rel="stylesheet" href="css/history.css?v=106" />
 </head>
 <body>
 
@@ -1352,8 +1352,8 @@
         Save Image
       </button>
       <button class="action-btn secondary" id="new-invoice-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
-        New Invoice
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        Done
       </button>
     </div>
   </section>
@@ -1635,6 +1635,10 @@
       <button class="action-btn secondary" id="pf-image-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
         Save as Image
+      </button>
+      <button class="action-btn secondary" id="pf-done-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        Done
       </button>
     </div>
   </section>
@@ -1998,7 +2002,12 @@
         </div>
         <div class="field">
           <label>Total Amount (LKR)</label>
-          <input type="number" id="grc-total-amount" min="0" step="0.01" inputmode="decimal" />
+          <!-- Derived from the villa rates and the number of nights, the same
+               way the reservation does it. Typed by hand it could disagree
+               with both the reservation the guest was quoted and the invoice
+               they are eventually billed. -->
+          <input type="text" id="grc-total-amount" readonly />
+          <p class="hint" id="grc-total-basis"></p>
         </div>
       </div>
 
@@ -2315,8 +2324,8 @@
         Save Image
       </button>
       <button class="action-btn secondary" id="resv-new-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>
-        New Reservation
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        Done
       </button>
     </div>
   </section>
@@ -2339,6 +2348,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=105"></script>
+<script type="module" src="js/main.js?v=106"></script>
 </body>
 </html>

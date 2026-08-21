@@ -41,6 +41,19 @@ const screenOrder = [
   "screen-reservation-form", "screen-reservation-preview",
 ];
 
+// Screens that show live data need re-rendering when they are returned to,
+// not just when they are first built. The home dashboard was rendered once
+// on branch selection, so a villa checked out or a check-in cancelled left
+// its card sitting on the home screen until the app was reloaded.
+//
+// A registry rather than a direct call: navigation is the lowest-level
+// module here and must not import the screens it drives.
+const screenEnterHandlers = {};
+export function onScreenEnter(id, fn) {
+  if (!screenEnterHandlers[id]) screenEnterHandlers[id] = [];
+  screenEnterHandlers[id].push(fn);
+}
+
 export function showScreen(id) {
   const currentEl = document.querySelector(".screen.active");
   const fromIdx = currentEl ? screenOrder.indexOf(currentEl.id) : -1;
@@ -55,6 +68,13 @@ export function showScreen(id) {
   target.classList.add(direction);
 
   window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // After the swap, so a handler can measure or focus what is now visible.
+  // Wrapped because one screen's refresh failing must not stop navigation
+  // itself — the user would be stranded on the previous screen.
+  (screenEnterHandlers[id] || []).forEach(fn => {
+    try { fn(); } catch (err) { console.error(`Refresh failed for ${id}:`, err); }
+  });
 }
 
 document.querySelectorAll(".back-btn").forEach(btn => {

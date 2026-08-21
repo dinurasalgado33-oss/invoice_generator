@@ -23,7 +23,7 @@ export function selectBranch(branchKey) {
 
   updateRoomsCardAvailability();
   updateInventoryBadge();
-  renderHomeDashboard();
+  renderHomeDashboard({ announce: true });
 }
 
 document.querySelectorAll(".branch-btn").forEach(btn => {

@@ -307,9 +307,12 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   setTimeout(() => { isGeneratingReservation = false; }, 0);
 });
 
-document.getElementById("resv-new-btn").addEventListener("click", () => {
+// Lands back on the Reservations list, where the reservation just made is
+// now a row that can be reprinted, invoiced to an agent, or cancelled.
+document.getElementById("resv-new-btn").addEventListener("click", async () => {
   resetReservationForm();
-  showScreen("screen-reservation-form");
+  const { openReservationsScreen } = await import("./reservations.js");
+  openReservationsScreen();
 });
 
 document.getElementById("resv-print-btn").addEventListener("click", () => window.print());

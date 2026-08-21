@@ -398,6 +398,11 @@ export function reprintProforma(proformaId, returnTo = "screen-reservations") {
 
 el("pf-print-btn").addEventListener("click", () => window.print());
 
+el("pf-done-btn").addEventListener("click", async () => {
+  const { openReservationsScreen } = await import("./reservations.js");
+  openReservationsScreen();
+});
+
 el("pf-image-btn").addEventListener("click", () => {
   const target = el("proforma-preview");
   // Same CDN guard as the other documents — a missing script throws
