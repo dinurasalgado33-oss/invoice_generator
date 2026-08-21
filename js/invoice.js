@@ -520,7 +520,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   checkoutContext = null;
 
   appState.invoiceCounter++;
-  safeStorage.set("leopardinn-invoice-counter", String(appState.invoiceCounter));
+  safeStorage.set("leopardinn-invoice-counter-v2", String(appState.invoiceCounter));
 
   // The record is passed so a listener can tell *which* invoice was just
   // raised. Without it, a listener holding state from an abandoned flow

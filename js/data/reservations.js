@@ -6,7 +6,7 @@
 // `no` is the guest-facing reservation number printed on both documents.
 // Sequential and human-read, so it carries the same offline-allocation
 // problem as invoice and GRC numbers — see the README's offline-first note.
-let nextReservationNo = 101;
+let nextReservationNo = 1;
 export function allocateReservationNo() {
   return nextReservationNo++;
 }
@@ -65,7 +65,7 @@ export function findConflicts({ branch, villas, checkinDate, checkoutDate, ignor
 // than as a flag on the reservation, because one booking can legitimately
 // be re-invoiced (an amended stay, a corrected agent rate) and each issued
 // document needs its own number and its own record of what it said.
-let nextProformaSeq = 102;
+let nextProformaSeq = 1;
 export function allocateProformaNo() {
   return nextProformaSeq++;
 }

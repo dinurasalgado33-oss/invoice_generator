@@ -13,9 +13,8 @@ export const appState = {
   // Who is signed in. Kept so the app can fill in fields it already knows
   // the answer to — staff were typing their own name on every invoice.
   currentUser: safeStorage.get("leopardinn-user") || "",
-  // Starts past the seeded INVOICES ids (151-174) so a fresh session's
-  // printed reservation numbers don't collide with the seed data — this
-  // number is also used directly as the INVOICES record id (invoice.js),
-  // so a collision there means two different invoices sharing one id.
-  invoiceCounter: Number(safeStorage.get("leopardinn-invoice-counter") || "175"),
+  // Invoice numbers start at 1. The storage key is versioned because a
+  // browser that ran the demo build still holds a counter in the 190s, and
+  // reading it back would carry the old numbering into a clean install.
+  invoiceCounter: Number(safeStorage.get("leopardinn-invoice-counter-v2") || "1"),
 };

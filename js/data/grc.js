@@ -34,7 +34,7 @@ export const GRC_RECORDS = [];
 
 // Sequential and guest-facing, like the invoice number — it's written on a
 // signed legal document, so it has the same offline-numbering problem
-// (see the README's offline-first section). Seeded past nothing for now
+// (see the README's offline-first section). Starts at 1
 // since no cards exist yet.
 let nextGrcNo = 1;
 export function allocateGrcNo() {

@@ -14,6 +14,10 @@ export const INVENTORY_DEPARTMENTS = [
   { name: "Maintenance & Office", categories: ["Maintenance & Office", "Other"] },
 ];
 
+// A literal, not a computed max: INVENTORY_BY_BRANCH is declared further
+// down this file, so reading it here hits the temporal dead zone and the
+// whole app fails to boot. initInventoryDerived() recomputes this from the
+// real data at startup, which is what actually keeps ids clear.
 let nextInventoryId = 100;
 export function allocateInventoryItemId() {
   return nextInventoryId++;
@@ -209,10 +213,8 @@ export const USAGE_LOG = [];
 
 // Restock purchase history — every logged restock (single or bulk) appends
 // here with its cost, so Reports can total spend, rank costliest items,
-// and show price trends. Seeded with a spread of past purchases: frequent
-// small buys for daily perishables (meat/seafood/produce/eggs), occasional
-// large buys for monthly bulk stock (grains, linen, cleaning supplies).
-let nextRestockId = 1000;
+// and show price trends. Empty until the first delivery is logged.
+let nextRestockId = 1;
 export function allocateRestockId() {
   return nextRestockId++;
 }
@@ -220,43 +222,4 @@ export function allocateRestockId() {
 // itemId is the join key; itemName/category/unit are a snapshot of how the
 // item looked at purchase time, so an old purchase still reads correctly
 // after the item is renamed or recategorised.
-function restock(id, branch, itemName, category, unit, qty, unitCost, date) {
-  const item = (INVENTORY_BY_BRANCH[branch] || []).find(i => i.name === itemName);
-  return { id, itemId: item ? item.id : null, branch, itemName, category, unit, qty, unitCost, totalCost: Math.round(qty * unitCost * 100) / 100, date };
-}
-
-export const RESTOCK_LOG = [
-  restock(1, "Wilpattu", "Chicken", "Meat", "kg", 15, 1150, "2026-07-15"),
-  restock(2, "Wilpattu", "Chicken", "Meat", "kg", 12, 1200, "2026-07-29"),
-  restock(3, "Wilpattu", "Chicken", "Meat", "kg", 15, 1260, "2026-08-10"),
-  restock(4, "Wilpattu", "Fish", "Seafood", "kg", 8, 1400, "2026-07-18"),
-  restock(5, "Wilpattu", "Fish", "Seafood", "kg", 8, 1550, "2026-08-05"),
-  restock(6, "Wilpattu", "Prawns", "Seafood", "kg", 6, 2700, "2026-07-20"),
-  restock(7, "Wilpattu", "Prawns", "Seafood", "kg", 5, 2900, "2026-08-08"),
-  restock(8, "Wilpattu", "Vegetables", "Produce", "kg", 15, 170, "2026-07-22"),
-  restock(9, "Wilpattu", "Vegetables", "Produce", "kg", 18, 190, "2026-08-06"),
-  restock(10, "Wilpattu", "Coconut", "Produce", "kg", 5, 110, "2026-07-25"),
-  restock(11, "Wilpattu", "Eggs", "Dairy & Eggs", "pcs", 60, 33, "2026-07-19"),
-  restock(12, "Wilpattu", "Eggs", "Dairy & Eggs", "pcs", 60, 36, "2026-08-07"),
-  restock(13, "Wilpattu", "Rice", "Grains", "kg", 30, 215, "2026-07-05"),
-  restock(14, "Wilpattu", "Cooking Oil", "Pantry", "L", 12, 740, "2026-07-10"),
-  restock(15, "Wilpattu", "Toilet Paper Rolls", "Housekeeping", "pcs", 120, 88, "2026-07-08"),
-  restock(16, "Wilpattu", "Bath Towels", "Linen", "pcs", 40, 1180, "2026-07-01"),
-  restock(17, "Wilpattu", "Disinfectant", "Cleaning Supplies", "L", 10, 550, "2026-07-12"),
-
-  restock(18, "Arugam Bay", "Chicken", "Meat", "kg", 18, 1180, "2026-07-16"),
-  restock(19, "Arugam Bay", "Chicken", "Meat", "kg", 14, 1220, "2026-07-30"),
-  restock(20, "Arugam Bay", "Chicken", "Meat", "kg", 16, 1270, "2026-08-11"),
-  restock(21, "Arugam Bay", "Fish", "Seafood", "kg", 10, 1420, "2026-07-19"),
-  restock(22, "Arugam Bay", "Fish", "Seafood", "kg", 9, 1600, "2026-08-06"),
-  restock(23, "Arugam Bay", "Prawns", "Seafood", "kg", 4, 2750, "2026-07-21"),
-  restock(24, "Arugam Bay", "Prawns", "Seafood", "kg", 4, 2950, "2026-08-09"),
-  restock(25, "Arugam Bay", "Vegetables", "Produce", "kg", 12, 175, "2026-07-23"),
-  restock(26, "Arugam Bay", "Vegetables", "Produce", "kg", 14, 195, "2026-08-07"),
-  restock(27, "Arugam Bay", "Coconut", "Produce", "kg", 6, 115, "2026-07-26"),
-  restock(28, "Arugam Bay", "Eggs", "Dairy & Eggs", "pcs", 60, 34, "2026-07-20"),
-  restock(29, "Arugam Bay", "Rice", "Grains", "kg", 35, 218, "2026-07-06"),
-  restock(30, "Arugam Bay", "Bottled Water", "Beverages", "pcs", 150, 55, "2026-07-14"),
-  restock(31, "Arugam Bay", "Soap Bars", "Toiletries & Amenities", "pcs", 100, 78, "2026-07-09"),
-  restock(32, "Arugam Bay", "Bedsheet Sets", "Linen", "pcs", 25, 3400, "2026-07-02"),
-];
+export const RESTOCK_LOG = [];
