@@ -1,0 +1,220 @@
+rules_version = '2';
+
+// Leopard Inn — Firestore security rules.
+//
+// The whole security boundary lives here. The app's config is public and
+// its code is readable, so nothing may depend on a screen hiding a button:
+// a rule has to be able to answer "may this signed-in person read this
+// record" on its own.
+//
+// Who someone is comes from users/{uid} — a document holding their role
+// and, for staff, the one property they work at. That document is readable
+// by them and writable by nobody from the app, so a receptionist cannot
+// promote themselves by editing their own row.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------
+    // Who is asking
+    // ---------------------------------------------------------------
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasProfile() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isManager() {
+      return hasProfile() && profile().role == 'manager' && profile().active == true;
+    }
+
+    function isStaff() {
+      return hasProfile() && profile().role == 'staff' && profile().active == true;
+    }
+
+    function worksHere(branch) {
+      return isManager() || (isStaff() && profile().branch == branch);
+    }
+
+    // A record already stored, and one being written. Both have to be
+    // checked on an update: without the first, a staff member could take
+    // another property's record and rewrite its branch to their own.
+    function mayTouchExisting() {
+      return resource != null && worksHere(resource.data.branch);
+    }
+
+    function mayWriteIncoming() {
+      return request.resource != null && worksHere(request.resource.data.branch);
+    }
+
+    // ---------------------------------------------------------------
+    // Staff directory
+    // ---------------------------------------------------------------
+    // Readable by the person it describes (the app needs to know its own
+    // role) and by managers (the staff screen lists them). Written only by
+    // a Cloud Function using the Admin SDK, which these rules do not
+    // apply to — so nobody can change their own role or branch.
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isManager());
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // The guest-facing menu
+    // ---------------------------------------------------------------
+    // The one thing the world may read without signing in, because a QR
+    // code on a table has nobody signed in behind it. Scoped to this
+    // collection alone and nothing else — the same database holds passport
+    // and NIC numbers, and a broader public rule would expose them.
+    match /menuItems/{item} {
+      allow read: if true;
+      allow create, update: if isManager();
+      allow delete: if isManager();
+    }
+
+    // Villa names and nightly rates. Staff read them to bill a stay;
+    // only a manager may change what anything costs.
+    match /rooms/{room} {
+      allow read: if signedIn();
+      allow create, update: if isManager();
+      allow delete: if isManager();
+    }
+
+    // ---------------------------------------------------------------
+    // Money — nothing financial is ever deleted
+    // ---------------------------------------------------------------
+    // An invoice may be created by whoever works at that property, and
+    // afterwards only voided, and only by a manager. It can never be
+    // removed: a bill that vanishes is the one thing books must not allow.
+    match /invoices/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if isManager() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    match /proformaInvoices/{id} {
+      allow read: if mayTouchExisting();
+      allow create, update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // The stay, and everything filed against it
+    // ---------------------------------------------------------------
+    // Registration cards carry passport and NIC numbers, so they follow
+    // the same property scoping as everything else and are never deleted —
+    // they are the record the law requires the hotel to keep.
+    match /registrationCards/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    match /bookings/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    match /reservations/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    // A guest's charges. Marked billed or written off, never removed, so a
+    // bill can always be traced back to what made it up.
+    match /guestCharges/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    match /foodOrders/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    match /activityCharges/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Stock
+    // ---------------------------------------------------------------
+    match /restocks/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if isManager() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    match /stockUsage/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if isManager() && mayTouchExisting();
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Logs and queues
+    // ---------------------------------------------------------------
+    // The welcome e-mail queue. The app adds rows; the Function that sends
+    // them marks each sent or failed with the Admin SDK, which bypasses
+    // these rules — so nothing here needs to let a client claim a send.
+    match /guestEmails/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /roomActivity/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update, delete: if false;
+    }
+
+    // Sign-ins are a manager's audit trail, so a member of staff may add
+    // to it but not read it back or alter it.
+    match /logins/{id} {
+      allow read: if isManager();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    // Crash reports. Anyone signed in may file one — the app writes these
+    // itself when something breaks — and only a manager reads them.
+    match /errors/{id} {
+      allow read: if isManager();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Anything not named above
+    // ---------------------------------------------------------------
+    // Denied. A new collection has to be granted access deliberately
+    // rather than inheriting it, so adding one cannot quietly open a hole.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
