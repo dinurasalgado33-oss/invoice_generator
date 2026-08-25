@@ -7,6 +7,7 @@ import {
 import { openReservationForm, reprintReservation } from "./reservation.js";
 import { openProformaForm, reprintProforma } from "./proforma.js";
 import { confirmAction } from "./confirm.js";
+import { update, COLLECTIONS } from "./data/store.js";
 
 // Reservations screen — the home for pre-arrival paperwork. Making a
 // reservation used to jump straight to a form and leave nothing behind;
@@ -197,7 +198,7 @@ async function cancelReservation(id) {
   const reason = await promptCancelReason();
   if (reason === null) return;
 
-  r.status = RESERVATION_STATUS.CANCELLED;
+  update(COLLECTIONS.RESERVATIONS, r, { status: RESERVATION_STATUS.CANCELLED });
   r.cancelledAt = new Date().toISOString();
   r.cancelReason = reason;
   renderReservationsList();

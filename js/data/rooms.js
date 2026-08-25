@@ -1,3 +1,4 @@
+import { add, COLLECTIONS } from "./store.js";
 // Room map — mock data for now; the launch card only lights up for
 // branches with data wired in. Swap ROOMS_BY_BRANCH for a real data
 // source later without touching the rendering/UI code.
@@ -51,5 +52,5 @@ export function findRoomById(roomId) {
 let nextRoomActivityId = 1;
 export const ROOM_ACTIVITY_LOG = [];
 export function logRoomActivity(branch, room, guest, action) {
-  ROOM_ACTIVITY_LOG.push({ id: nextRoomActivityId++, roomId: room.id, branch, villa: room.name, guest, action, datetime: new Date().toISOString() });
+  add(COLLECTIONS.ROOM_ACTIVITY, ROOM_ACTIVITY_LOG, { id: nextRoomActivityId++, roomId: room.id, branch, villa: room.name, guest, action, datetime: new Date().toISOString() });
 }

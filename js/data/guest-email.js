@@ -1,3 +1,4 @@
+import { add, COLLECTIONS } from "./store.js";
 // The welcome e-mail a guest gets when they check in — the menus for the
 // property they are staying at, plus the few things they ask reception in
 // the first hour anyway.
@@ -76,7 +77,7 @@ export function queueWelcomeEmail({ bookingId, grcNo, branch, guestName, email, 
     sentAt: null,
     error: "",
   };
-  GUEST_EMAIL_QUEUE.push(row);
+  add(COLLECTIONS.GUEST_EMAILS, GUEST_EMAIL_QUEUE, row);
   return row;
 }
 

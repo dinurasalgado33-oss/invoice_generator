@@ -497,3 +497,15 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 @media print {
   .invoice-void-banner { border-width: 2px; }
 }
+
+/* A discount is always a percentage now — the LKR/% chooser is gone,
+   because the same field meaning two different things, told apart by a
+   dropdown beside it, is how "10" becomes ten rupees off a 50,000 bill
+   instead of ten percent. */
+.discount-unit {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}

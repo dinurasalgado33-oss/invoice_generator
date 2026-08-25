@@ -11,6 +11,7 @@ import {
 } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
+import { add, update, COLLECTIONS } from "./data/store.js";
 
 // Proforma Invoice — the pre-arrival bill sent to the travel agent or
 // guide who made the booking. Raised against an existing reservation, so
@@ -423,9 +424,9 @@ el("proforma-form").addEventListener("submit", (e) => {
     // Overwrite in place, preserving when it was first raised.
     record.createdAt = existing.createdAt;
     record.correctedAt = new Date().toISOString();
-    Object.assign(existing, record);
+    update(COLLECTIONS.PROFORMAS, existing, record);
   } else {
-    PROFORMA_INVOICES.push(record);
+    add(COLLECTIONS.PROFORMAS, PROFORMA_INVOICES, record);
   }
 
   renderProformaPreview(record);

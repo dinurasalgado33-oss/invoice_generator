@@ -10,6 +10,7 @@ import { chargeRoom } from "./rooms.js";
 import { updateInventoryBadge } from "./inventory.js";
 import { confirmAction } from "./confirm.js";
 import { resetForm, addItemRow, clearItems, setCheckoutContext } from "./invoice.js";
+import { add, COLLECTIONS } from "./data/store.js";
 
 let currentOrderSelection = {}; // dishId -> qty, for the Create/Edit view
 let orderSearchQuery = "";
@@ -363,7 +364,7 @@ async function completeOrder(orderId) {
 
   order.items.forEach(item => {
     if (room) chargeRoom(room, item.name, item.qty, item.price, "food");
-    FOOD_ORDER_RECORDS.push({
+    add(COLLECTIONS.FOOD_ORDERS, FOOD_ORDER_RECORDS, {
       id: allocateFoodOrderRecordId(),
       dishId: item.dishId,
       dish: item.name,

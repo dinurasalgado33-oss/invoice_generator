@@ -7,6 +7,7 @@ import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
 } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
+import { add, update, COLLECTIONS } from "./data/store.js";
 
 // Guest counts are printed on a document handed to the guest, so a stray
 // keystroke turning "2 adults" into 2 million needs to be caught here
@@ -418,10 +419,10 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   if (existing) {
     // Overwrite in place so every reference to this reservation — the
     // agent's invoice, a linked check-in — keeps pointing at one record.
-    Object.assign(existing, record);
+    update(COLLECTIONS.RESERVATIONS, existing, record);
     syncProformasToReservation(existing);
   } else {
-    RESERVATIONS.push(record);
+    add(COLLECTIONS.RESERVATIONS, RESERVATIONS, record);
   }
   refreshReservationsList();
 

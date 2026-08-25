@@ -7,6 +7,7 @@ import {
   USAGE_LOG, USAGE_REASONS, allocateUsageId,
 } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
+import { add, COLLECTIONS } from "./data/store.js";
 
 // Inventory is fully editable by every role — staff need to be able to
 // log stock changes day to day without waiting on a manager.
@@ -42,7 +43,7 @@ export function updateInventoryBadge() {
 }
 
 function logRestock(branch, item, qty, unitCost, date) {
-  RESTOCK_LOG.push({
+  add(COLLECTIONS.RESTOCKS, RESTOCK_LOG, {
     id: allocateRestockId(),
     itemId: item.id,
     branch,
@@ -333,7 +334,7 @@ document.getElementById("usage-form").addEventListener("submit", (e) => {
 
   const reason = document.getElementById("usage-reason").value;
   item.stock = Math.max(0, Math.round((item.stock - qty) * 100) / 100);
-  USAGE_LOG.push({
+  add(COLLECTIONS.STOCK_USAGE, USAGE_LOG, {
     id: allocateUsageId(),
     itemId: item.id,
     branch: appState.selectedBranch,

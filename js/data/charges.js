@@ -88,3 +88,26 @@ export const DEFAULT_BOOKING_SOURCE = "Direct";
 // settles at the Central Bank rate on the day.
 export const CURRENCIES = ["LKR", "USD", "EUR", "GBP"];
 export const DEFAULT_CURRENCY = "LKR";
+
+// VAT, set per property by a manager. Zero until the hotel registers, so
+// nothing prints until there is something to print — but the field exists
+// on every invoice from the start, which means turning it on later is a
+// setting rather than a migration of bills already raised.
+//
+// The rate that applied when a bill was raised is stored on that bill.
+// Reading today's rate to re-total an old invoice would silently restate
+// last year's takings every time the rate changed.
+export const VAT_RATES = {
+  "Wilpattu": 0,
+  "Arugam Bay": 0,
+};
+
+export function vatRateFor(branch) {
+  return Number(VAT_RATES[branch]) || 0;
+}
+
+export function setVatRate(branch, rate) {
+  const clean = Math.max(0, Math.min(100, Number(rate) || 0));
+  VAT_RATES[branch] = clean;
+  return clean;
+}

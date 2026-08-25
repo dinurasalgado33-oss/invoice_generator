@@ -4,6 +4,7 @@ import { escapeHtml, fmtLKR, setLogoSrc, showToast, setBranchLabel } from "./uti
 import { MENU_ITEMS, MENU_CATEGORIES, allocateDishId, allocateDishNumber } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
+import { add, update, COLLECTIONS } from "./data/store.js";
 
 let editingDishId = null;
 
@@ -240,10 +241,10 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
 
   if (editingDishId) {
     const dish = MENU_ITEMS.find(d => d.id === editingDishId);
-    Object.assign(dish, { name, category, price, description, ingredients });
+    update(COLLECTIONS.MENU, dish, { name, category, price, description, ingredients });
     showToast(`${name} updated`);
   } else {
-    MENU_ITEMS.push({ id: allocateDishId(), number: allocateDishNumber(appState.selectedBranch), name, category, price, description, ingredients, branch: appState.selectedBranch });
+    add(COLLECTIONS.MENU, MENU_ITEMS, { id: allocateDishId(), number: allocateDishNumber(appState.selectedBranch), name, category, price, description, ingredients, branch: appState.selectedBranch });
     showToast(`${name} added`);
   }
 

@@ -7,6 +7,8 @@
 // perfectly sequenced. `restoreSession()` is the one exception: it must
 // run only after every screen has finished wiring itself up, so it's
 // called explicitly, last.
+// First, so it is already listening before any other module evaluates.
+import "./data/error-log.js";
 import { initInventoryDerived } from "./data/inventory.js";
 import "./navigation.js";
 import "./invoice.js";

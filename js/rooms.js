@@ -15,6 +15,7 @@ import {
   addGuestCharge, openChargesFor, tabTotal, markCharged, writeOffCharges,
 } from "./data/guest-charges.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
+import { add, update, COLLECTIONS } from "./data/store.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
@@ -372,7 +373,7 @@ async function cancelCheckIn() {
   if (!ok) return;
 
   const booking = BOOKINGS.find(b => b.id === room.bookingId);
-  if (booking) booking.status = "Cancelled";
+  if (booking) update(COLLECTIONS.BOOKINGS, booking, { status: "Cancelled" });
   // The charges are gone from the tab, so no invoice will ever carry them.
   // Left untouched they'd go on counting as revenue in the Food Orders and
   // Activities reports — money the hotel never billed and never took.
@@ -597,7 +598,7 @@ function chargeActivities() {
     // `revenue` stays the gross billed to the guest (it has to reconcile
     // with the invoice line), while `income`/`payout` carry the split so
     // the dashboard can report what the hotel actually kept.
-    ACTIVITY_RECORDS.push({
+    add(COLLECTIONS.ACTIVITY_CHARGES, ACTIVITY_RECORDS, {
       id: allocateActivityRecordId(),
       activityId: activity.id,
       roomId: room.id,
@@ -622,7 +623,7 @@ function chargeActivities() {
     chargeRoom(room, c.name, 1, c.price, category);
     // One-off charges have no catalogue entry, so activityId is null — but
     // they can still carry a payout (a hired car, an outside guide).
-    ACTIVITY_RECORDS.push({
+    add(COLLECTIONS.ACTIVITY_CHARGES, ACTIVITY_RECORDS, {
       id: allocateActivityRecordId(),
       activityId: null,
       roomId: room.id,
@@ -706,7 +707,7 @@ function showNewBookingForm() {
         reservationId: reservation ? reservation.id : null,
         status: "Checked In",
       };
-      BOOKINGS.push(booking);
+      add(COLLECTIONS.BOOKINGS, BOOKINGS, booking);
 
       rooms.forEach(r => {
         r.guest = card.guestName;
@@ -798,7 +799,7 @@ onAfterGenerate((record) => {
     if (!room) { checkoutRoomRef = null; return; }
 
     const booking = BOOKINGS.find(b => b.id === room.bookingId);
-    if (booking) booking.status = "Checked Out";
+    if (booking) update(COLLECTIONS.BOOKINGS, booking, { status: "Checked Out" });
 
     // Frees every villa on the stay. The invoice just billed all of them,
     // so leaving the others occupied would strand them with no bill left

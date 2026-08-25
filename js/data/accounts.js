@@ -1,3 +1,4 @@
+import { add, COLLECTIONS } from "./store.js";
 // Staff login accounts — client-side gate only (no backend), just keeps
 // casual visitors out. Credentials live in this file, in plain view, so
 // treat it as a light deterrent, not real security.
@@ -16,5 +17,5 @@ export const ACCOUNTS = [
 let nextLoginLogId = 1;
 export const LOGIN_LOG = [];
 export function logLogin(username, role, branch) {
-  LOGIN_LOG.push({ id: nextLoginLogId++, username, role, branch: branch || null, datetime: new Date().toISOString() });
+  add(COLLECTIONS.LOGINS, LOGIN_LOG, { id: nextLoginLogId++, username, role, branch: branch || null, datetime: new Date().toISOString() });
 }

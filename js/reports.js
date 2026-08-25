@@ -6,6 +6,7 @@ import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG, USAGE_LOG, getInventoryUsage } from "./data/inventory.js";
 import { LOGIN_LOG } from "./data/accounts.js";
 import { confirmAction } from "./confirm.js";
+import { update, COLLECTIONS } from "./data/store.js";
 
 const state = {
   preset: "month", // today | week | month | lastmonth | custom
@@ -1048,7 +1049,7 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
   });
   if (!ok) return;
 
-  inv.status = "Void";
+  update(COLLECTIONS.INVOICES, inv, { status: "Void" });
   inv.voidReason = reason;
   inv.voidedAt = new Date().toISOString();
   // An invoice records who prepared it; cancelling one is the bigger

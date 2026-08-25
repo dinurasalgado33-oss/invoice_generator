@@ -3,9 +3,10 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO, safeStorage, clampMoney, MAX_MONEY, MAX_COUNT } from "./utils.js";
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
+import { add, COLLECTIONS } from "./data/store.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
-  isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK, CURRENCIES,
+  isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK, CURRENCIES, vatRateFor,
 } from "./data/charges.js";
 
 const afterGenerateCallbacks = [];
@@ -146,17 +147,18 @@ function computeTotals() {
   const serviceCharge = serviceChargeIsAuto() ? serviceChargeFor(items) : num("service-charge");
   const advance = num("advance");
   const grossAmount = billTotal + serviceCharge;
-  const discountType = document.getElementById("discount-type").value;
-  const discountInputRaw = num("discount-amount");
-  // A discount can never exceed what it's discounting — cap percent at
-  // 100% and a flat amount at the gross, rather than letting it drive the
-  // net amount negative (advance is allowed to exceed gross, since that's
-  // a legitimate refund-style scenario; a discount overshooting isn't).
-  const discountInput = discountType === "percent" ? Math.min(100, discountInputRaw) : Math.min(discountInputRaw, grossAmount);
-  const discountAmount = discountType === "percent" ? grossAmount * (discountInput / 100) : discountInput;
+  // Always a percentage. A flat amount and a percentage in the same field,
+  // told apart by a dropdown beside it, is a discount entered in the wrong
+  // mode — 10 meaning ten rupees off a 50,000 bill, or ten percent off it.
+  const discountPercent = Math.min(100, num("discount-amount"));
+  const discountAmount = grossAmount * (discountPercent / 100);
   const netAmount = grossAmount - discountAmount;
-  const grandTotal = netAmount - advance;
-  return { items, billTotal, serviceCharge, advance, grossAmount, discountType, discountInput, discountAmount, netAmount, grandTotal };
+  // VAT applies to what the guest actually pays after the discount, and
+  // before any advance they have already handed over.
+  const vatRate = vatRateFor(appState.selectedBranch);
+  const vatAmount = netAmount * (vatRate / 100);
+  const grandTotal = netAmount + vatAmount - advance;
+  return { items, billTotal, serviceCharge, advance, grossAmount, discountPercent, discountAmount, netAmount, vatRate, vatAmount, grandTotal };
 }
 
 function updateLiveTotals() {
@@ -248,7 +250,6 @@ document.getElementById("guest-count").addEventListener("input", sanitizeInteger
 ["service-charge", "advance", "currency", "discount-amount"].forEach(id => {
   document.getElementById(id).addEventListener("input", updateLiveTotals);
 });
-document.getElementById("discount-type").addEventListener("change", updateLiveTotals);
 document.getElementById("service-charge-auto").addEventListener("change", updateLiveTotals);
 
 // Snap an out-of-range discount back to its cap once the staff member
@@ -415,9 +416,18 @@ function renderInvoicePreview(r) {
   document.getElementById("prev-gross").textContent = fmt(r.grossAmount, currency);
   document.getElementById("prev-discount-row").style.display = r.discount ? "" : "none";
   document.getElementById("prev-discount-label").textContent =
-    r.discountType === "percent" ? `Discount (${r.discountInputRaw}%)` : "Discount";
+    r.discountPercent ? `Discount (${r.discountPercent}%)` : "Discount";
   document.getElementById("prev-discount").textContent = r.discount ? "-" + fmt(r.discount, currency) : "";
   document.getElementById("prev-net").textContent = fmt(r.total, currency);
+  // A rate of zero means the hotel is not registered for VAT — printing
+  // "VAT 0.00" would imply it is.
+  const vatRow = document.getElementById("prev-vat-row");
+  const showVat = Number(r.vatRate) > 0;
+  vatRow.hidden = !showVat;
+  if (showVat) {
+    document.getElementById("prev-vat-label").textContent = `VAT (${r.vatRate}%)`;
+    document.getElementById("prev-vat").textContent = fmt(r.vatAmount || 0, currency);
+  }
   document.getElementById("prev-advance").textContent = r.advance ? fmt(r.advance, currency) : "-";
   document.getElementById("prev-total").textContent = fmt(r.grandTotal, currency);
 
@@ -521,7 +531,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
 
   isSubmitting = true;
 
-  const { billTotal, serviceCharge, advance, grossAmount, discountType, discountAmount, netAmount, grandTotal } = computeTotals();
+  const { billTotal, serviceCharge, advance, grossAmount, discountPercent, discountAmount, netAmount, vatRate, vatAmount, grandTotal } = computeTotals();
 
   // The record's id is the same number printed on the document — so a
   // paper invoice can always be found in Reports by the number on it,
@@ -563,14 +573,15 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     // at today's rate would restate last month's takings every time the
     // rupee moved.
     exchangeRate: (val("currency") || "LKR") === "LKR" ? 1 : clampMoney(document.getElementById("exchange-rate").value),
-    discountType,
-    discountInputRaw: val("discount-amount"),
+    discountPercent,
+    vatRate,
+    vatAmount,
     billTotal,
     grossAmount,
     grandTotal,
     staffName: val("staff-name") || "",
   };
-  INVOICES.push(record);
+  add(COLLECTIONS.INVOICES, INVOICES, record);
   renderInvoicePreview(record);
   setInvoicePreviewReturn("screen-form", "Back");
   checkoutContext = null;

@@ -10,6 +10,7 @@ import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { BOOKING_SOURCES } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
+import { add, update, COLLECTIONS } from "./data/store.js";
 import {
   GRC_RECORDS, allocateGrcNo, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
   STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
@@ -362,7 +363,7 @@ el("grc-form").addEventListener("submit", (e) => {
   // stay covers, which only the caller can act on.
   const bookingId = context.onComplete(record, linkedReservation);
   record.bookingId = bookingId ?? null;
-  GRC_RECORDS.push(record);
+  add(COLLECTIONS.GRC, GRC_RECORDS, record);
 
   // Queued, not sent: sending is the server's job. A guest with no address
   // gets a row marked "No e-mail" rather than no row, so the question
@@ -380,8 +381,10 @@ el("grc-form").addEventListener("submit", (e) => {
   // stops being an outstanding promise, and the villa is no longer
   // reserved for those nights because it is now occupied for them.
   if (linkedReservation) {
-    linkedReservation.status = RESERVATION_STATUS.CHECKED_IN;
-    linkedReservation.bookingId = record.bookingId;
+    update(COLLECTIONS.RESERVATIONS, linkedReservation, {
+      status: RESERVATION_STATUS.CHECKED_IN,
+      bookingId: record.bookingId,
+    });
     refreshReservationsList();
   }
 
