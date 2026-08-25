@@ -582,3 +582,24 @@ select {
   .bl-full { display: none; }
   .bl-short { display: inline; }
 }
+
+/* A button that is waiting on the network. The spinner replaces the icon
+   rather than sitting beside it, so the button keeps its width and the
+   layout does not jump at the moment someone is watching it most. */
+.btn-spinner { display: none; }
+.is-busy .btn-icon { display: none; }
+.is-busy .btn-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin .6s linear infinite;
+  vertical-align: -0.15em;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .is-busy .btn-spinner { animation-duration: 2s; }
+}
+button.is-busy { cursor: progress; }

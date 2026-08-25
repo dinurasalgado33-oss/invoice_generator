@@ -49,11 +49,45 @@ function routeAfterLogin(profile) {
   }
 }
 
-function setBusy(busy) {
-  const btn = document.querySelector("#login-form button[type=submit]");
-  if (btn) btn.disabled = busy;
+function setBusy(busy, label) {
+  const btn = document.getElementById("login-submit-btn");
+  const text = document.getElementById("login-submit-label");
+  if (btn) {
+    btn.disabled = busy;
+    btn.classList.toggle("is-busy", busy);
+  }
+  if (text) text.textContent = busy ? (label || "Signing in…") : "Log In";
   document.getElementById("login-username").disabled = busy;
   document.getElementById("login-password").disabled = busy;
+}
+
+// Hydration waits on a first snapshot per collection. If one never arrives
+// — a listener that neither succeeds nor errors — Promise.allSettled waits
+// with it, and the app sits on the login screen having actually signed in.
+// That was the bug: it looked like nothing happened until a refresh.
+//
+// Firestore has a local cache, so carrying on without every collection is
+// safe: the listeners stay attached and fill in as they arrive.
+function withTimeout(promise, ms, onTimeout) {
+  return new Promise(resolve => {
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      resolve(onTimeout);
+    }, ms);
+    promise.then(value => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(value);
+    }, () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(onTimeout);
+    });
+  });
 }
 
 function showLoginError(message) {
@@ -76,19 +110,13 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   setBusy(true);
 
   try {
-    const profile = await signIn(email, password);
-    applyProfile(profile);
-
-    // Everything the screens read comes from here. Done before routing, so
-    // the first screen shown is already populated rather than filling in
-    // underneath the staff member a second later.
-    const { failed } = await startSync();
-    if (failed.length) {
-      showToast(`Signed in, but ${failed.length} record type${failed.length === 1 ? "" : "s"} didn't load`);
-    }
-
-    logLogin(email, profile.role, profile.branch || null);
-    routeAfterLogin(profile);
+    // Signs in and stops. Loading and routing belong to the session
+    // listener below, which fires for this sign-in as well as for a
+    // session Firebase restored on its own. Doing it in both places meant
+    // two hydrations racing, and the screen waiting on whichever lost.
+    await signIn(email, password);
+    // Deliberately still busy — the listener takes over from here and
+    // clears it once the screens have something to show.
   } catch (err) {
     // The screen stays deliberately vague — it must not reveal whether an
     // address exists. The console is not the screen, and during setup the
@@ -140,11 +168,26 @@ export function restoreSession() {
         appState.currentUser = "";
         showToast("Signed out");
       }
+      setBusy(false);
       showScreen("screen-login");
       return;
     }
+
     applyProfile(profile);
-    await startSync();
+    setBusy(true, "Loading…");
+
+    // Ten seconds is long enough for a slow connection and short enough
+    // that a stuck listener never strands somebody on the login screen
+    // holding a working session.
+    const result = await withTimeout(startSync(), 10000, { timedOut: true, failed: [] });
+    if (result.timedOut) {
+      showToast("Still loading records — carrying on");
+    } else if (result.failed.length) {
+      showToast(`${result.failed.length} record type${result.failed.length === 1 ? "" : "s"} didn't load`);
+    }
+
+    logLogin(profile.email || appState.currentUser, profile.role, profile.branch || null);
     routeAfterLogin(profile);
+    setBusy(false);
   });
 }

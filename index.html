@@ -44,9 +44,10 @@
         </div>
         <p class="field-error" id="login-error">Incorrect username or password</p>
       </div>
-      <button type="submit" class="primary-btn big">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
-        Log In
+      <button type="submit" class="primary-btn big" id="login-submit-btn">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+        <span class="btn-spinner" aria-hidden="true"></span>
+        <span id="login-submit-label">Log In</span>
       </button>
     </form>
   </section>
