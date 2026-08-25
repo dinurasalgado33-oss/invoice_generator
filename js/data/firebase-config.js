@@ -38,8 +38,22 @@ function isLocal(host) {
 
 export function firebaseConfig() {
   const host = typeof location !== "undefined" ? location.hostname : "localhost";
-  if (isLocal(host) || !LIVE) return DEV;
-  return LIVE;
+  if (isLocal(host)) return DEV;
+  if (LIVE) return LIVE;
+
+  // Served from a real address with no live project configured. Falling
+  // back to the test database is the safe direction, but doing it quietly
+  // is not: real guests would be checked into a project meant to be
+  // thrown away, and nothing on screen would say so. Shout, then fall
+  // back.
+  console.error(
+    "[Leopard Inn] Running on " + host + " but no live Firebase project is configured — " +
+    "using the TEST database. Fill in LIVE in js/data/firebase-config.js before going live."
+  );
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.usingTestDatabase = "true";
+  }
+  return DEV;
 }
 
 export function isLiveProject() {
