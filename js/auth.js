@@ -90,6 +90,10 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     logLogin(email, profile.role, profile.branch || null);
     routeAfterLogin(profile);
   } catch (err) {
+    // The screen stays deliberately vague — it must not reveal whether an
+    // address exists. The console is not the screen, and during setup the
+    // real code is the whole diagnosis.
+    console.error("[Leopard Inn] sign-in failed:", err && err.code, err && err.message);
     showLoginError(describeAuthError(err));
   } finally {
     setBusy(false);

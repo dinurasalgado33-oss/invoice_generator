@@ -28,6 +28,10 @@ const LIVE = null;
 // the real thing. Erring this way round means an unrecognised host gets
 // the *test* project rather than silently writing to live data.
 function isLocal(host) {
+  // Opening index.html straight off disk reports an empty hostname. That is
+  // as local as it gets, and without this it fell through to the "no live
+  // project" warning and looked like a real misconfiguration.
+  if (!host) return true;
   return host === "localhost"
     || host === "127.0.0.1"
     || host === "[::1]"

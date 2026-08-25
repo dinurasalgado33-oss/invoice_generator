@@ -114,6 +114,10 @@ export function describeAuthError(err) {
   if (code === "auth/invalid-email") return "That doesn't look like an e-mail address.";
   if (code === "auth/network-request-failed") return "No connection — check the signal and try again.";
   if (code === "auth/too-many-requests") return "Too many attempts. Wait a minute and try again.";
+  // Not a credential problem and not a secret: the provider simply is not
+  // switched on, and saying so saves an hour of guessing at passwords.
+  if (code === "auth/operation-not-allowed") return "E-mail sign-in is not enabled on this Firebase project yet.";
+  if (code === "auth/configuration-not-found") return "Firebase Authentication has not been set up on this project yet.";
   // Wrong password, unknown account and disabled user all land here on
   // purpose: which one it was is not something a login screen should say.
   return "E-mail or password is wrong.";
