@@ -209,6 +209,22 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Document numbering
+    // ---------------------------------------------------------------
+    // One counter per property, document type and financial year. A device
+    // reserves a block of numbers from it and spends them offline, so this
+    // is the only place in the app that needs real coordination.
+    //
+    // Anyone signed in may reserve a block, because reception has to be
+    // able to bill. Nobody may delete one: losing a counter would restart
+    // a series and hand out numbers that already exist on paper.
+    match /counters/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Anything not named above
     // ---------------------------------------------------------------
     // Denied. A new collection has to be granted access deliberately

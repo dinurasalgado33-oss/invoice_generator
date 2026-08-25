@@ -194,7 +194,7 @@ export function openGrcForm({ branch, room, onComplete }) {
     el("grc-reservation-select").innerHTML =
       `<option value="">Walk-in — no reservation</option>` +
       matchingReservations.map(r =>
-        `<option value="${r.id}">RES-${r.no} · ${escapeHtml(r.guestName)} · ${formatDate(r.checkinDate)}</option>`
+        `<option value="${r.id}">${r.no} · ${escapeHtml(r.guestName)} · ${formatDate(r.checkinDate)}</option>`
       ).join("");
   }
 
@@ -234,14 +234,14 @@ el("grc-reservation-select").addEventListener("change", (e) => {
   el("grc-departure-time").value = r.checkoutTime || DEFAULT_DEPARTURE_TIME;
   el("grc-adults").value = String(r.adults ?? 1);
   el("grc-children").value = String(r.children ?? 0);
-  el("grc-reservation-by").value = `RES-${r.no}`;
+  el("grc-reservation-by").value = `${r.no}`;
   // The reservation's booking type is the meal plan on the card, when it
   // matches one the card knows about.
   if (MEAL_PLANS.includes(r.bookingType)) el("grc-meal-plan").value = r.bookingType;
 
   el("grc-guest-name-error").classList.remove("show");
   syncDerivedFields();
-  showToast(`Filled in from RES-${r.no}`);
+  showToast(`Filled in from ${r.no}`);
 });
 
 el("grc-step-next").addEventListener("click", () => {

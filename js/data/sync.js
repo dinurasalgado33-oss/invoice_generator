@@ -12,7 +12,8 @@
 
 import { useAdapter, COLLECTIONS } from "./store.js";
 import { firestoreAdapter, hydrate, stopWatching } from "./firestore-adapter.js";
-import { scopedBranch } from "./session.js";
+import { scopedBranch, currentProfile } from "./session.js";
+import { primeNumbering } from "./numbering.js";
 import { logError } from "./error-log.js";
 
 import { INVOICES, BOOKINGS, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./reports.js";
@@ -76,6 +77,16 @@ export async function startSync() {
       logError(`Could not load ${name}`, { source: "sync", stack: r.reason && r.reason.stack });
     }
   });
+
+  // Reserve a block of document numbers for every property this person
+  // works at, now, while there is signal — so a device that goes offline
+  // straight afterwards can still issue an invoice. A manager works at
+  // both, so both get primed.
+  const profile = currentProfile();
+  const branches = profile && profile.role === "staff"
+    ? [profile.branch].filter(Boolean)
+    : ["Wilpattu", "Arugam Bay"];
+  await Promise.allSettled(branches.map(b => primeNumbering(b)));
 
   return { loaded: COLLECTION_MAP.length - failed.length, failed };
 }

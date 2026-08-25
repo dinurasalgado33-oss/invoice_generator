@@ -105,21 +105,21 @@ function renderReservationsList() {
       <div class="reservation-card ${r.status === RESERVATION_STATUS.CANCELLED ? "is-cancelled" : ""}">
         <div class="reservation-card-top">
           <div class="reservation-card-id">
-            <span class="reservation-no">RES-${escapeHtml(String(r.no))}</span>
+            <span class="reservation-no">${escapeHtml(String(r.no))}</span>
             ${statusBadge(r)}
             ${issuedTag}
           </div>
           <div class="reservation-card-tools">
             <span class="reservation-card-date">${formatDate(toDateISO(r.createdAt))}</span>
-            <button type="button" class="reservation-icon-btn reservation-print-btn" data-reservation-id="${r.id}" aria-label="Print confirmation for RES-${r.no}" title="Print confirmation">
+            <button type="button" class="reservation-icon-btn reservation-print-btn" data-reservation-id="${r.id}" aria-label="Print confirmation for ${r.no}" title="Print confirmation">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
             </button>
             ${isOpen ? `
-            <button type="button" class="reservation-icon-btn reservation-edit-btn" data-reservation-id="${r.id}" aria-label="Correct RES-${r.no}" title="Correct this reservation">
+            <button type="button" class="reservation-icon-btn reservation-edit-btn" data-reservation-id="${r.id}" aria-label="Correct ${r.no}" title="Correct this reservation">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
             </button>` : ""}
             ${isOpen ? `
-            <button type="button" class="reservation-icon-btn danger reservation-cancel-btn" data-reservation-id="${r.id}" aria-label="Cancel RES-${r.no}" title="Cancel reservation">
+            <button type="button" class="reservation-icon-btn danger reservation-cancel-btn" data-reservation-id="${r.id}" aria-label="Cancel ${r.no}" title="Cancel reservation">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" /></svg>
             </button>` : ""}
           </div>
@@ -189,7 +189,7 @@ async function cancelReservation(id) {
 
   const ok = await confirmAction({
     title: "Cancel this reservation?",
-    message: `RES-${r.no} for ${r.guestName} (${formatDate(r.checkinDate)} → ${formatDate(r.checkoutDate)}) will be cancelled and the villa freed for those nights.${agentWarning}`,
+    message: `${r.no} for ${r.guestName} (${formatDate(r.checkinDate)} → ${formatDate(r.checkoutDate)}) will be cancelled and the villa freed for those nights.${agentWarning}`,
     confirmLabel: "Cancel Reservation",
     tone: "danger",
   });
@@ -202,7 +202,7 @@ async function cancelReservation(id) {
   r.cancelledAt = new Date().toISOString();
   r.cancelReason = reason;
   renderReservationsList();
-  showToast(`RES-${r.no} cancelled`);
+  showToast(`${r.no} cancelled`);
 }
 
 // Deliberately a second step rather than a field inside the confirm sheet:

@@ -7,6 +7,7 @@ import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
 } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
+import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 
 // Guest counts are printed on a document handed to the guest, so a stray
@@ -110,7 +111,7 @@ export function openReservationForm(reservationId = null) {
   // The heading and the button have to say which of the two jobs this is,
   // or a correction looks exactly like making a second reservation.
   document.getElementById("resv-form-heading").textContent =
-    existing ? `Correct RES-${existing.no}` : "New Reservation";
+    existing ? `Correct ${existing.no}` : "New Reservation";
   document.getElementById("resv-submit-btn").textContent =
     existing ? "Save Changes" : "Generate Confirmation";
 
@@ -337,6 +338,19 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   // reservations.
   const existing = editingReservationId != null ? findReservationById(editingReservationId) : null;
   const reservationId = existing ? existing.id : allocateReservationNo();
+
+  // A correction keeps the number it was issued under. Only a new
+  // reservation draws one, and if none is available it is refused rather
+  // than given a number that might already be on someone else's paper.
+  let issued = existing ? null : takeNumber(appState.selectedBranch, DOC_TYPES.RESERVATION);
+  if (!existing && !issued) {
+    const errorEl = document.getElementById("resv-conflict-error");
+    errorEl.textContent = "No reservation numbers left on this device — reconnect and try again.";
+    errorEl.classList.add("show");
+    errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    isGeneratingReservation = false;
+    return;
+  }
   const branchInfo = BRANCH_INFO[appState.selectedBranch] || {};
   const title = document.getElementById("resv-title").value;
   const guestName = resvGuestNameInput.value.trim();
@@ -373,7 +387,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   });
   if (conflicts.length) {
     const detail = conflicts.map(c =>
-      `${c.villas.map(v => v.name).join(", ")} — RES-${c.reservation.no} (${c.reservation.guestName}, ${formatDate(c.reservation.checkinDate)} → ${formatDate(c.reservation.checkoutDate)})`
+      `${c.villas.map(v => v.name).join(", ")} — ${c.reservation.no} (${c.reservation.guestName}, ${formatDate(c.reservation.checkinDate)} → ${formatDate(c.reservation.checkoutDate)})`
     ).join("; ");
     const errorEl = document.getElementById("resv-conflict-error");
     errorEl.textContent = `Already reserved: ${detail}`;
@@ -390,7 +404,12 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   // the guest was originally sent.
   const record = {
     id: reservationId,
-    no: reservationId,
+    // The number printed on the document, issued from this device's
+    // reserved block. Held as the formatted string because that is what a
+    // guest and an accountant both refer to.
+    no: existing ? existing.no : issued.formatted,
+    financialYear: existing ? existing.financialYear : issued.fy,
+    sequence: existing ? existing.sequence : issued.seq,
     branch: appState.selectedBranch,
     title,
     guestName,
@@ -432,7 +451,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     ? PROFORMA_INVOICES.filter(p => p.reservationId === existing.id).length
     : 0;
   showToast(existing
-    ? `RES-${record.no} updated${syncedInvoices ? ` — agent invoice updated too` : ""}`
+    ? `${record.no} updated${syncedInvoices ? ` — agent invoice updated too` : ""}`
     : "Reservation confirmation generated");
   // Cleared here, not in openReservationForm: leaving it set would make the
   // next new reservation silently overwrite the one just corrected.

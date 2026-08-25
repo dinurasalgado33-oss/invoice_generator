@@ -245,7 +245,7 @@ export function openProformaForm(reservationId) {
   // clear this invoice belongs to that booking and isn't re-stating it.
   el("proforma-source-summary").innerHTML = `
     <p class="proforma-source-label">Raising an invoice against</p>
-    <p class="proforma-source-main">RES-${escapeHtml(String(res.no))} · ${escapeHtml(orDash(res.guestName))}</p>
+    <p class="proforma-source-main">${escapeHtml(String(res.no))} · ${escapeHtml(orDash(res.guestName))}</p>
     <p class="proforma-source-meta">
       ${formatDate(res.checkinDate)} &rarr; ${formatDate(res.checkoutDate)}
       · ${res.nights} night${res.nights === 1 ? "" : "s"}
