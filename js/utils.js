@@ -4,18 +4,27 @@ export function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Local calendar date, NOT UTC. toISOString() is UTC, so in Sri Lanka
-// (UTC+5:30) anything recorded between midnight and 05:30 local time was
-// being stamped with the previous day — wrong checkout lists, and sales
-// landing in the wrong day's revenue.
+// Both hotels are in Sri Lanka, so a "day" means a day at the hotel — not
+// UTC, and not whatever timezone the device happens to be set to. Stated
+// explicitly rather than relying on the device: toISOString() is UTC, so
+// anything recorded after 6:30pm local would be filed under the previous
+// day, and a manager checking reports from abroad would see a different
+// set of days again.
+//
+// Timestamps themselves stay UTC, which is correct for storage. This is
+// only for deciding which day a moment belongs to.
+export const HOTEL_TIMEZONE = "Asia/Colombo";
+
+const hotelDayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: HOTEL_TIMEZONE,
+  year: "numeric", month: "2-digit", day: "2-digit",
+});
+
 export function toDateISO(date = new Date()) {
   const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d)) return "";
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0"),
-  ].join("-");
+  // en-CA renders as YYYY-MM-DD, which is the shape every record stores.
+  return hotelDayFormatter.format(d);
 }
 
 export function todayISO() {

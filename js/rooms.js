@@ -11,6 +11,9 @@ import {
   isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
 } from "./data/charges.js";
 import { openGrcForm, reprintGrc } from "./grc.js";
+import {
+  addGuestCharge, openChargesFor, tabTotal, markCharged, writeOffCharges,
+} from "./data/guest-charges.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
@@ -213,7 +216,9 @@ function renderRoomDetailBody() {
 // wants to settle (their paper records routinely split one stay across
 // several invoice numbers, usually food onto its own bill).
 function renderRunningTab(room) {
-  const charges = room.pendingCharges || [];
+  // Keyed on the stay, not the villa: a party in two villas has one tab,
+  // and a charge follows the guest rather than the room it was sent to.
+  const charges = openChargesFor(room.bookingId);
   if (!charges.length) return "";
   const total = charges.reduce((sum, c) => sum + c.value, 0);
   return `
@@ -241,7 +246,7 @@ function renderRunningTab(room) {
 // the staff's own books, which a single checkout invoice can't express.
 async function startInterimInvoice() {
   const room = getActiveRoom();
-  const charges = room.pendingCharges || [];
+  const charges = openChargesFor(room.bookingId);
   if (!charges.length) return;
   const total = charges.reduce((sum, c) => sum + c.value, 0);
 
@@ -320,16 +325,10 @@ async function releaseVilla() {
     booking.villa = remaining.map(r => r.name).join(" + ");
   }
 
-  // Anything already on this villa's own tab — food sent to that villa, a
-  // safari charged from it — belongs to the party, not to the room. Moved
-  // across rather than deleted, or releasing a villa would quietly wipe
-  // charges the guest has genuinely run up.
-  const carriedOver = room.pendingCharges || [];
-  if (carriedOver.length) {
-    if (!keeper.pendingCharges) keeper.pendingCharges = [];
-    keeper.pendingCharges.push(...carriedOver);
-  }
-
+  // Nothing to carry across any more: charges belong to the stay, not to
+  // the villa, so releasing one of a party's villas leaves their tab
+  // untouched. This used to need charges moved by hand, and getting that
+  // wrong silently wiped what the guest had run up.
   logRoomActivity(activeRoomRef.branch, room, room.guest, "Villa Released");
   room.status = "available";
   delete room.guest;
@@ -337,7 +336,6 @@ async function releaseVilla() {
   delete room.checkin;
   delete room.checkout;
   delete room.source;
-  delete room.pendingCharges;
   delete room.bookingId;
 
   showToast(`${room.name} released — ${fmtLKR(charge)} added to the bill`);
@@ -360,8 +358,7 @@ async function cancelCheckIn() {
   // warning used to say only "this can't be undone" — never that the money
   // on screen was about to be written off. Staff were being asked to
   // approve a write-off without being told there was one.
-  const unbilled = rooms.reduce(
-    (sum, r) => sum + (r.pendingCharges || []).reduce((s, c) => s + c.value, 0), 0);
+  const unbilled = tabTotal(room.bookingId);
   const moneyWarning = unbilled > 0
     ? ` ${fmtLKR(unbilled)} on the running tab will be written off and billed to nobody.`
     : "";
@@ -380,6 +377,7 @@ async function cancelCheckIn() {
   // Left untouched they'd go on counting as revenue in the Food Orders and
   // Activities reports — money the hotel never billed and never took.
   writeOffStayRecords(room.bookingId, `Check-in cancelled for ${room.guest}`);
+  writeOffCharges(room.bookingId, `Check-in cancelled for ${room.guest}`);
 
   rooms.forEach(r => {
     logRoomActivity(activeRoomRef.branch, r, r.guest, "Check-In Cancelled");
@@ -389,7 +387,6 @@ async function cancelCheckIn() {
     delete r.checkin;
     delete r.checkout;
     delete r.source;
-    delete r.pendingCharges;
     delete r.bookingId;
   });
 
@@ -410,13 +407,11 @@ async function cancelCheckIn() {
 // service charge applies to it (food only), so it travels with the line
 // from the moment it's created rather than being guessed at billing time.
 export function chargeRoom(room, desc, qty, rate, category = DEFAULT_CHARGE_CATEGORY) {
-  if (!room.pendingCharges) room.pendingCharges = [];
-  room.pendingCharges.push({
-    desc,
-    qty: String(qty),
-    rate,
-    value: qty * rate,
-    category: isChargeCategory(category) ? category : DEFAULT_CHARGE_CATEGORY,
+  return addGuestCharge({
+    bookingId: room.bookingId ?? null,
+    roomId: room.id,
+    branch: appState.selectedBranch,
+    desc, qty, rate, category,
   });
 }
 
@@ -775,12 +770,10 @@ function prefillInvoiceForCheckout(room) {
 
   // Food orders and activity charges placed during the stay ride along
   // onto the same invoice, each keeping the category it was charged under.
-  // Collected from every villa, since charges follow whichever villa the
-  // order was placed against.
-  rooms.forEach(r => {
-    (r.pendingCharges || []).forEach(c => {
-      addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category);
-    });
+  // One read for the whole stay — they are the party's charges, not any
+  // one villa's, so no sweeping across villas and no risk of missing one.
+  openChargesFor(room.bookingId).forEach(c => {
+    addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category);
   });
 }
 
@@ -792,12 +785,10 @@ onAfterGenerate((record) => {
   if (interimRef) {
     const billedThisVilla = record && record.interim && record.roomId === interimRef.roomId;
     if (billedThisVilla) {
-      const room = (ROOMS_BY_BRANCH[interimRef.branch] || []).find(r => r.id === interimRef.roomId);
-      if (room && Array.isArray(room.pendingCharges)) {
-        const billed = new Set(interimRef.charges);
-        room.pendingCharges = room.pendingCharges.filter(c => !billed.has(c));
-        if (!room.pendingCharges.length) delete room.pendingCharges;
-      }
+      // Only the charges this invoice actually carried. Anything ordered
+      // while the form was open stays on the tab rather than being marked
+      // billed along with them.
+      markCharged(interimRef.charges, record.id);
     }
     interimRef = null;
   }
@@ -812,6 +803,9 @@ onAfterGenerate((record) => {
     // Frees every villa on the stay. The invoice just billed all of them,
     // so leaving the others occupied would strand them with no bill left
     // to raise.
+    // The invoice just carried the whole tab, so those charges are settled.
+    markCharged(openChargesFor(room.bookingId), record && record.id);
+
     roomsOnStay(checkoutRoomRef.branch, room).forEach(r => {
       logRoomActivity(checkoutRoomRef.branch, r, r.guest, "Check Out");
       r.status = "available";
@@ -820,7 +814,6 @@ onAfterGenerate((record) => {
       delete r.checkin;
       delete r.checkout;
       delete r.source;
-      delete r.pendingCharges;
       delete r.bookingId;
     });
     checkoutRoomRef = null;

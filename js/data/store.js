@@ -21,6 +21,7 @@ export const COLLECTIONS = {
   BOOKINGS: "bookings",
   FOOD_ORDERS: "foodOrders",
   ACTIVITY_CHARGES: "activityCharges",
+  GUEST_CHARGES: "guestCharges",
   RESERVATIONS: "reservations",
   PROFORMAS: "proformaInvoices",
   GRC: "registrationCards",

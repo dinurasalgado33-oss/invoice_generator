@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast } from "./utils.js";
+import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast, toDateISO } from "./utils.js";
 import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue, invoiceLKR } from "./data/reports.js";
 import { ROOMS_BY_BRANCH, ROOM_ACTIVITY_LOG } from "./data/rooms.js";
 import { RESTOCK_LOG, USAGE_LOG, getInventoryUsage } from "./data/inventory.js";
@@ -173,13 +173,13 @@ function getFilteredLoginLog(range) {
   // them regardless of which branch filter is active, alongside whichever
   // staff logins match.
   return LOGIN_LOG
-    .filter(l => inRange(l.datetime?.slice(0, 10), range) && (state.branch === "all" || l.branch === state.branch || l.branch === null) && matchesSearch(l.username))
+    .filter(l => inRange(toDateISO(l.datetime), range) && (state.branch === "all" || l.branch === state.branch || l.branch === null) && matchesSearch(l.username))
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
 }
 
 function getFilteredRoomActivity(range) {
   return ROOM_ACTIVITY_LOG
-    .filter(a => inRange(a.datetime?.slice(0, 10), range) && matchesBranch(a.branch) && matchesSearch(a.guest + " " + a.villa))
+    .filter(a => inRange(toDateISO(a.datetime), range) && matchesBranch(a.branch) && matchesSearch(a.guest + " " + a.villa))
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
 }
 
