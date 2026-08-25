@@ -1,15 +1,20 @@
 import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
-import { safeStorage } from "./utils.js";
-import { ACCOUNTS, logLogin } from "./data/accounts.js";
+import { safeStorage, showToast } from "./utils.js";
+import { logLogin } from "./data/accounts.js";
 import { selectBranch } from "./branch.js";
 import { confirmAction } from "./confirm.js";
+import { signIn, signOutNow, watchSession, describeAuthError, currentProfile } from "./data/session.js";
+import { startSync, stopSync } from "./data/sync.js";
 
-// Staff login — client-side gate only (no backend), just keeps casual
-// visitors out. Credentials live in this file, in plain view, so treat
-// it as a light deterrent, not real security.
-const LOGIN_KEY = "leopardinn-logged-in";
-const ROLE_KEY = "leopardinn-role";
+// Sign-in is Firebase Auth now, not a list of usernames in a file. What
+// somebody may do comes from their users/{uid} document, which the app
+// cannot write — so a role is something granted, never claimed.
+//
+// The security rules enforce all of this independently. Everything below
+// is about showing the right screens; none of it is what keeps a
+// receptionist out of the other property's guest records.
+
 const LOCKED_BRANCH_KEY = "leopardinn-locked-branch";
 
 function applyRoleGates() {
@@ -27,43 +32,67 @@ function applyRoleGates() {
   document.getElementById("role-indicator").textContent = "Role: " + (isStaff ? "Staff" : "Manager");
 }
 
-function routeAfterLogin() {
+function applyProfile(profile) {
+  appState.currentRole = profile.role;
+  appState.currentUser = profile.name || profile.email || "";
+  safeStorage.set("leopardinn-user", appState.currentUser);
+  safeStorage.set(LOCKED_BRANCH_KEY, profile.role === "staff" ? (profile.branch || "") : "");
+}
+
+function routeAfterLogin(profile) {
   applyRoleGates();
-  const lockedBranch = safeStorage.get(LOCKED_BRANCH_KEY);
-  if (lockedBranch) {
-    selectBranch(lockedBranch);
+  if (profile.role === "staff" && profile.branch) {
+    selectBranch(profile.branch);
     showScreen("screen-home");
   } else {
     showScreen("screen-branch");
   }
 }
 
-document.getElementById("login-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const username = document.getElementById("login-username").value.trim().toLowerCase();
-  const password = document.getElementById("login-password").value;
+function setBusy(busy) {
+  const btn = document.querySelector("#login-form button[type=submit]");
+  if (btn) btn.disabled = busy;
+  document.getElementById("login-username").disabled = busy;
+  document.getElementById("login-password").disabled = busy;
+}
+
+function showLoginError(message) {
   const errorEl = document.getElementById("login-error");
   const formEl = document.getElementById("login-form");
+  errorEl.textContent = message;
+  errorEl.classList.add("show");
+  formEl.classList.remove("shake");
+  void formEl.offsetWidth; // restart animation
+  formEl.classList.add("shake");
+  document.getElementById("login-password").value = "";
+  document.getElementById("login-password").focus();
+}
 
-  const account = ACCOUNTS.find(a => a.username === username && a.password === password);
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("login-username").value.trim();
+  const password = document.getElementById("login-password").value;
+  document.getElementById("login-error").classList.remove("show");
+  setBusy(true);
 
-  if (account) {
-    safeStorage.set(LOGIN_KEY, "true");
-    safeStorage.set(ROLE_KEY, account.role);
-    safeStorage.set(LOCKED_BRANCH_KEY, account.branch || "");
-    appState.currentRole = account.role;
-    appState.currentUser = account.displayName || account.username;
-    safeStorage.set("leopardinn-user", appState.currentUser);
-    errorEl.classList.remove("show");
-    logLogin(account.username, account.role, account.branch);
-    routeAfterLogin();
-  } else {
-    errorEl.classList.add("show");
-    formEl.classList.remove("shake");
-    void formEl.offsetWidth; // restart animation
-    formEl.classList.add("shake");
-    document.getElementById("login-password").value = "";
-    document.getElementById("login-password").focus();
+  try {
+    const profile = await signIn(email, password);
+    applyProfile(profile);
+
+    // Everything the screens read comes from here. Done before routing, so
+    // the first screen shown is already populated rather than filling in
+    // underneath the staff member a second later.
+    const { failed } = await startSync();
+    if (failed.length) {
+      showToast(`Signed in, but ${failed.length} record type${failed.length === 1 ? "" : "s"} didn't load`);
+    }
+
+    logLogin(email, profile.role, profile.branch || null);
+    routeAfterLogin(profile);
+  } catch (err) {
+    showLoginError(describeAuthError(err));
+  } finally {
+    setBusy(false);
   }
 });
 
@@ -76,33 +105,42 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   });
   if (!ok) return;
 
-  safeStorage.remove(LOGIN_KEY);
-  safeStorage.remove(ROLE_KEY);
-  safeStorage.remove(LOCKED_BRANCH_KEY);
+  stopSync();
+  await signOutNow();
   appState.currentRole = null;
   appState.currentUser = "";
   safeStorage.remove("leopardinn-user");
+  safeStorage.remove(LOCKED_BRANCH_KEY);
 
   document.getElementById("login-form").reset();
   document.getElementById("login-error").classList.remove("show");
   showScreen("screen-login");
 });
 
-// Restore a logged-in session (skip login, and skip the branch picker too
-// if the account is locked to one branch). Exported and called explicitly
-// last from main.js, after every other module has finished wiring up its
-// own screen — this app already hit a real bug once from routing before
-// everything it depends on was ready.
+// Firebase restores the previous session itself on load, so there is no
+// "logged in" flag of our own to keep in step with it — the old one could
+// disagree with reality after a password change or a disabled account, and
+// the app would show a signed-in shell over a database refusing every read.
+//
+// Called explicitly last from main.js, after every other module has wired
+// up its own screen: this app has already had one real bug from routing
+// before the things it depends on were ready.
 export function restoreSession() {
-  if (safeStorage.get(LOGIN_KEY) !== "true") return;
-
-  applyRoleGates();
-  const lockedBranch = safeStorage.get(LOCKED_BRANCH_KEY);
-  document.getElementById("screen-login").classList.remove("active");
-  if (lockedBranch) {
-    selectBranch(lockedBranch);
-    document.getElementById("screen-home").classList.add("active");
-  } else {
-    document.getElementById("screen-branch").classList.add("active");
-  }
+  watchSession(async (profile) => {
+    if (!profile) {
+      // Either nobody was signed in, or the account lost its access while
+      // away. Either way the login screen is the honest answer.
+      if (appState.currentRole) {
+        stopSync();
+        appState.currentRole = null;
+        appState.currentUser = "";
+        showToast("Signed out");
+      }
+      showScreen("screen-login");
+      return;
+    }
+    applyProfile(profile);
+    await startSync();
+    routeAfterLogin(profile);
+  });
 }

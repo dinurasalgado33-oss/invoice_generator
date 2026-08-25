@@ -1,15 +1,8 @@
 import { add, COLLECTIONS } from "./store.js";
-// Staff login accounts — client-side gate only (no backend), just keeps
-// casual visitors out. Credentials live in this file, in plain view, so
-// treat it as a light deterrent, not real security.
-// displayName is what gets printed when the app signs a document on this
-// person's behalf — "staffw" is a login, not a name a guest should see on
-// their invoice.
-export const ACCOUNTS = [
-  { username: "ashen", password: "1234", role: "manager", branch: null, displayName: "Ashen" },
-  { username: "staffw", password: "1234", role: "staff", branch: "Wilpattu", displayName: "Wilpattu Reception" },
-  { username: "staffa", password: "1234", role: "staff", branch: "Arugam Bay", displayName: "Arugam Bay Reception" },
-];
+// Sign-in is Firebase Auth, and what someone may do comes from their
+// users/{uid} document — so there are no credentials here any more. This
+// file keeps only the record of who signed in and when, which is a
+// manager-facing audit trail.
 
 // Every successful login appends here — a manager-facing audit trail of
 // who signed in, in what role, and when. branch is null for managers
