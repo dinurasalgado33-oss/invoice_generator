@@ -55,6 +55,15 @@ be on file.
   expected and normal** — tell the manager, or it looks like missing
   invoices.
 
+### Time
+
+- **Sri Lanka time is what a day means.** Timestamps stay UTC underneath,
+  which is correct, but everything that groups or reports by day converts
+  to Asia/Colombo first. Without this, anything recorded after 6:30pm is
+  stamped with the previous day in UTC, and the nightly Sheet job would
+  pick the wrong invoices every single night — a silent, permanent skew
+  rather than a visible break. Fixed before anything touches the database.
+
 ### Money
 
 - **Revenue comes only from the checkout invoice.** Never reservations,
@@ -80,6 +89,9 @@ be on file.
   price disagreement) do not get imported with them.
 - **Daily backup, nothing rolled off.** Revisit when data protection is
   looked at properly — passport and NIC numbers accumulate indefinitely.
+- **No restore drill before go-live.** Dinura's call, knowing the risk:
+  the first time an incomplete export would be discovered is the day it
+  was needed. Worth doing eventually.
 
 ### Access
 
@@ -89,8 +101,35 @@ be on file.
 - **Staff are scoped to their own property.** Managers see both, one at a
   time.
 - **Voiding an invoice stays manager-only.**
-- Adding or removing a member of staff is done in the Firebase console,
-  not in the app. Accepted.
+- **The app signs itself out after a long idle period.** The PIN stops a
+  guest at the desk reading passport numbers, but the account stays signed
+  in and a client-side PIN can be bypassed — so anyone who *takes* the
+  phone has full access regardless. Auto sign-out means a lost phone stops
+  being useful within hours instead of indefinitely. The PIN is screen
+  privacy, not device security; a missing phone means disabling the
+  account, not trusting the PIN.
+- **Property scoping is enforced by the rules, not the screens.** A
+  Wilpattu receptionist cannot read Arugam Bay guest records even if they
+  went looking for them. Managers read both, so Reports' "All Branches"
+  still works for the people who use it.
+- **A small manager-only staff screen** to add or disable a member of
+  staff and set their property. *This reverses an earlier decision that
+  the Firebase console was enough* — it changed once it was clear that
+  adding someone needs a custom claim set by a Function, so it is a
+  two-step job, not one click, and not something to be doing with a new
+  receptionist waiting.
+
+### The app itself
+
+- **The service worker owns caching.** The twelve hand-bumped `?v=` tags
+  go. Two caching schemes that don't know about each other is how staff
+  end up running a three-week-old app while you swear it was fixed. Staff
+  get told a new version is ready and it updates on next open.
+- **Automated tests for the sync layer only** — writes queuing offline,
+  syncing in order, nothing lost on reconnect. That is the piece where
+  "I checked it in the browser" genuinely stops being enough, because a
+  charge lost in sync looks like nothing at all on screen. Everything else
+  stays hand-checked.
 
 ### Guest-facing
 
@@ -139,28 +178,37 @@ be on file.
   numbers go in as-is. Revisit before real guests' data is live.
 - **Printed output has never been checked against the paper originals.**
   Folded into the phase where the team configures the system.
+- **A backup has never been restored.** Accepted for now.
 - **Nobody has used the app for a real shift.**
 
 ---
 
 ## 4. Order of work
 
-1. **Store abstraction** — every persisted write through one place with a
-   swappable adapter. Surface is small: 13 write sites, 6 in-place edits.
-   *(started — `js/data/store.js`)*
-2. **Error logging** — starts local, changes destination later.
-3. **Percentage-only discounts** and the **configurable VAT** field.
-4. **Charges as documents** rather than a list on the villa.
-5. Dinura creates both Firebase projects and sends the two web configs.
-6. **Firestore adapter** + security rules (staff scoped to their property,
-   manager-only voiding, menu publicly readable and nothing else).
-7. **Auth** replacing the hardcoded accounts, plus the PIN lock.
-8. **Numbering blocks**, per property, resetting 1 April.
-9. **PWA** — manifest, icon, service worker.
-10. **Hosting** — app and menu PDFs.
-11. **Functions** — welcome e-mail, nightly Sheet append, nightly backup.
+Two things happen before the database exists, deliberately — both are
+easier to get right while a mistake still costs nothing.
 
----
+1. **Sri Lanka time** everywhere a day is grouped or reported.
+2. **Guest charges become their own records** rather than a list on the
+   villa. Done on its own and tested hard: it touches checkout, the
+   part-way bill, villa release and the cancel-write-off — the four paths
+   where every money-losing bug found on 21 August actually lived.
+3. **Store abstraction** — every persisted write through one place with a
+   swappable adapter. *(started — `js/data/store.js`)*
+4. **Error logging** — starts local, changes destination later.
+5. **Percentage-only discounts** and the **configurable VAT** field.
+
+Then, once Dinura sends the two web configs:
+
+6. **Firestore adapter** + security rules — staff scoped to their property,
+   manager-only voiding, menu publicly readable and nothing else.
+7. **Sync-layer tests.**
+8. **Auth** replacing the hardcoded accounts, the PIN lock, auto sign-out,
+   and the staff screen.
+9. **Numbering blocks**, per property, resetting 1 April.
+10. **PWA** — manifest, icon, service worker; the `?v=` tags come out.
+11. **Hosting** — app and menu PDFs.
+12. **Functions** — welcome e-mail, nightly Sheet append, nightly backup.
 
 ## 5. Setup checklist for Dinura
 
