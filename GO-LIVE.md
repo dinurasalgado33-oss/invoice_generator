@@ -23,7 +23,7 @@ data behind a rule nobody has watched actually block anything.
 | Phase | What | Status |
 |---|---|---|
 | 1 | Verify branch scoping with a real staff account | ✅ Done — verified against live Firestore rules, not just the UI |
-| 2 | Offline resilience test — network genuinely off | ⬜ Not started |
+| 2 | Offline resilience test — network genuinely off | ✅ Done — full stay offline, verified synced after reconnect |
 | 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
 | 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⬜ Not started |
 | 5 | Staff management screen, PIN unlock, auto sign-out | ⬜ Not started |
@@ -275,9 +275,13 @@ stays attached to why it mattered.
    directly against Firestore, not just the UI: cross-branch reads and
    writes refused, own-branch access works, manager-only collections
    refused to staff.
-5. **Test offline properly.** Phase 2. Check in a guest with the network
-   off, reconnect, confirm the records arrive intact and the numbers do
-   not collide with another device's.
+5. ~~**Test offline properly.**~~ Done — Phase 2. Genuinely disabled the
+   Firestore SDK's network (not just watched the UI), ran a full stay —
+   check in, charge, checkout, invoice — entirely offline, confirmed both
+   the GRC and the invoice queued with `hasPendingWrites: true`, then
+   reconnected and confirmed both landed on the server
+   (`fromCache: false, hasPendingWrites: false`) and rehydrate correctly
+   after a fresh reload.
 6. **Cloud Functions** — the welcome email send, the nightly Sheets
    append, the nightly backup. Phase 4. Note that the email API key
    must live in a Function and never in client JS, which is readable by
