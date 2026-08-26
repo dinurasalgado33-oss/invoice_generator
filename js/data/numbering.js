@@ -21,6 +21,7 @@
 // have gone missing. See [[backend-decisions]].
 
 import { connect, getDb, fsApi } from "./firebase.js";
+import { projectId } from "./firebase-config.js";
 import { safeStorage, toDateISO } from "../utils.js";
 import { logError } from "./error-log.js";
 
@@ -53,8 +54,15 @@ export function formatNumber(prefix, fy, seq) {
   return `${prefix}-${fy}-${String(seq).padStart(3, "0")}`;
 }
 
+// Keyed by project as well as branch, type and year. Without the project,
+// a device that used the test database and then switched to the live one
+// would still be holding a *test* block, and would spend its numbers on
+// real invoices — numbers the live counter has never heard of and will
+// hand out again later. The switchover is exactly when nobody is looking
+// for that, so the key carries the project rather than relying on
+// somebody remembering to clear site data.
 function localKey(branch, type, fy) {
-  return `leopardinn-block-${branch}-${type}-${fy}`.replace(/\s+/g, "-");
+  return `leopardinn-block-${projectId()}-${branch}-${type}-${fy}`.replace(/\s+/g, "-");
 }
 
 function readBlock(branch, type, fy) {
