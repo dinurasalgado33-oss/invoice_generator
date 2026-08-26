@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-26, at commit `a1ea5b5`.
+Last updated: 2026-08-26, at commit `a953902`.
 
 ---
 
@@ -26,7 +26,7 @@ data behind a rule nobody has watched actually block anything.
 | 2 | Offline resilience test — network genuinely off | ✅ Done — full stay offline, verified synced after reconnect |
 | 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
 | 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⬜ Not started |
-| 5 | Staff management screen, PIN unlock, auto sign-out | ⬜ Not started |
+| 5 | Staff management screen, PIN unlock, auto sign-out | 🟡 PIN lock + auto-lock done and verified; staff management screen still needs a Cloud Function |
 | 6 | Firebase Hosting | ⬜ Not started |
 
 This table is shown after every phase completes, updated in place.
@@ -285,8 +285,10 @@ stays attached to why it mattered.
 8. **Staff management screen** so accounts don't need console access
    forever. Manager-only, and it still cannot write `users/{uid}`
    directly — it needs a Function. Phase 5.
-9. **PIN unlock + auto sign-out.** A shared reception tablet left signed
-   in is the realistic threat, not a remote attacker. Phase 5.
+9. ~~**PIN unlock + auto sign-out.**~~ Done — `a953902`. Locks via header
+   button, a ten-minute idle timer, and tab-hidden (which catches the
+   tablet screen sleeping). Session survives, so unlocking returns to the
+   exact screen. Explicitly not a security boundary; the rules are.
 10. **Hosting.** `firebase deploy --only hosting`, plus the domain added
     to authorized domains (§4.5).
 
