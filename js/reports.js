@@ -350,12 +350,12 @@ function renderInvoicesTab(range) {
       : "";
     const voidBtn = isVoid
       ? ""
-      : `<button type="button" class="report-void-btn" data-invoice-id="${escapeHtml(inv.id)}" aria-label="Void invoice #${escapeHtml(inv.id)}">Void</button>`;
+      : `<button type="button" class="report-void-btn" data-invoice-id="${escapeHtml(inv.id)}" aria-label="Void invoice ${escapeHtml(inv.id)}">Void</button>`;
     return `
     <div class="report-row ${isVoid ? "report-row-void" : ""}">
       <div class="report-row-top">
         <div>
-          <span class="report-row-title">#${escapeHtml(inv.id)} — ${escapeHtml(inv.guest)}</span>
+          <span class="report-row-title">${escapeHtml(inv.id)} — ${escapeHtml(inv.guest)}</span>
           <span class="report-row-sub">${escapeHtml(inv.branch)} &middot; ${formatDate(inv.date)}</span>
         </div>
         <div class="report-row-end">
@@ -1018,7 +1018,7 @@ function openVoidSheet(invoiceId) {
   voidingInvoiceId = inv.id;
 
   document.getElementById("void-sheet-summary").textContent =
-    `#${inv.id} — ${inv.guest} · ${inv.branch} · ${formatDate(inv.date)} · ${invoiceAmountLabel(inv)}`;
+    `${inv.id} — ${inv.guest} · ${inv.branch} · ${formatDate(inv.date)} · ${invoiceAmountLabel(inv)}`;
   document.getElementById("void-reason").value = "";
   document.getElementById("void-sheet-overlay").classList.add("open");
 }
@@ -1043,7 +1043,7 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
   const reason = document.getElementById("void-reason").value.trim();
   const ok = await confirmAction({
     title: "Void this invoice?",
-    message: `#${inv.id} for ${inv.guest} (${invoiceAmountLabel(inv)}) will stop counting toward revenue. This can't be undone.`,
+    message: `${inv.id} for ${inv.guest} (${invoiceAmountLabel(inv)}) will stop counting toward revenue. This can't be undone.`,
     confirmLabel: "Void Invoice",
     tone: "danger",
   });
@@ -1059,5 +1059,5 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
 
   closeVoidSheet();
   renderAll();
-  showToast(`Invoice #${inv.id} voided`);
+  showToast(`Invoice ${inv.id} voided`);
 });

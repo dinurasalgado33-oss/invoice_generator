@@ -4,6 +4,7 @@ import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO, safeStor
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import { add, COLLECTIONS } from "./data/store.js";
+import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
   isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK, CURRENCIES, vatRateFor,
@@ -481,7 +482,11 @@ export function resetForm() {
   document.getElementById("invoice-form").reset();
   itemsBody.innerHTML = "";
   addItemRow();
-  document.getElementById("inv-number").value = String(appState.invoiceCounter);
+  // Drawn from this device's reserved block at the moment the invoice is
+  // actually raised, not shown in advance — a number displayed here and
+  // then abandoned (the guest changes their mind, the form is backed out
+  // of) would burn a real number on nothing.
+  document.getElementById("inv-number").value = "Assigned on Generate";
   document.getElementById("inv-date").value = toDateISO();
   document.getElementById("currency").value = "LKR";
   document.getElementById("exchange-rate").value = "";
@@ -529,6 +534,17 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     return;
   }
 
+  // Drawn from this device's reserved block, now — not shown in advance,
+  // so nothing is burned if the form is abandoned first. Refused rather
+  // than guessed at if the block is genuinely empty and none could be
+  // reserved: a wrong number on an invoice is worse than being asked to
+  // reconnect.
+  const issued = takeNumber(appState.selectedBranch, DOC_TYPES.INVOICE);
+  if (!issued) {
+    showToast("No invoice numbers left on this device — reconnect and try again");
+    return;
+  }
+
   isSubmitting = true;
 
   const { billTotal, serviceCharge, advance, grossAmount, discountPercent, discountAmount, netAmount, vatRate, vatAmount, grandTotal } = computeTotals();
@@ -545,7 +561,9 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   // exist only in the form — so once staff left the preview the document
   // could never be shown again, and a mis-tap lost a financial record.
   const record = {
-    id: val("inv-number") || String(appState.invoiceCounter),
+    id: issued.formatted,
+    financialYear: issued.fy,
+    sequence: issued.seq,
     roomId: checkoutContext ? checkoutContext.roomId : null,
     bookingId: checkoutContext ? checkoutContext.bookingId : null,
     source: checkoutContext && checkoutContext.source ? checkoutContext.source : null,
@@ -585,9 +603,6 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   renderInvoicePreview(record);
   setInvoicePreviewReturn("screen-form", "Back");
   checkoutContext = null;
-
-  appState.invoiceCounter++;
-  safeStorage.set("leopardinn-invoice-counter-v2", String(appState.invoiceCounter));
 
   // The record is passed so a listener can tell *which* invoice was just
   // raised. Without it, a listener holding state from an abandoned flow

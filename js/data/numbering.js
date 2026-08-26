@@ -114,7 +114,16 @@ async function topUp(branch, type, fy) {
     }
     return true;
   } catch (err) {
-    // Offline, or the rules refused. Neither is fatal while numbers remain.
+    // Offline is silent on purpose — it is the normal case this whole
+    // scheme exists for, and logging it every time a phone has no signal
+    // would be noise. A permission refusal is not normal: it means the
+    // rules do not match what this code expects, and staying quiet about
+    // it is how "no numbers available" turns into an unexplained mystery.
+    if (err && err.code !== "unavailable" && err.code !== "failed-precondition") {
+      logError(`Could not reserve a ${type} number block for ${branch}: ${err.code || err.message}`, {
+        source: "numbering",
+      });
+    }
     return false;
   }
 }
