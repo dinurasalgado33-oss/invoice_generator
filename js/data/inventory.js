@@ -165,11 +165,11 @@ export function initInventoryDerived() {
     items.forEach(item => { openingStockByItemId[item.id] = item.stock; });
   });
 
-  // Keep generated ids clear of whatever the dataset already used.
+  // Keep generated item ids clear of whatever the dataset already used.
+  // Restocks no longer need this: their id is a UUID (see [[ids.js]]),
+  // which needs no coordination and has no "max" to recover.
   const maxItemId = Math.max(0, ...Object.values(INVENTORY_BY_BRANCH).flat().map(i => i.id));
   nextInventoryId = maxItemId + 1;
-  const maxRestockId = Math.max(0, ...RESTOCK_LOG.map(r => r.id));
-  nextRestockId = maxRestockId + 1;
 }
 
 // Reports' Inventory Usage tab used to read a frozen, hand-written
