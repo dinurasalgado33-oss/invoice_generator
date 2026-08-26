@@ -246,21 +246,21 @@ function renderHistory() {
     btn.addEventListener("click", () => openDocument(btn.dataset.doc, btn.dataset.id));
   });
   body.querySelectorAll(".extras-btn").forEach(btn => {
-    btn.addEventListener("click", () => openExtras(Number(btn.dataset.bookingId)));
+    btn.addEventListener("click", () => openExtras(btn.dataset.bookingId));
   });
 }
 
 const BACK_TO_HISTORY = "screen-guest-history";
 
 function openDocument(kind, id) {
-  if (kind === "card") return reprintGrc(Number(id), BACK_TO_HISTORY);
-  if (kind === "reservation") return reprintReservation(Number(id), BACK_TO_HISTORY);
-  if (kind === "proforma") return reprintProforma(Number(id), BACK_TO_HISTORY);
+  if (kind === "card") return reprintGrc(id, BACK_TO_HISTORY);
+  if (kind === "reservation") return reprintReservation(id, BACK_TO_HISTORY);
+  if (kind === "proforma") return reprintProforma(id, BACK_TO_HISTORY);
   // A walk-in row carries its invoice id directly — there is no booking to
   // look it up through.
   if (kind === "walkin-invoice") return reopenInvoice(String(id), BACK_TO_HISTORY);
   if (kind === "invoice") {
-    const bookingId = Number(id);
+    const bookingId = id;
     const invoices = INVOICES.filter(i => i.bookingId === bookingId);
     if (!invoices.length) return;
     // A stay can carry an interim bill and a checkout invoice. The last one

@@ -1,3 +1,4 @@
+import { newId } from "./ids.js";
 // Historical mock records for the Reports & Export screen. These are a
 // separate, independent dataset from the "live" state in rooms.js/
 // inventory.js — those hold current snapshots (today's room status,
@@ -25,9 +26,12 @@ export const FOOD_ORDER_RECORDS = [];
 
 // Every completed order (from the Orders screen) appends a row per dish
 // here — that's what makes it count as a sale in the Food Orders report.
-let nextFoodOrderRecordId = 1;
+// A UUID, not a counter. Two devices offline would both have handed out
+// the same number, and every lookup joining on it would then match two
+// different records — one guest's bill quietly containing another's
+// charges. See [[backend-decisions]].
 export function allocateFoodOrderRecordId() {
-  return nextFoodOrderRecordId++;
+  return newId();
 }
 
 // Every activity charge (Room Map > villa > Activities) appends a row
@@ -35,17 +39,15 @@ export function allocateFoodOrderRecordId() {
 // rides along on the invoice total with no way to attribute it to
 // "activities" instead of "room" in the Dashboard's revenue split.
 export const ACTIVITY_RECORDS = [];
-let nextActivityRecordId = 1;
 export function allocateActivityRecordId() {
-  return nextActivityRecordId++;
+  return newId();
 }
 
 // `roomId` is the join key; `villa` is the villa name at booking time.
 // Each booking also carries its own `id` so check-out can close the exact
 // row it opened, instead of re-finding it by matching guest+villa+dates.
-let nextBookingId = 1;
 export function allocateBookingId() {
-  return nextBookingId++;
+  return newId();
 }
 
 export const BOOKINGS = [];

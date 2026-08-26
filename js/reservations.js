@@ -152,25 +152,25 @@ function renderReservationsList() {
   }).join("");
 
   list.querySelectorAll(".reservation-invoice-btn").forEach(btn => {
-    btn.addEventListener("click", () => openProformaForm(Number(btn.dataset.reservationId)));
+    btn.addEventListener("click", () => openProformaForm(btn.dataset.reservationId));
   });
   list.querySelectorAll(".reservation-view-invoice-btn").forEach(btn => {
-    btn.addEventListener("click", () => reprintProforma(Number(btn.dataset.proformaId), "screen-reservations"));
+    btn.addEventListener("click", () => reprintProforma(btn.dataset.proformaId, "screen-reservations"));
   });
   // The guest's copy of an agent booking: same confirmation, no rates and
   // no bank details, since they settle with the agent.
   list.querySelectorAll(".reservation-guest-copy-btn").forEach(btn => {
     btn.addEventListener("click", () =>
-      reprintReservation(Number(btn.dataset.reservationId), "screen-reservations", { hidePrices: true }));
+      reprintReservation(btn.dataset.reservationId, "screen-reservations", { hidePrices: true }));
   });
   list.querySelectorAll(".reservation-edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => openReservationForm(Number(btn.dataset.reservationId)));
+    btn.addEventListener("click", () => openReservationForm(btn.dataset.reservationId));
   });
   list.querySelectorAll(".reservation-print-btn").forEach(btn => {
-    btn.addEventListener("click", () => reprintReservation(Number(btn.dataset.reservationId), "screen-reservations"));
+    btn.addEventListener("click", () => reprintReservation(btn.dataset.reservationId, "screen-reservations"));
   });
   list.querySelectorAll(".reservation-cancel-btn").forEach(btn => {
-    btn.addEventListener("click", () => cancelReservation(Number(btn.dataset.reservationId)));
+    btn.addEventListener("click", () => cancelReservation(btn.dataset.reservationId));
   });
 }
 

@@ -1,3 +1,4 @@
+import { newId } from "./ids.js";
 // Everything a guest has run up during a stay and not yet been billed for
 // — food sent to the villa, a safari, a transfer.
 //
@@ -27,9 +28,12 @@ export const CHARGE_STATUS = {
 
 export const GUEST_CHARGES = [];
 
-let nextChargeId = 1;
+// A UUID, not a counter. Two devices offline would both have handed out
+// the same number, and every lookup joining on it would then match two
+// different records — one guest's bill quietly containing another's
+// charges. See [[backend-decisions]].
 export function allocateChargeId() {
-  return nextChargeId++;
+  return newId();
 }
 
 // A charge is never edited in place beyond its status — the description,

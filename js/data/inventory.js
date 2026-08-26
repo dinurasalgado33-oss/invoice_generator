@@ -1,3 +1,4 @@
+import { newId } from "./ids.js";
 export const INVENTORY_CATEGORIES = [
   "Meat", "Seafood", "Produce", "Dairy & Eggs", "Grains", "Pantry", "Beverages",
   "Toiletries & Amenities", "Housekeeping", "Linen", "Cleaning Supplies", "Maintenance & Office", "Other",
@@ -202,9 +203,12 @@ export function getInventoryUsage() {
 // getInventoryUsage() picks these up for free, since it derives usage from
 // opening + restocked − closing rather than from any one cause. The log
 // exists so the manager can see *why* stock moved, not just that it did.
-let nextUsageId = 1;
+// A UUID, not a counter. Two devices offline would both have handed out
+// the same number, and every lookup joining on it would then match two
+// different records — one guest's bill quietly containing another's
+// charges. See [[backend-decisions]].
 export function allocateUsageId() {
-  return nextUsageId++;
+  return newId();
 }
 
 export const USAGE_REASONS = ["Kitchen use", "Waste / spoilage", "Staff meal", "Other"];
@@ -214,9 +218,8 @@ export const USAGE_LOG = [];
 // Restock purchase history — every logged restock (single or bulk) appends
 // here with its cost, so Reports can total spend, rank costliest items,
 // and show price trends. Empty until the first delivery is logged.
-let nextRestockId = 1;
 export function allocateRestockId() {
-  return nextRestockId++;
+  return newId();
 }
 
 // itemId is the join key; itemName/category/unit are a snapshot of how the

@@ -286,13 +286,13 @@ function renderPendingOrdersList() {
   `).join("") || `<p class="room-detail-empty">No pending orders right now.</p>`;
 
   list.querySelectorAll(".pending-order-edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => editOrder(Number(btn.dataset.orderId)));
+    btn.addEventListener("click", () => editOrder(btn.dataset.orderId));
   });
   list.querySelectorAll(".pending-order-delete-btn").forEach(btn => {
-    btn.addEventListener("click", () => deleteOrder(Number(btn.dataset.orderId)));
+    btn.addEventListener("click", () => deleteOrder(btn.dataset.orderId));
   });
   list.querySelectorAll(".pending-order-complete-btn").forEach(btn => {
-    btn.addEventListener("click", () => completeOrder(Number(btn.dataset.orderId)));
+    btn.addEventListener("click", () => completeOrder(btn.dataset.orderId));
   });
 }
 

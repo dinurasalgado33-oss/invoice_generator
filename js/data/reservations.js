@@ -1,3 +1,4 @@
+import { newId } from "./ids.js";
 // Reservations are now records, not just printed documents. The
 // Reservations screen lists them, and each one can later produce a
 // Proforma Invoice for the travel agent or guide who booked it — which
@@ -6,9 +7,15 @@
 // `no` is the guest-facing reservation number printed on both documents.
 // Sequential and human-read, so it carries the same offline-allocation
 // problem as invoice and GRC numbers — see the README's offline-first note.
-let nextReservationNo = 1;
+// A UUID, not a counter. Two devices offline would both have handed out
+// the same number, and every lookup joining on it would then match two
+// different records — one guest's bill quietly containing another's
+// charges. See [[backend-decisions]].
+// The printed number a guest and an accountant refer to is issued
+// separately, from this property's reserved block, and lives on the
+// record as `no` — this is only the internal join key.
 export function allocateReservationNo() {
-  return nextReservationNo++;
+  return newId();
 }
 
 // A reservation is a promise about a future stay, so it needs a state:
@@ -65,9 +72,8 @@ export function findConflicts({ branch, villas, checkinDate, checkoutDate, ignor
 // than as a flag on the reservation, because one booking can legitimately
 // be re-invoiced (an amended stay, a corrected agent rate) and each issued
 // document needs its own number and its own record of what it said.
-let nextProformaSeq = 1;
 export function allocateProformaNo() {
-  return nextProformaSeq++;
+  return newId();
 }
 
 export const PROFORMA_INVOICES = [];

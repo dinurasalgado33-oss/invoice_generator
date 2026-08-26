@@ -1,3 +1,4 @@
+import { newId } from "./ids.js";
 import { add, COLLECTIONS } from "./store.js";
 // The welcome e-mail a guest gets when they check in — the menus for the
 // property they are staying at, plus the few things they ask reception in
@@ -24,9 +25,12 @@ export const EMAIL_STATUS = {
 // later when the guest says they never got it.
 export const GUEST_EMAIL_QUEUE = [];
 
-let nextQueueId = 1;
+// A UUID, not a counter. Two devices offline would both have handed out
+// the same number, and every lookup joining on it would then match two
+// different records — one guest's bill quietly containing another's
+// charges. See [[backend-decisions]].
 export function allocateGuestEmailId() {
-  return nextQueueId++;
+  return newId();
 }
 
 // Which menus a guest at this property should be given. Keyed to the
