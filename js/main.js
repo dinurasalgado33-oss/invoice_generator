@@ -28,11 +28,23 @@ import "./proforma.js";
 import "./history.js";
 import "./branch.js";
 import { restoreSession } from "./auth.js";
+import { initLock, lock, hasPin, startPinSetup } from "./lock.js";
 
 // Derived inventory state (opening-stock snapshot, seeded costs, id
 // counters) is computed here rather than at module load — with a backend
 // the dataset won't have arrived yet when the modules first evaluate, so
 // this is the single line that moves to "after the first snapshot".
 initInventoryDerived();
+
+// Wires the lock's listeners. It stays dormant until a PIN is set and
+// somebody is signed in, so this is safe to call before either is true.
+initLock();
+
+// The header's lock button. Offers to set a PIN first if there isn't one,
+// rather than doing nothing and looking broken.
+document.getElementById("lock-now-btn").addEventListener("click", () => {
+  if (hasPin()) lock();
+  else startPinSetup();
+});
 
 restoreSession();
