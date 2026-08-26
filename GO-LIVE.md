@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-26, at commit `62440eb`.
+Last updated: 2026-08-26, at commit `a1ea5b5`.
 
 ---
 
@@ -38,18 +38,23 @@ This table is shown after every phase completes, updated in place.
 | Area | State |
 |---|---|
 | Firestore connection | ✅ Working, proven end to end |
-| Auth (email/password) | ✅ Working — one account |
-| Security rules | ⚠️ **Written in full, published only in part** — see §3 |
-| Offline cache + multi-tab | ✅ Configured, not stress-tested |
+| Auth (email/password) | ✅ Working — manager + staff both verified |
+| Security rules — written | ✅ Done |
+| Security rules — deploy pipeline | ✅ CLI installed, deploys cleanly |
+| Security rules — branch scoping | ✅ Verified against live Firestore, not just UI (Phase 1) |
+| Offline cache + multi-tab | ✅ Full stay tested with network genuinely off (Phase 2) |
 | Record IDs (UUID) | ✅ Done, collision case tested directly |
-| Numbering — reservations | ✅ Wired |
-| Numbering — invoices | ⚠️ Wired, **unverified** (blocked by rules) |
-| Numbering — GRC, proforma | ❌ Not wired |
+| Number blocks keyed per project | ✅ Done — dev→live switch is safe, no manual steps needed |
+| Numbering — reservations | ✅ Verified live |
+| Numbering — invoices | ✅ Verified live |
+| Numbering — GRC | ✅ Verified live |
+| Numbering — proforma | ✅ Verified live |
 | Cloud Functions | ❌ None written |
 | Hosting | ❌ Not set up |
 | Google Sheets mirror | ❌ Not started |
 | Backups | ❌ Not configured |
 | `LIVE` project config | ❌ Deliberately still `null` |
+| The real `leopard-inn` project | ❌ Not created yet |
 
 ---
 
@@ -73,69 +78,60 @@ load-bearing work otherwise.
 - A full stay — check in, charge, check out, invoice — completes with no
   console errors.
 
-**Written and syntactically sound, but never observed working:**
+**Also verified since, in Phases 1 and 2:**
 
-- Every rule except the ones exercised by `logins`, the collections that
-  hydrate at sign-in, and — as of Phase 1 — branch scoping. The
-  scoping rules (`mayTouchExisting` / `mayWriteIncoming`) were tested
+- Branch scoping (`mayTouchExisting` / `mayWriteIncoming`), tested
   directly against Firestore with a real staff account, bypassing the UI
-  entirely: cross-branch reads and writes were both refused with
-  `permission-denied`, own-branch writes succeeded, and manager-only
-  collections (`logins`, `users`) were refused to staff. That is now a
-  verified fact, not an assumption.
-- Offline behaviour. The persistent cache is configured but nothing has
-  been done with the network actually off.
-- Invoice numbering, which was wired at `6745a0f` and could not be
-  verified because block reservation is refused (§3).
+  entirely: cross-branch reads and writes both refused with
+  `permission-denied`, own-branch writes succeeded, manager-only
+  collections (`logins`, `users`) refused to staff.
+- Offline behaviour, with the Firestore SDK's network genuinely
+  disabled: a full stay (check in, charge, checkout, invoice) completed
+  offline, queued with `hasPendingWrites: true`, then landed on the
+  server once reconnected and rehydrated correctly after a reload.
+- All four document types — invoice, GRC, reservation, proforma — draw
+  real, correctly formatted numbers from Firestore. Doing this surfaced a
+  genuine bug: a financial year like `2026/27` contains a slash, and
+  Firestore treats `/` as a path separator, so every block-reservation
+  attempt was being rejected outright, on any project, regardless of
+  rules. Fixed in `8dbbb6e`.
 
-**Not built at all:** Functions, hosting, Sheets, backups.
+**Not built at all:** Functions, hosting, Sheets, backups, the real
+`leopard-inn` project itself.
 
 ---
 
-## 3. Fix this first: there is no way to deploy rules
+## 3. Resolved: rules now deploy with one command
 
-This is the most important finding in the file, and it is a process
-problem rather than a code one.
+This used to be the most important open problem in the file. It no
+longer is — recorded here so the reason it mattered doesn't get lost.
 
-`firestore.rules` is a complete, careful, 200-line security boundary that
-lives in the repo — and **nothing deploys it.** It has only ever reached
-Firebase by being copy-pasted into the console by hand.
+`firestore.rules` used to reach Firebase only by being copy-pasted into
+the console by hand, and the predictable thing happened: the `counters`
+rule was added to the file in commit `1f3e3d1`, never pasted in, and
+document numbering was silently refused for two commits before anyone
+noticed. The file and the live project had quietly disagreed.
 
-The predictable thing happened. The `counters` rule was added to the file
-in commit `1f3e3d1`, never pasted in, and so document numbering has been
-silently refused ever since. It surfaced only because invoice numbering
-was tested today and returned `permission-denied`. The file and the live
-project had quietly disagreed for two commits.
+**Fixed.** The Firebase CLI is installed, `firebase.json`, `.firebaserc`
+and `firestore.indexes.json` exist and are committed, and a real deploy
+has been run successfully:
 
-Two things follow, and both matter more for the real project than for
-dev:
+```bash
+cd "path to the project folder"
+firebase deploy --only firestore:rules
+```
 
-1. **The rules in the repo are not evidence of the rules in force.** For
-   `leopard-inn-dev` that is an annoyance. For the real project it is a
-   guest-data question, because the file is the only place the branch
-   scoping is written down.
-2. **Set up the Firebase CLI before creating the live project**, so the
-   live project never has a hand-edited rules state to drift from:
+Whenever `firestore.rules` changes, that command is the whole publish
+step — no console, no copy-paste, no chance of the repo and the live
+project disagreeing again.
 
-   ```bash
-   npm install -g firebase-tools
-   firebase login
-   firebase init firestore
-   ```
-
-   That writes `firebase.json`, `.firebaserc` and
-   `firestore.indexes.json` — none of which exist today. After that,
-   publishing rules is one command that can be committed alongside the
-   change that needed it:
-
-   ```bash
-   firebase deploy --only firestore:rules
-   ```
-
-**Immediate action, before anything else:** paste the current
-`firestore.rules` into `leopard-inn-dev` → Firestore → Rules → Publish,
-so invoice numbering can be verified against dev before the live project
-is built on top of unverified work.
+One thing worth remembering for the live project: `firebase login` and
+`npm install -g firebase-tools` need to run in **your own terminal**, on
+your actual machine — an AI assistant's tool calls run in a separate
+sandboxed environment and cannot install anything onto your real disk or
+complete a Google OAuth sign-in on your behalf. Deploys likewise have to
+be run by you, or by an assistant working directly in a terminal on your
+machine, never one working through a sandboxed tool.
 
 ---
 
@@ -248,13 +244,10 @@ will refuse it at runtime with a console link that creates the index.
   were cleared earlier, so the live project starts genuinely clean. That
   is an advantage: no migration step, no risk of demo bookings appearing
   in real revenue.
-- **Number blocks.** Reserved blocks live in each device's
-  `localStorage`, keyed per project only by branch and year — *not* by
-  project ID. A device that used dev and then switches to live will still
-  be holding a dev block and will spend its numbers against live
-  documents. Clear site data on every device at the switchover, or the
-  first live invoices carry numbers the live counter knows nothing about.
-  Worth fixing properly by putting the project ID in the storage key.
+- ~~**Number blocks.**~~ Fixed in `e2ba474` — the storage key now includes
+  the project ID, so a device switching from dev to live cannot spend a
+  dev-issued number against a live document. No manual clearing needed at
+  switchover.
 
 ---
 
