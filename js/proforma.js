@@ -10,6 +10,7 @@ import {
   PROFORMA_CURRENCIES, DEFAULT_PROFORMA_CURRENCY,
 } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
+import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 
@@ -386,8 +387,6 @@ el("proforma-form").addEventListener("submit", (e) => {
     el("pf-items-error").classList.add("show");
     return;
   }
-  isSubmitting = true;
-
   const res = sourceReservation;
   // A correction keeps its number, for the same reason a reservation does:
   // allocating on every edit would leave gaps that read as invoices someone
@@ -395,8 +394,23 @@ el("proforma-form").addEventListener("submit", (e) => {
   const existing = editingProformaId != null
     ? PROFORMA_INVOICES.find(x => x.id === editingProformaId)
     : null;
+
+  let issued = null;
+  if (!existing) {
+    issued = takeNumber(res.branch, DOC_TYPES.PROFORMA);
+    if (!issued) {
+      showToast("No agent invoice numbers left on this device — reconnect and try again");
+      return;
+    }
+  }
+
+  isSubmitting = true;
+
   const record = {
     id: existing ? existing.id : allocateProformaNo(),
+    no: existing ? existing.no : issued.formatted,
+    financialYear: existing ? existing.financialYear : issued.fy,
+    sequence: existing ? existing.sequence : issued.seq,
     reservationId: res.id,
     reservationNo: res.no,
     branch: res.branch,
@@ -464,7 +478,13 @@ function renderProformaPreview(p) {
 
   // Matches the paper document's "RES - TRA102" — RES marks the booking,
   // TRA marks it as a travel agent invoice against that booking.
-  el("pf-prev-resno").textContent = `RES - TRA${p.reservationNo}`;
+  // This document's own printed number, and the reservation it was
+  // raised against — two different numbers, no longer mashed into one
+  // string. That string-concatenation was left over from when both were
+  // bare integers; now that each is its own formatted "PREFIX-FY-###",
+  // gluing them together read as garbage.
+  el("pf-prev-no").textContent = p.no || "";
+  el("pf-prev-resno").textContent = p.reservationNo || "";
   el("pf-prev-date").textContent = formatDate(p.issuedDate);
   el("pf-prev-currency").textContent = p.currency;
   el("pf-prev-currency-head").textContent = p.currency;

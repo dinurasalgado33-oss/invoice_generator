@@ -54,6 +54,15 @@ export function formatNumber(prefix, fy, seq) {
   return `${prefix}-${fy}-${String(seq).padStart(3, "0")}`;
 }
 
+// A financial year reads "2026/27" on a printed document, and that slash
+// is a path separator to Firestore — `counters/Wilpattu__invoice__2026/27`
+// parses as three segments and is rejected as an invalid document
+// reference. So the printed form above keeps its slash and every *key*
+// derived from a year goes through here instead.
+function slug(part) {
+  return String(part).replace(/[/\s]+/g, "-");
+}
+
 // Keyed by project as well as branch, type and year. Without the project,
 // a device that used the test database and then switched to the live one
 // would still be holding a *test* block, and would spend its numbers on
@@ -62,7 +71,7 @@ export function formatNumber(prefix, fy, seq) {
 // for that, so the key carries the project rather than relying on
 // somebody remembering to clear site data.
 function localKey(branch, type, fy) {
-  return `leopardinn-block-${projectId()}-${branch}-${type}-${fy}`.replace(/\s+/g, "-");
+  return `leopardinn-block-${slug(projectId())}-${slug(branch)}-${slug(type)}-${slug(fy)}`;
 }
 
 function readBlock(branch, type, fy) {
@@ -90,7 +99,7 @@ function remaining(block) {
 async function reserveBlock(branch, type, fy) {
   await connect();
   const fs = fsApi();
-  const ref = fs.doc(getDb(), "counters", `${branch}__${type}__${fy}`.replace(/\s+/g, "-"));
+  const ref = fs.doc(getDb(), "counters", `${slug(branch)}__${slug(type)}__${slug(fy)}`);
 
   return fs.runTransaction(getDb(), async (tx) => {
     const snap = await tx.get(ref);

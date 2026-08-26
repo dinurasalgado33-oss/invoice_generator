@@ -32,15 +32,6 @@ export const DEFAULT_DEPARTURE_TIME = "11:00";
 // it stays correct even after the villa is renamed or re-let.
 export const GRC_RECORDS = [];
 
-// Sequential and guest-facing, like the invoice number — it's written on a
-// signed legal document, so it has the same offline-numbering problem
-// (see the README's offline-first section). Starts at 1
-// since no cards exist yet.
-let nextGrcNo = 1;
-export function allocateGrcNo() {
-  return nextGrcNo++;
-}
-
 export function findGrcByBookingId(bookingId) {
   return GRC_RECORDS.find(g => g.bookingId === bookingId) || null;
 }

@@ -12,10 +12,11 @@ import { BOOKING_SOURCES } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 import {
-  GRC_RECORDS, allocateGrcNo, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
+  GRC_RECORDS, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
   STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
   DEFAULT_ARRIVAL_TIME, DEFAULT_DEPARTURE_TIME,
 } from "./data/grc.js";
+import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 
 // The Guest Registration Card is a legal requirement at check-in, so this
 // screen replaces the old four-field check-in form entirely: no booking
@@ -309,12 +310,24 @@ el("grc-form").addEventListener("submit", (e) => {
       return;
     }
   }
+  // A registration card is a signed legal document the hotel is required
+  // to keep, so its number comes from this device's reserved block like
+  // every other document — and is refused rather than guessed at if none
+  // is available.
+  const issued = takeNumber(context.branch, DOC_TYPES.GRC);
+  if (!issued) {
+    showToast("No card numbers left on this device — reconnect and try again");
+    return;
+  }
+
   isSubmitting = true;
 
   const arrival = val("grc-arrival-date");
   const departure = val("grc-departure-date");
   const record = {
-    grcNo: allocateGrcNo(),
+    grcNo: issued.formatted,
+    financialYear: issued.fy,
+    sequence: issued.seq,
     branch: context.branch,
     roomId: context.room.id,
     roomName: villaNamesForStay(),
