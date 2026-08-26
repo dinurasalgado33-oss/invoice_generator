@@ -1,3 +1,6 @@
 .claude/
 dev/menu-preview/
 node_modules/
+firebase-debug.log
+firestore-debug.log
+.firebase/
