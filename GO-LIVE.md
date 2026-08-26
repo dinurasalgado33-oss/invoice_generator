@@ -22,7 +22,7 @@ data behind a rule nobody has watched actually block anything.
 
 | Phase | What | Status |
 |---|---|---|
-| 1 | Verify branch scoping with a real staff account | ⬜ Not started |
+| 1 | Verify branch scoping with a real staff account | ✅ Done — verified against live Firestore rules, not just the UI |
 | 2 | Offline resilience test — network genuinely off | ⬜ Not started |
 | 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
 | 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⬜ Not started |
@@ -75,12 +75,14 @@ load-bearing work otherwise.
 
 **Written and syntactically sound, but never observed working:**
 
-- Every rule except the handful exercised by `logins` and the collections
-  that hydrate at sign-in. In particular the branch-scoping rules
-  (`mayTouchExisting` / `mayWriteIncoming`) have **never been tested
-  against a real staff account** — there has only ever been one manager
-  account. A staff member being correctly locked out of the other
-  property's records is, right now, an untested claim.
+- Every rule except the ones exercised by `logins`, the collections that
+  hydrate at sign-in, and — as of Phase 1 — branch scoping. The
+  scoping rules (`mayTouchExisting` / `mayWriteIncoming`) were tested
+  directly against Firestore with a real staff account, bypassing the UI
+  entirely: cross-branch reads and writes were both refused with
+  `permission-denied`, own-branch writes succeeded, and manager-only
+  collections (`logins`, `users`) were refused to staff. That is now a
+  verified fact, not an assumption.
 - Offline behaviour. The persistent cache is configured but nothing has
   been done with the network actually off.
 - Invoice numbering, which was wired at `6745a0f` and could not be
@@ -258,33 +260,36 @@ will refuse it at runtime with a console link that creates the index.
 
 ## 6. Gaps to close before real guests
 
-Roughly in order of how much they'd hurt.
+Roughly in order of how much they'd hurt. Struck-through items are done —
+kept here rather than deleted, so the record of what closed each gap
+stays attached to why it mattered.
 
-1. **Rules deploy path** (§3) — everything else is guesswork without it.
-2. **Verify invoice numbering** once rules are published. Wired but
-   unproven.
-3. **Wire GRC and proforma numbering.** Same `takeNumber` machinery,
-   two more files. Until then those documents have no numbering scheme at
-   all.
-4. **Test with a real staff account.** The branch scoping is the single
-   most security-relevant thing in the rules and has never been exercised.
-   Create a staff account on dev, sign in, confirm they cannot see the
-   other property.
-5. **Test offline properly.** Check in a guest with the network off,
-   reconnect, confirm the records arrive intact and the numbers do not
-   collide with another device's.
+1. ~~**Rules deploy path** (§3).~~ Done — Firebase CLI installed, deploys
+   with `firebase deploy --only firestore:rules`.
+2. ~~**Verify invoice numbering.**~~ Done — surfaced and fixed a real bug
+   in the process: a financial year's `/` broke Firestore document IDs.
+3. ~~**Wire GRC and proforma numbering.**~~ Done — both draw real numbers
+   now, and a second, unrelated bug in the proforma's printed number was
+   found and fixed along the way.
+4. ~~**Test with a real staff account.**~~ Done — Phase 1. Verified
+   directly against Firestore, not just the UI: cross-branch reads and
+   writes refused, own-branch access works, manager-only collections
+   refused to staff.
+5. **Test offline properly.** Phase 2. Check in a guest with the network
+   off, reconnect, confirm the records arrive intact and the numbers do
+   not collide with another device's.
 6. **Cloud Functions** — the welcome email send, the nightly Sheets
-   append, the nightly backup. None written. Note that the email API key
+   append, the nightly backup. Phase 4. Note that the email API key
    must live in a Function and never in client JS, which is readable by
    anyone.
 7. **Backups.** Firestore's scheduled export needs a Blaze plan and a
    Cloud Storage bucket. Free-tier Spark has no automatic backups at all —
-   worth knowing before assuming the data is safe.
+   worth knowing before assuming the data is safe. Phase 4.
 8. **Staff management screen** so accounts don't need console access
    forever. Manager-only, and it still cannot write `users/{uid}`
-   directly — it needs a Function.
+   directly — it needs a Function. Phase 5.
 9. **PIN unlock + auto sign-out.** A shared reception tablet left signed
-   in is the realistic threat, not a remote attacker.
+   in is the realistic threat, not a remote attacker. Phase 5.
 10. **Hosting.** `firebase deploy --only hosting`, plus the domain added
     to authorized domains (§4.5).
 
