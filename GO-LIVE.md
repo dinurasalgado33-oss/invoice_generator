@@ -9,7 +9,27 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-26, at commit `6745a0f`.
+Last updated: 2026-08-26, at commit `62440eb`.
+
+---
+
+## 0. Phase plan
+
+The order matters: each phase is safe to skip past only once the one
+before it is actually verified, not just written. Security scoping comes
+before the live project, because there is no point standing up real guest
+data behind a rule nobody has watched actually block anything.
+
+| Phase | What | Status |
+|---|---|---|
+| 1 | Verify branch scoping with a real staff account | ⬜ Not started |
+| 2 | Offline resilience test — network genuinely off | ⬜ Not started |
+| 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
+| 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⬜ Not started |
+| 5 | Staff management screen, PIN unlock, auto sign-out | ⬜ Not started |
+| 6 | Firebase Hosting | ⬜ Not started |
+
+This table is shown after every phase completes, updated in place.
 
 ---
 
