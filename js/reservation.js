@@ -134,16 +134,10 @@ function syncProformasToReservation(r) {
   if (!affected.length) return;
 
   const stillBooked = new Set((r.villas || []).map(v => v.roomId));
-  affected.forEach(p => {
-    p.guestName = r.guestName;
-    p.guestTotal = r.guestTotal;
-    p.contact = r.contact;
-    p.checkinDate = r.checkinDate;
-    p.checkoutDate = r.checkoutDate;
-    p.nights = r.nights;
+  const villaById = new Map((r.villas || []).map(v => [v.roomId, v]));
 
-    const villaById = new Map((r.villas || []).map(v => [v.roomId, v]));
-    p.items = (p.items || [])
+  affected.forEach(p => {
+    const items = (p.items || [])
       .filter(it => stillBooked.has(it.roomId))
       .map((it, i) => {
         const villa = villaById.get(it.roomId);
@@ -158,13 +152,33 @@ function syncProformasToReservation(r) {
         };
       });
 
-    p.billTotal = p.items.reduce((s, it) => s + it.value, 0);
-    const discount = Math.min(clampMoney(p.discount), p.billTotal);
-    p.discount = discount;
-    p.gross = p.billTotal;
-    p.net = p.billTotal - discount;
-    p.grandTotal = p.net - clampMoney(p.advance);
-    p.correctedAt = new Date().toISOString();
+    const billTotal = items.reduce((s, it) => s + it.value, 0);
+    const discount = Math.min(clampMoney(p.discount), billTotal);
+    const net = billTotal - discount;
+
+    // Every changed field goes through this one update(), rather than being
+    // assigned in place first. Correcting a reservation rewrites the agent
+    // invoice's guest, dates, nights, line items and every total, and the
+    // toast says so — "agent invoice updated too". Assigning left all of it
+    // in this tab's memory only, so the stored document kept the
+    // pre-correction figures under the same TRA number: the copy the agent
+    // was sent and the copy the next device reprinted disagreed, with
+    // nothing on screen admitting it.
+    update(COLLECTIONS.PROFORMAS, p, {
+      guestName: r.guestName,
+      guestTotal: r.guestTotal,
+      contact: r.contact,
+      checkinDate: r.checkinDate,
+      checkoutDate: r.checkoutDate,
+      nights: r.nights,
+      items,
+      billTotal,
+      discount,
+      gross: billTotal,
+      net,
+      grandTotal: net - clampMoney(p.advance),
+      correctedAt: new Date().toISOString(),
+    });
   });
 }
 
