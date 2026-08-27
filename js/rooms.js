@@ -321,9 +321,16 @@ async function releaseVilla() {
 
   // The booking has to stop claiming this villa, or checkout would sweep
   // it back in and free a villa somebody else has since been given.
+  //
+  // Written through update(), not assigned in place: assigning only changed
+  // the copy in this tab's memory, so the release survived until the next
+  // reload and was never visible to the other device at all — which is
+  // exactly the sweep-it-back-in case this block exists to prevent.
   if (booking && Array.isArray(booking.roomIds)) {
-    booking.roomIds = booking.roomIds.filter(id => id !== room.id);
-    booking.villa = remaining.map(r => r.name).join(" + ");
+    update(COLLECTIONS.BOOKINGS, booking, {
+      roomIds: booking.roomIds.filter(id => id !== room.id),
+      villa: remaining.map(r => r.name).join(" + "),
+    });
   }
 
   // Nothing to carry across any more: charges belong to the stay, not to
