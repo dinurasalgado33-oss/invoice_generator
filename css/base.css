@@ -664,7 +664,18 @@ button.is-busy { cursor: progress; }
   outline: none;
   border-color: var(--gold);
 }
-.lock-form .field-error { min-height: 18px; }
+/* Kept in the layout and hidden by visibility rather than display, so the
+   space is genuinely reserved. `min-height` alone could not reserve
+   anything: .field-error is `display: none` until it gets `.show`, so a
+   wrong PIN pushed the Unlock button 10px down the screen at the exact
+   moment someone was tapping it again. Scoped to .lock-form — everywhere
+   else an error appearing is a normal reflow, not a moving target. */
+.lock-form .field-error {
+  display: block;
+  visibility: hidden;
+  min-height: 18px;
+}
+.lock-form .field-error.show { visibility: visible; }
 .lock-form .primary-btn { margin-top: 12px; }
 .link-btn {
   margin-top: 16px;
