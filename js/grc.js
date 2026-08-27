@@ -222,7 +222,12 @@ export function openGrcForm({ branch, room, onComplete }) {
 // booked. Everything stays editable — the reservation is a starting point,
 // not a lock, since details change between booking and arrival.
 el("grc-reservation-select").addEventListener("change", (e) => {
-  const id = Number(e.target.value);
+  // The option value is a reservation UUID, so it is used as-is. Number()
+  // here yielded NaN, which is falsy — so picking a reservation silently
+  // did nothing at all, and `linkedReservation` stayed null right through
+  // submit. The empty value is the "Walk-in" option, and is falsy too,
+  // which is what keeps that branch working.
+  const id = e.target.value;
   linkedReservation = id ? findReservationById(id) : null;
   if (!linkedReservation) return;
 
