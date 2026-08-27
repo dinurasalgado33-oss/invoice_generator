@@ -1055,13 +1055,21 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
   });
   if (!ok) return;
 
-  update(COLLECTIONS.INVOICES, inv, { status: "Void" });
-  inv.voidReason = reason;
-  inv.voidedAt = new Date().toISOString();
+  // Every field in the one update() call. They used to be assigned
+  // immediately after it, which happened to work — the adapter awaits
+  // connect() before reading the record, so the assignments landed first
+  // — but only by accident of that await. Anything that made the write
+  // synchronous would have silently dropped the entire void audit trail.
+  //
   // An invoice records who prepared it; cancelling one is the bigger
   // financial act and recorded nobody. Two managers share these accounts,
-  // and "who wrote this off" is the first question an audit asks.
-  inv.voidedBy = appState.currentUser || "";
+  // and "who voided this" is the first question an audit asks.
+  update(COLLECTIONS.INVOICES, inv, {
+    status: "Void",
+    voidReason: reason,
+    voidedAt: new Date().toISOString(),
+    voidedBy: appState.currentUser || "",
+  });
 
   closeVoidSheet();
   renderAll();
