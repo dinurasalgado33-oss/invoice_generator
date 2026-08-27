@@ -1,4 +1,5 @@
 import { newId } from "./ids.js";
+import { update, COLLECTIONS } from "./store.js";
 // Historical mock records for the Reports & Export screen. These are a
 // separate, independent dataset from the "live" state in rooms.js/
 // inventory.js — those hold current snapshots (today's room status,
@@ -63,12 +64,20 @@ export function writeOffStayRecords(bookingId, reason) {
   if (bookingId === null || bookingId === undefined) return 0;
   const at = new Date().toISOString();
   let touched = 0;
-  [FOOD_ORDER_RECORDS, ACTIVITY_RECORDS].forEach(set => {
+  // Paired with its collection, because a write-off has to reach the
+  // database. Mutating in place was enough when everything lived in
+  // memory; with a backend it meant the money came off this device's
+  // reports and stayed on every other one — and came back here on the
+  // next reload, since hydration overwrites from the server.
+  [[FOOD_ORDER_RECORDS, COLLECTIONS.FOOD_ORDERS],
+   [ACTIVITY_RECORDS, COLLECTIONS.ACTIVITY_CHARGES]].forEach(([set, collection]) => {
     set.forEach(r => {
       if (r.bookingId === bookingId && !r.writtenOff) {
-        r.writtenOff = true;
-        r.writeOffReason = reason || "";
-        r.writtenOffAt = at;
+        update(collection, r, {
+          writtenOff: true,
+          writeOffReason: reason || "",
+          writtenOffAt: at,
+        });
         touched++;
       }
     });
