@@ -276,8 +276,15 @@ export function openProformaForm(reservationId) {
 
 function applyFormMode() {
   const editing = editingProformaId != null;
+  // `no` is the issued number ("TRA-2026/27-001") — already prefixed, so
+  // it is printed as-is. The id beside it is a UUID: this heading was
+  // reading "Correct Agent Invoice TRA-c3135b0d-af18-4915-…", which names
+  // no document the agent or the accountant has ever seen.
+  const editingNo = editing
+    ? (PROFORMA_INVOICES.find(x => String(x.id) === String(editingProformaId)) || {}).no
+    : null;
   el("proforma-form-heading").textContent = editing
-    ? `Correct Agent Invoice TRA-${editingProformaId}`
+    ? (editingNo ? `Correct Agent Invoice ${editingNo}` : "Correct Agent Invoice")
     : "Invoice for Travel Agent / Guide";
   el("pf-submit-label").textContent = editing ? "Save Changes" : "Generate Proforma Invoice";
 }
@@ -455,7 +462,8 @@ el("proforma-form").addEventListener("submit", (e) => {
   sourceReservation = null;
   isSubmitting = false;
   showToast(existing
-    ? `Agent invoice TRA-${record.id} updated`
+    // `no`, not `id` — see applyFormMode. `id` is the UUID.
+    ? `Agent invoice ${record.no} updated`
     : `Proforma invoice raised for ${record.travelAgent}`);
   editingProformaId = null;
   showScreen("screen-proforma-preview");
