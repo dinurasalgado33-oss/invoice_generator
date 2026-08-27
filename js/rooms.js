@@ -796,7 +796,29 @@ onAfterGenerate((record) => {
 
   if (checkoutRoomRef) {
     const room = (ROOMS_BY_BRANCH[checkoutRoomRef.branch] || []).find(r => r.id === checkoutRoomRef.roomId);
-    if (!room) { checkoutRoomRef = null; return; }
+
+    // Only the invoice this checkout actually produced may close the stay.
+    //
+    // Nothing cleared checkoutRoomRef when staff backed out of the form, and
+    // this ran on *any* later invoice — so: tap Check Out, guest says "one
+    // more night", back out, then bill an unrelated walk-in food order, and
+    // that walk-in's invoice checked the resident out. Their villas were
+    // freed while they were still in them, their booking was marked Checked
+    // Out, and their whole open tab was marked billed against a stranger's
+    // bill. Reproduced end to end before fixing.
+    //
+    // The interim branch above has always carried a guard of this shape;
+    // this one never did. Matching on the stay rather than only the villa,
+    // because a villa can be re-let the same day.
+    const isThisCheckout = Boolean(room) && Boolean(record)
+      && !record.interim
+      && !record.walkin
+      && record.roomId === checkoutRoomRef.roomId
+      && (record.bookingId ?? null) === (room.bookingId ?? null);
+
+    // Cleared either way: an invoice that was not this checkout means the
+    // checkout was abandoned, so the pending reference is stale.
+    if (!isThisCheckout) { checkoutRoomRef = null; return; }
 
     const booking = BOOKINGS.find(b => b.id === room.bookingId);
     if (booking) update(COLLECTIONS.BOOKINGS, booking, { status: "Checked Out" });
