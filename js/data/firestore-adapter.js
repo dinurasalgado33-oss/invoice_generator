@@ -90,7 +90,7 @@ export const firestoreAdapter = {
 
 const watching = new Map();
 
-export async function hydrate(collection, array, { branch = null } = {}) {
+export async function hydrate(collection, array, { branch = null, keepLocalIfEmpty = false } = {}) {
   await connect();
   const fs = fsApi();
 
@@ -112,6 +112,16 @@ export async function hydrate(collection, array, { branch = null } = {}) {
         });
         rows.push(row);
       });
+      // Config collections start full — the menu lives in the source, not
+      // in anybody's typing — so an empty result means "not seeded yet",
+      // never "there are no dishes". Splicing here would replace the whole
+      // menu with nothing, and the app would look like it had lost it.
+      // Records are the opposite: empty genuinely means empty, and must
+      // splice, or a deleted-everywhere collection would never clear.
+      if (keepLocalIfEmpty && rows.length === 0) {
+        if (!settled) { settled = true; resolve(array); }
+        return;
+      }
       array.splice(0, array.length, ...rows);
       if (!settled) { settled = true; resolve(array); }
     }, (err) => {

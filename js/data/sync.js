@@ -14,6 +14,7 @@ import { useAdapter, COLLECTIONS } from "./store.js";
 import { firestoreAdapter, hydrate, stopWatching } from "./firestore-adapter.js";
 import { scopedBranch, currentProfile } from "./session.js";
 import { primeNumbering } from "./numbering.js";
+import { seedMenuIfEmpty } from "./seed-config.js";
 import { logError } from "./error-log.js";
 
 import { INVOICES, BOOKINGS, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./reports.js";
@@ -22,6 +23,7 @@ import { GRC_RECORDS } from "./grc.js";
 import { GUEST_CHARGES } from "./guest-charges.js";
 import { GUEST_EMAIL_QUEUE } from "./guest-email.js";
 import { RESTOCK_LOG, USAGE_LOG } from "./inventory.js";
+import { MENU_ITEMS } from "./menu.js";
 import { ROOM_ACTIVITY_LOG } from "./rooms.js";
 import { LOGIN_LOG } from "./accounts.js";
 import { ERROR_LOG } from "./error-log.js";
@@ -43,6 +45,7 @@ const COLLECTION_MAP = [
   [COLLECTIONS.STOCK_USAGE, USAGE_LOG],
   [COLLECTIONS.GUEST_EMAILS, GUEST_EMAIL_QUEUE],
   [COLLECTIONS.ROOM_ACTIVITY, ROOM_ACTIVITY_LOG],
+  [COLLECTIONS.MENU, MENU_ITEMS, { everyone: true, keepLocalIfEmpty: true }],
   [COLLECTIONS.LOGINS, LOGIN_LOG, { everyone: true }],
   [COLLECTIONS.ERRORS, ERROR_LOG, { everyone: true }],
 ];
@@ -61,9 +64,28 @@ export async function startSync() {
   useAdapter(firestoreAdapter);
   running = true;
 
+  // Before hydrating, not after. The menu is the one collection that
+  // starts full rather than empty — it lives in the source, not in
+  // anybody's typing — and hydrate() splices the array to whatever the
+  // server returned. On a fresh project that would replace 161 dishes
+  // with nothing. Seeding first means there is something to hydrate.
+  //
+  // Managers only, because the rules let only a manager write menuItems.
+  // Asking a receptionist's device to seed would fail on every sign-in
+  // and log an error each time, for something it was never allowed to do.
+  // A staff member on a genuinely unseeded project hydrates nothing and
+  // falls back to the in-code menu, which holds the same dishes.
+  const seeder = currentProfile();
+  if (seeder && seeder.role === "manager") {
+    await seedMenuIfEmpty();
+  }
+
   const results = await Promise.allSettled(
     COLLECTION_MAP.map(([name, array, opts]) =>
-      hydrate(name, array, { branch: opts && opts.everyone ? null : branch })
+      hydrate(name, array, {
+        branch: opts && opts.everyone ? null : branch,
+        keepLocalIfEmpty: Boolean(opts && opts.keepLocalIfEmpty),
+      })
     )
   );
 
