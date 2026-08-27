@@ -101,6 +101,15 @@ function renderReservationsList() {
     // cancelled or already fulfilled one is meaningless, so the control
     // isn't offered rather than being offered and refused.
     const isOpen = r.status === RESERVATION_STATUS.CONFIRMED;
+    // Raising a *new* agent invoice against a cancelled reservation bills
+    // for a stay that was called off — and spends a real TRA number from
+    // this device's block doing it. Deliberately not `isOpen`: a checked-in
+    // reservation must still be invoiceable, since an agent is usually
+    // billed for a stay that has already happened. Only cancellation stops
+    // it. Reprints of invoices already raised stay available either way —
+    // those documents exist, and the cancellation policy on them may well
+    // still apply, which is what the cancel warning says.
+    const mayInvoice = r.status !== RESERVATION_STATUS.CANCELLED;
     return `
       <div class="reservation-card ${r.status === RESERVATION_STATUS.CANCELLED ? "is-cancelled" : ""}">
         <div class="reservation-card-top">
@@ -141,11 +150,11 @@ function renderReservationsList() {
           <button type="button" class="secondary-btn reservation-guest-copy-btn" data-reservation-id="${r.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
             Guest Confirmation
-          </button>` : `
+          </button>` : mayInvoice ? `
           <button type="button" class="secondary-btn reservation-invoice-btn" data-reservation-id="${r.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
             Generate Invoice for Guide
-          </button>`}
+          </button>` : ""}
         </div>
       </div>
     `;
