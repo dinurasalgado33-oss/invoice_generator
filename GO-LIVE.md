@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-26, at commit `97f2659`.
+Last updated: 2026-08-27, at commit `36dd770`.
 
 ---
 
