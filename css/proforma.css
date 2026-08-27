@@ -305,7 +305,15 @@
 /* Card tools — print and cancel sit top-right as icons. Cancel used to be
    a full-width text button under the card, which gave a rarely-used and
    destructive action more weight than the primary one above it. */
-.reservation-card-tools { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+/* 14px, not 4px, and the number is load-bearing: the icons are 30px and
+   each carries a 44px touch overlay (below), so anything under a 14px gap
+   puts the centres closer together than the overlays are wide and they
+   overlap. The later sibling wins the hit test, so the overlap was eating
+   its neighbour's visible pixels — a tap on the right-hand edge of the
+   Correct icon fired Cancel, and on the right edge of Print fired Correct.
+   Confirmed by hit-testing at 390px before changing it. 30 + 14 = 44 makes
+   the overlays tile exactly instead. */
+.reservation-card-tools { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 .reservation-card-tools .reservation-card-date { margin-right: 4px; }
 .reservation-icon-btn {
   position: relative;
