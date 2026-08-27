@@ -44,6 +44,48 @@ function computeMonthlyOccupancy(branch, year, month) {
   return Math.min(100, Math.round((bookedNights / totalRoomNights) * 100));
 }
 
+// One category's share of an invoice, in LKR, on the same basis as the
+// invoice's own revenue figure.
+//
+// Two things were wrong with reading categoryTotals straight off the record.
+//
+// It was never converted, so a bill raised in USD contributed its face
+// value: a USD 500 villa at 300 LKR/USD added 500 to the villa slice
+// instead of 150,000, while the Revenue KPI on the same screen counted it
+// correctly. Everything here is scaled by the rate stamped on the bill.
+//
+// And categoryTotals are line items — struck before service charge and
+// before discount — so the slices summed to the bill total while the KPI
+// showed net. On one stay that was 33,000 against 30,150 on the same
+// screen, with the discount and service charge belonging to no category.
+//
+// So the invoice's own order is reproduced per category:
+//
+//   service charge -> food ONLY, because that is the base it is levied on
+//                     (see SERVICE_CHARGE_RATE). Spreading it pro rata
+//                     would make the pie add up and still be wrong, by
+//                     showing villa and safari carrying a charge neither
+//                     one attracts.
+//   discount       -> pro rata, because a percentage off the bill really
+//                     does come off every line.
+//
+// The scale is taken from the invoice's own stored gross and net rather
+// than recomputed from the discount percentage, so the slices land on the
+// invoice's actual total whatever the record happens to hold.
+function categoryLKR(inv, key) {
+  const rate = (!inv.currency || inv.currency === "LKR") ? 1 : (Number(inv.exchangeRate) || 0);
+  const base = (inv.categoryTotals && inv.categoryTotals[key]) || 0;
+  const withService = base + (key === "food" ? (Number(inv.serviceCharge) || 0) : 0);
+
+  const grossAll = Object.keys(inv.categoryTotals).reduce((sum, k) => sum + (inv.categoryTotals[k] || 0), 0)
+    + (Number(inv.serviceCharge) || 0);
+  const net = Number(inv.total) || 0;
+  // A zero gross means nothing to apportion — and guards the division.
+  const scale = grossAll > 0 ? net / grossAll : 0;
+
+  return withService * scale * rate;
+}
+
 function renderDashboard(branch) {
   const now = new Date();
   const thisMonthKey = monthKey(toDateISO(now));
@@ -74,7 +116,7 @@ function renderDashboard(branch) {
   let uncategorised = 0;
   branchInvoices.forEach(inv => {
     if (inv.categoryTotals) {
-      splitKeys.forEach(k => { split[k] += inv.categoryTotals[k] || 0; });
+      splitKeys.forEach(k => { split[k] += categoryLKR(inv, k); });
     } else {
       uncategorised += invoiceLKR(inv);
     }
