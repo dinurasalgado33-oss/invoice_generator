@@ -316,3 +316,36 @@ Then sign in and confirm:
 If `currentProject()` still says `leopard-inn-dev` on a real domain, stop
 — `LIVE` is not filled in, and everything being typed in is going into a
 database meant to be thrown away.
+
+---
+
+## 8. Dinura's list
+
+Everything that needs Dinura specifically — console access, a Google
+account, a payment method, or a decision. Nothing here can be done by an
+assistant. Detail for each is in the section named.
+
+| # | Task | Detail | Blocks |
+|---|---|---|---|
+| 1 | Create the `leopard-inn` project — production mode, `asia-south1` | §4.1 | everything below |
+| 2 | `firebase deploy --only firestore:rules` against it, **before** any account or record exists | §4.2 | 3, 4 |
+| 3 | Enable Email/Password auth | §4.3 | 4 |
+| 4 | Create each real account + its `users/{uid}` doc by hand | §4.4 | going live |
+| 5 | Add the real config to `LIVE` in `js/data/firebase-config.js` | §4.6 | going live |
+| 6 | Add the serving domain to Authorized domains | §4.5 | sign-in working |
+| 7 | Run through the verification checklist | §7 | confidence |
+
+Optional, whenever wanted:
+
+| # | Task | Note |
+|---|---|---|
+| 8 | `firebase deploy --only hosting` | Works on the free plan. Puts the portal on a public URL — deliberately left undone. |
+| 9 | Enable the Blaze plan | Only needed for Phase 4 (welcome email, Sheets mirror, scheduled backups). Provider already chosen: Resend. |
+
+Two things worth repeating because they are the ones that bite:
+
+- **The branch string must be exactly `Wilpattu` or `Arugam Bay`.** A
+  typo makes an account that signs in fine and then silently sees
+  nothing, with no error saying why.
+- **Rules before data, always.** An empty database with correct rules is
+  safe. An empty database with default rules is not.
