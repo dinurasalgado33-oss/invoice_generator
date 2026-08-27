@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-26, at commit `a953902`.
+Last updated: 2026-08-26, at commit `97f2659`.
 
 ---
 
@@ -25,9 +25,9 @@ data behind a rule nobody has watched actually block anything.
 | 1 | Verify branch scoping with a real staff account | ✅ Done — verified against live Firestore rules, not just the UI |
 | 2 | Offline resilience test — network genuinely off | ✅ Done — full stay offline, verified synced after reconnect |
 | 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
-| 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⬜ Not started |
+| 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⏸️ Deferred — needs the Blaze plan, Dinura chose not to enable it yet. Provider decided: Resend |
 | 5 | Staff management screen, PIN unlock, auto sign-out | 🟡 PIN lock + auto-lock done and verified; staff management screen still needs a Cloud Function |
-| 6 | Firebase Hosting | ⬜ Not started |
+| 6 | Firebase Hosting | 🟡 Config written and dry-run clean; not deployed (publishing publicly is Dinura's call) |
 
 This table is shown after every phase completes, updated in place.
 
@@ -50,7 +50,7 @@ This table is shown after every phase completes, updated in place.
 | Numbering — GRC | ✅ Verified live |
 | Numbering — proforma | ✅ Verified live |
 | Cloud Functions | ❌ None written |
-| Hosting | ❌ Not set up |
+| Hosting | 🟡 Configured, not deployed |
 | Google Sheets mirror | ❌ Not started |
 | Backups | ❌ Not configured |
 | `LIVE` project config | ❌ Deliberately still `null` |
