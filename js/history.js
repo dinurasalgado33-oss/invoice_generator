@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, setLogoSrc, showToast, orDash, setBranchLabel } from "./utils.js";
 import { BOOKINGS, INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./data/reports.js";
-import { findGrcByBookingId } from "./data/grc.js";
+import { findGrcByBookingId, GRC_RECORDS } from "./data/grc.js";
 import { RESERVATIONS, PROFORMA_INVOICES } from "./data/reservations.js";
 import { emailForBooking, EMAIL_STATUS } from "./data/guest-email.js";
 import { reprintGrc } from "./grc.js";
@@ -62,10 +62,39 @@ function stays() {
     });
 }
 
+// The number a stay is known by on paper.
+//
+// Not the booking id: that became a UUID when record ids did, and the
+// column had been printing all 36 characters of it — meaningless to read,
+// impossible to search for, and on a phone it pushed the guest's name onto
+// a second line. The registration card number is what a stay is actually
+// called: issued at check-in, printed, and signed by the guest. A walk-in
+// has no card and keeps its invoice number, which is already what it had.
+//
+// Built as a Map once per render rather than looked up per row — search
+// tests every stay against every keystroke, and a scan of the cards inside
+// that would be quadratic.
+let cardNoByBooking = new Map();
+
+function indexStayNumbers() {
+  cardNoByBooking = new Map(
+    GRC_RECORDS.filter(g => g.bookingId != null).map(g => [g.bookingId, g.grcNo])
+  );
+}
+
+function stayNumber(b) {
+  if (b.walkInInvoiceId) return String(b.walkInInvoiceId);
+  return cardNoByBooking.get(b.id) || null;
+}
+
 function matches(b) {
   const q = searchQuery.trim().toLowerCase();
   if (!q) return true;
-  return String(b.walkInInvoiceId || b.id).includes(q)
+  // Lowercased on both sides: card and invoice numbers are upper-case
+  // ("GRC-2026/27-001"), so comparing them against an already-lowercased
+  // query could never match — searching for the number printed on the
+  // document in front of you returned nothing.
+  return (stayNumber(b) || "").toLowerCase().includes(q)
     || (b.guest || "").toLowerCase().includes(q)
     || (b.villa || "").toLowerCase().includes(q);
 }
@@ -160,6 +189,7 @@ function statusPill(b) {
 
 function renderHistory() {
   const body = document.getElementById("history-body");
+  indexStayNumbers();
   const all = stays();
   const filtered = all.filter(matches);
   const page = filtered.slice(0, shown);
@@ -199,7 +229,7 @@ function renderHistory() {
     const extras = food.length + activities.length;
     return `
       <tr class="stay-row">
-        <td class="hc-no" data-label="Stay"><span class="stay-no">#${b.walkInInvoiceId || b.id}</span></td>
+        <td class="hc-no" data-label="Stay"><span class="stay-no">${stayNumber(b) ? "#" + escapeHtml(stayNumber(b)) : "&mdash;"}</span></td>
         <td class="hc-guest" data-label="Guest">
           <span class="stay-guest">${escapeHtml(orDash(b.guest))}</span>
           ${statusPill(b)}
@@ -286,8 +316,12 @@ function openExtras(bookingId) {
 
   setLogoSrc("charges-logo", appState.selectedBranchLogo);
   document.getElementById("charges-title").textContent = booking.guest || "Guest";
+  // Same reason as the list column: the booking id is a UUID, and printing
+  // it as "Stay #…" put 36 characters of nothing at the head of the sheet.
+  const card = findGrcByBookingId(booking.id);
+  const stayNo = card ? `Stay #${card.grcNo} · ` : "";
   document.getElementById("charges-sub").textContent =
-    `Stay #${booking.id} · ${booking.villa} · ${formatDate(booking.checkin)} → ${formatDate(booking.checkout)}`;
+    `${stayNo}${booking.villa} · ${formatDate(booking.checkin)} → ${formatDate(booking.checkout)}`;
 
   const section = (title, rows, total, extra = "") => `
     <div class="extras-section">
