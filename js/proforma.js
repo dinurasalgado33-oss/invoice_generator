@@ -287,7 +287,10 @@ function applyFormMode() {
 // only reopens what staff actually chose: the agent, currency, rates,
 // nights, discount, advance and remark.
 export function openProformaEdit(proformaId) {
-  const p = PROFORMA_INVOICES.find(x => x.id === Number(proformaId));
+  // String-compared, never Number()'d: a proforma id is a UUID, so
+  // Number() yields NaN and the find silently misses — which surfaced as
+  // "That invoice is no longer available", i.e. as data loss.
+  const p = PROFORMA_INVOICES.find(x => String(x.id) === String(proformaId));
   if (!p) {
     showToast("That invoice is no longer available");
     return;
@@ -541,7 +544,8 @@ function renderProformaPreview(p) {
 // it here meant one reprint from Guest History left every later proforma
 // pointing back at Guest History too.
 export function reprintProforma(proformaId, returnTo = "screen-reservations") {
-  const p = PROFORMA_INVOICES.find(x => x.id === Number(proformaId));
+  // See openProformaEdit — UUID, so string-compared.
+  const p = PROFORMA_INVOICES.find(x => String(x.id) === String(proformaId));
   if (!p) {
     showToast("That invoice is no longer available");
     return;
