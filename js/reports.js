@@ -26,16 +26,22 @@ const BRANCHES = ["Wilpattu", "Arugam Bay"];
 // `group` exists because eight flat tabs gave no clue which report answers
 // which question — grouping them by what the manager is actually looking
 // into does.
+//
+// `rows` names what a row of this report *is*, for the empty state. The
+// label could not do that job: it is a heading, so interpolating it
+// produced "Invoices entries will appear here", "Restock Log entries",
+// "Bookings & Occupancy entries" — broken English on all nine tabs. Kept
+// plural throughout so "…as they happen" agrees.
 const REPORTS = {
-  invoices:  { label: "Invoices",             group: "Money",      searchHint: "Guest name or invoice #" },
-  food:      { label: "Food Orders",          group: "Money",      searchHint: "Dish name" },
-  inventory: { label: "Inventory Usage",      group: "Stock",      searchHint: "Item name", ignoresPeriod: true },
-  spend:     { label: "Inventory Spend",      group: "Stock",      searchHint: "Item name" },
-  restock:   { label: "Restock Log",          group: "Stock",      searchHint: "Item name" },
-  writeoffs: { label: "Stock Written Off",     group: "Stock",      searchHint: "Item name" },
-  bookings:  { label: "Bookings & Occupancy", group: "Operations", searchHint: "Guest or villa" },
-  activity:  { label: "Check-in / Check-out", group: "Operations", searchHint: "Guest or villa" },
-  logins:    { label: "Staff Logins",         group: "Operations", searchHint: "Username" },
+  invoices:  { label: "Invoices",             group: "Money",      searchHint: "Guest name or invoice #", rows: "Invoices" },
+  food:      { label: "Food Orders",          group: "Money",      searchHint: "Dish name",               rows: "Dish sales" },
+  inventory: { label: "Inventory Usage",      group: "Stock",      searchHint: "Item name", ignoresPeriod: true, rows: "Stock movements" },
+  spend:     { label: "Inventory Spend",      group: "Stock",      searchHint: "Item name",               rows: "Restock costs" },
+  restock:   { label: "Restock Log",          group: "Stock",      searchHint: "Item name",               rows: "Restocks" },
+  writeoffs: { label: "Stock Written Off",     group: "Stock",      searchHint: "Item name",               rows: "Write-offs" },
+  bookings:  { label: "Bookings & Occupancy", group: "Operations", searchHint: "Guest or villa",          rows: "Bookings" },
+  activity:  { label: "Check-in / Check-out", group: "Operations", searchHint: "Guest or villa",          rows: "Check-ins and check-outs" },
+  logins:    { label: "Staff Logins",         group: "Operations", searchHint: "Username",                rows: "Sign-ins" },
 };
 
 const REPORT_GROUPS = ["Money", "Stock", "Operations"];
@@ -330,7 +336,7 @@ function emptyState() {
   return `
     <div class="report-empty">
       <p class="report-empty-title">Nothing recorded this month.</p>
-      <p class="report-empty-hint">${escapeHtml(REPORTS[state.tab].label)} entries will appear here as they happen.</p>
+      <p class="report-empty-hint">${escapeHtml(REPORTS[state.tab].rows)} will appear here as they happen.</p>
     </div>
   `;
 }
