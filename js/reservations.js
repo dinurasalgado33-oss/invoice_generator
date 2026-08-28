@@ -207,9 +207,17 @@ async function cancelReservation(id) {
   const reason = await promptCancelReason();
   if (reason === null) return;
 
-  update(COLLECTIONS.RESERVATIONS, r, { status: RESERVATION_STATUS.CANCELLED });
-  r.cancelledAt = new Date().toISOString();
-  r.cancelReason = reason;
+  // All four fields in the one call. Assigning the audit trail after the
+  // update() only reached the database because the adapter awaits connect()
+  // before reading the record, so the assignments won that race — an
+  // accident, not a design. The reason is the whole point of cancelling
+  // rather than deleting, so it must not depend on the timing of a write.
+  // Same shape as the invoice void, fixed in 0730e42.
+  update(COLLECTIONS.RESERVATIONS, r, {
+    status: RESERVATION_STATUS.CANCELLED,
+    cancelReason: reason,
+    cancelledAt: new Date().toISOString(),
+  });
   renderReservationsList();
   showToast(`${r.no} cancelled`);
 }
