@@ -876,10 +876,18 @@ function getExportRows() {
       // Category columns mirror the money columns the manager already
       // keeps by hand, so an exported month can be reconciled against
       // their spreadsheet line for line.
+      // VAT is carried as its own rate and amount rather than left to be
+      // inferred: "Total (billed)" is net, so a VAT-registered month could
+      // not be reconciled — or filed — from this export at all. Both come
+      // off the invoice, which stamps the rate that applied when it was
+      // raised, so reprinting or re-exporting an old month cannot restate
+      // it at today's rate. Grand Total is what the guest actually paid:
+      // net + VAT - advance.
       headers: [
         "Invoice #", "Guest", "Branch", "Date", "Source", "Currency", "Total (billed)", "Rate", "Total (LKR)",
         "Villa", "Food", "Safari", "Transport", "Ticket", "Other",
-        "Service Charge", "Status", "Void Reason", "Voided By",
+        "Service Charge", "VAT Rate %", "VAT Amount", "Advance", "Grand Total",
+        "Status", "Void Reason", "Voided By",
       ],
       rows: getFilteredInvoices(range).map(r => {
         const c = r.categoryTotals || {};
@@ -887,7 +895,8 @@ function getExportRows() {
           r.id, r.guest, r.branch, r.date, r.source || "", r.currency || "LKR", r.total,
           r.exchangeRate || 1, invoiceLKR(r),
           c.villa || 0, c.food || 0, c.safari || 0, c.transport || 0, c.ticket || 0, c.other || 0,
-          r.serviceCharge || 0, r.status, r.voidReason || "", r.voidedBy || "",
+          r.serviceCharge || 0, r.vatRate || 0, r.vatAmount || 0, r.advance || 0, r.grandTotal || 0,
+          r.status, r.voidReason || "", r.voidedBy || "",
         ];
       }),
     };
