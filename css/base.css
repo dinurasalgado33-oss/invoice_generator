@@ -687,3 +687,23 @@ button.is-busy { cursor: progress; }
   cursor: pointer;
   padding: 8px;
 }
+
+/* Demo banner — says, permanently and unmissably, that nothing here is
+   saved. A demo that looks identical to the real app is how somebody
+   ends up checking a real guest into a browser tab. */
+.demo-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 300;              /* above the lock overlay too */
+  background: var(--gold);
+  color: var(--maroon-dark);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  letter-spacing: .01em;
+}
+/* Keeps the banner from covering the last row of any scrolling screen. */
+body.has-demo-banner .screen { padding-bottom: 52px; }

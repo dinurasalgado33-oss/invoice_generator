@@ -6,6 +6,8 @@ import { selectBranch } from "./branch.js";
 import { confirmAction } from "./confirm.js";
 import { signIn, signOutNow, watchSession, describeAuthError, currentProfile } from "./data/session.js";
 import { startSync, stopSync } from "./data/sync.js";
+import { isDemoMode, showDemoBanner } from "./demo.js";
+import { seedDemoBlocks } from "./data/numbering.js";
 
 // Sign-in is Firebase Auth now, not a list of usernames in a file. What
 // somebody may do comes from their users/{uid} document, which the app
@@ -137,6 +139,14 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   });
   if (!ok) return;
 
+  // In demo there is no session to end and no Firebase to tell. Calling
+  // signOutNow() would open a connection to the real project purely to
+  // sign out of nothing.
+  if (isDemoMode()) {
+    location.reload();
+    return;
+  }
+
   stopSync();
   await signOutNow();
   appState.currentRole = null;
@@ -158,6 +168,23 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
 // up its own screen: this app has already had one real bug from routing
 // before the things it depends on were ready.
 export function restoreSession() {
+  // Demo mode never touches Firebase — not even to ask whether somebody
+  // is signed in. watchSession() would call connect(), and a demo that
+  // opens a connection to the real project is exactly what this avoids.
+  // Without an adapter installed, store.js keeps using its in-memory
+  // fallback, which is how the whole app worked before there was a
+  // backend.
+  if (isDemoMode()) {
+    appState.currentRole = "manager";   // sees everything; it is a demo
+    appState.currentUser = "Demo";
+    applyRoleGates();
+    seedDemoBlocks("Wilpattu");
+    seedDemoBlocks("Arugam Bay");
+    showDemoBanner();
+    showScreen("screen-branch");
+    return;
+  }
+
   watchSession(async (profile) => {
     if (!profile) {
       // Either nobody was signed in, or the account lost its access while

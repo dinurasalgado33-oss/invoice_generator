@@ -199,6 +199,18 @@ export function blockStatus(branch, docType) {
   return { financialYear: fy, remaining: left, hasBlock: Boolean(block) };
 }
 
+// Demo mode has no Firestore to reserve from, and a demo where every
+// invoice refuses to generate demonstrates nothing. Hands out a large
+// local block per document type so the whole flow works, numbered from a
+// range no real series will ever reach — so a demo invoice can never be
+// mistaken for a real one if a screenshot escapes.
+export function seedDemoBlocks(branch) {
+  const fy = financialYear();
+  Object.values(DOC_TYPES).forEach(docType => {
+    writeBlock(branch, docType.key, fy, { from: 9000, to: 9999, next: 9000 });
+  });
+}
+
 // Called once after sign-in, so every device has numbers in hand before
 // anybody needs one — including if it goes offline immediately afterwards.
 export async function primeNumbering(branch) {
