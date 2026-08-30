@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-27, at commit `36dd770`.
+Last updated: 2026-08-27, at commit `9936275`.
 
 ---
 
@@ -27,7 +27,7 @@ data behind a rule nobody has watched actually block anything.
 | 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
 | 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⏸️ Deferred — needs the Blaze plan, Dinura chose not to enable it yet. Provider decided: Resend |
 | 5 | Staff management screen, PIN unlock, auto sign-out | 🟡 PIN lock + auto-lock done and verified; staff management screen still needs a Cloud Function |
-| 6 | Firebase Hosting | 🟡 Config written and dry-run clean; not deployed (publishing publicly is Dinura's call) |
+| 6 | Firebase Hosting | 🟡 Config written and dry-run clean; not deployed. Note: the app is already public on GitHub Pages in demo mode, so Firebase Hosting is only needed for the real, signed-in deployment |
 
 This table is shown after every phase completes, updated in place.
 
