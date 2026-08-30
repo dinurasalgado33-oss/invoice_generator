@@ -15,6 +15,10 @@ const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 
+// The nightly Google Sheet mirror lives in its own file — a different job
+// with a different trigger, sharing only the admin app initialised above.
+exports.mirrorToSheet = require("./sheets-mirror").mirrorToSheet;
+
 // Set with:  firebase functions:secrets:set GMAIL_APP_PASSWORD --project live
 // Never committed, never printed, never in the client bundle.
 const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");

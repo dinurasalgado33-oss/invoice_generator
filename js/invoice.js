@@ -564,6 +564,12 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     id: issued.formatted,
     financialYear: issued.fy,
     sequence: issued.seq,
+    // When the bill was actually raised, as distinct from `date`, which is
+    // the invoice date reception types and can back- or forward-date. An
+    // audit needs to know when the document came into existence, and the
+    // nightly mirror needs a value that only ever moves forward to know
+    // what it has not yet exported.
+    createdAt: new Date().toISOString(),
     roomId: checkoutContext ? checkoutContext.roomId : null,
     bookingId: checkoutContext ? checkoutContext.bookingId : null,
     source: checkoutContext && checkoutContext.source ? checkoutContext.source : null,
