@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-30, at commit `d41559c`.
+Last updated: 2026-08-30, at commit `5587320`.
 
 ---
 
@@ -52,7 +52,7 @@ This table is shown after every phase completes, updated in place.
 | Cloud Functions | ❌ None written |
 | Hosting | ✅ Live at leopard-inn.web.app |
 | Google Sheets mirror | ❌ Not started |
-| Backups | ❌ Not configured |
+| Backups | ✅ Native Firestore scheduled backups — DAILY, 14-day retention |
 | `LIVE` project config | ✅ Filled in and verified on the real domain |
 | The real `leopard-inn` project | ✅ Created, rules deployed, seeded, in use |
 
