@@ -2,12 +2,14 @@
   "name": "leopard-inn-functions",
   "description": "Server-side jobs for the Leopard Inn staff portal",
   "private": true,
-  "engines": { "node": "20" },
+  "engines": {
+    "node": "22"
+  },
   "main": "index.js",
   "type": "commonjs",
   "dependencies": {
     "firebase-admin": "^12.6.0",
-    "firebase-functions": "^6.1.0",
+    "firebase-functions": "^7.3.2",
     "nodemailer": "^6.9.15"
   }
 }
