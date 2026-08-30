@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-27, at commit `9936275`.
+Last updated: 2026-08-30, at commit `d41559c`.
 
 ---
 
@@ -24,10 +24,10 @@ data behind a rule nobody has watched actually block anything.
 |---|---|---|
 | 1 | Verify branch scoping with a real staff account | ✅ Done — verified against live Firestore rules, not just the UI |
 | 2 | Offline resilience test — network genuinely off | ✅ Done — full stay offline, verified synced after reconnect |
-| 3 | Create the real `leopard-inn` project, go live | ⬜ Not started |
+| 3 | Create the real `leopard-inn` project, go live | ✅ Done — live at https://leopard-inn.web.app, rules deployed before any data, counters + menu seeded, verified |
 | 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⏸️ Deferred — needs the Blaze plan, Dinura chose not to enable it yet. Provider decided: Resend |
 | 5 | Staff management screen, PIN unlock, auto sign-out | 🟡 PIN lock + auto-lock done and verified; staff management screen still needs a Cloud Function |
-| 6 | Firebase Hosting | 🟡 Config written and dry-run clean; not deployed. Note: the app is already public on GitHub Pages in demo mode, so Firebase Hosting is only needed for the real, signed-in deployment |
+| 6 | Firebase Hosting | ✅ Done — deployed to leopard-inn.web.app as part of Phase 3 |
 
 This table is shown after every phase completes, updated in place.
 
@@ -50,11 +50,11 @@ This table is shown after every phase completes, updated in place.
 | Numbering — GRC | ✅ Verified live |
 | Numbering — proforma | ✅ Verified live |
 | Cloud Functions | ❌ None written |
-| Hosting | 🟡 Configured, not deployed |
+| Hosting | ✅ Live at leopard-inn.web.app |
 | Google Sheets mirror | ❌ Not started |
 | Backups | ❌ Not configured |
-| `LIVE` project config | ❌ Deliberately still `null` |
-| The real `leopard-inn` project | ❌ Not created yet |
+| `LIVE` project config | ✅ Filled in and verified on the real domain |
+| The real `leopard-inn` project | ✅ Created, rules deployed, seeded, in use |
 
 ---
 
