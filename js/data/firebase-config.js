@@ -19,10 +19,19 @@ const DEV = {
   appId: "1:876047759757:web:5c4c07f4e91a35cc85a5c4",
 };
 
-// Filled in when the live project's config arrives. Until then the app
-// runs against the test project everywhere, which is the safe direction
-// for the mistake to go.
-const LIVE = null;
+// The real project. Guest passport numbers, real money, real invoices.
+//
+// measurementId is deliberately omitted: it belongs to Analytics, which
+// this app does not load. Carrying a key for a product that is never
+// initialised is just an unused secret in a public file.
+const LIVE = {
+  apiKey: "AIzaSyAa9LK0vI9skrSc0OU9-4Jzaq57aAa4uQA",
+  authDomain: "leopard-inn.firebaseapp.com",
+  projectId: "leopard-inn",
+  storageBucket: "leopard-inn.firebasestorage.app",
+  messagingSenderId: "473662422025",
+  appId: "1:473662422025:web:a3307478a594d8b141ccd8",
+};
 
 // Anything that isn't localhost or a local network address is treated as
 // the real thing. Erring this way round means an unrecognised host gets

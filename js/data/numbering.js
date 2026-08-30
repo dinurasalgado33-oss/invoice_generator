@@ -22,6 +22,7 @@
 
 import { connect, getDb, fsApi } from "./firebase.js";
 import { projectId } from "./firebase-config.js";
+import { isDemoMode } from "../demo.js";
 import { safeStorage, toDateISO } from "../utils.js";
 import { logError } from "./error-log.js";
 
@@ -71,7 +72,16 @@ function slug(part) {
 // for that, so the key carries the project rather than relying on
 // somebody remembering to clear site data.
 function localKey(branch, type, fy) {
-  return `leopardinn-block-${slug(projectId())}-${slug(branch)}-${slug(type)}-${slug(fy)}`;
+  // Demo blocks are kept in their own namespace, never sharing a key with
+  // real ones. Demo mode and the live config are both chosen by hostname,
+  // so ?demo=1 on the production domain would otherwise write its
+  // 9000-range block under the live project's key — and the next real
+  // invoice raised in that browser would be numbered from 9000. Different
+  // origins already separate the GitHub Pages demo from a hosted app, but
+  // ?demo=1 on the real domain is the same origin, and that is exactly the
+  // case somebody would try while showing the system to someone.
+  const scope = isDemoMode() ? "demo" : slug(projectId());
+  return `leopardinn-block-${scope}-${slug(branch)}-${slug(type)}-${slug(fy)}`;
 }
 
 function readBlock(branch, type, fy) {
