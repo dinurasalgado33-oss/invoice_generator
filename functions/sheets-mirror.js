@@ -123,7 +123,14 @@ exports.mirrorToSheet = onSchedule(
     }
 
     const sheets = await sheetsClient();
-    const spreadsheetId = SHEET_ID.value();
+    // Trimmed, because a secret set from a shell pipe arrives with the
+    // platform line ending attached. PowerShell contributed two trailing
+    // CRLFs here, so Sheets looked for a spreadsheet whose id ended in
+    // newlines and correctly reported it did not exist. The error reads
+    // "Requested entity was not found", which sounds like a wrong id or a
+    // sharing problem and sent this in the wrong direction twice.
+    // Whitespace is not the operator's job to get right.
+    const spreadsheetId = String(SHEET_ID.value() || "").trim();
     await ensureHeaders(sheets, spreadsheetId);
     await sheets.spreadsheets.values.append({
       spreadsheetId,
