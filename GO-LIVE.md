@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-30, at commit `5587320`.
+Last updated: 2026-08-30, at commit `75efac9`.
 
 ---
 
@@ -25,7 +25,7 @@ data behind a rule nobody has watched actually block anything.
 | 1 | Verify branch scoping with a real staff account | ✅ Done — verified against live Firestore rules, not just the UI |
 | 2 | Offline resilience test — network genuinely off | ✅ Done — full stay offline, verified synced after reconnect |
 | 3 | Create the real `leopard-inn` project, go live | ✅ Done — live at https://leopard-inn.web.app, rules deployed before any data, counters + menu seeded, verified |
-| 4 | Cloud Functions — welcome email, Sheets mirror, backups | ⏸️ Deferred — needs the Blaze plan, Dinura chose not to enable it yet. Provider decided: Resend |
+| 4 | Cloud Functions — welcome email, Sheets mirror, backups | ✅ Done — backups daily/14d, welcome e-mail deployed (Gmail), Sheets mirror verified writing to the real Sheet |
 | 5 | Staff management screen, PIN unlock, auto sign-out | 🟡 PIN lock + auto-lock done and verified; staff management screen still needs a Cloud Function |
 | 6 | Firebase Hosting | ✅ Done — deployed to leopard-inn.web.app as part of Phase 3 |
 
@@ -49,9 +49,9 @@ This table is shown after every phase completes, updated in place.
 | Numbering — invoices | ✅ Verified live |
 | Numbering — GRC | ✅ Verified live |
 | Numbering — proforma | ✅ Verified live |
-| Cloud Functions | ❌ None written |
+| Cloud Functions | ✅ sendWelcomeEmail + mirrorToSheet live on leopard-inn |
 | Hosting | ✅ Live at leopard-inn.web.app |
-| Google Sheets mirror | ❌ Not started |
+| Google Sheets mirror | ✅ Nightly 23:30 Asia/Colombo, verified appending |
 | Backups | ✅ Native Firestore scheduled backups — DAILY, 14-day retention |
 | `LIVE` project config | ✅ Filled in and verified on the real domain |
 | The real `leopard-inn` project | ✅ Created, rules deployed, seeded, in use |
