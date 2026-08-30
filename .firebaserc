@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "leopard-inn-dev"
+    "default": "leopard-inn-dev",
+    "dev": "leopard-inn-dev",
+    "live": "leopard-inn"
   }
 }
