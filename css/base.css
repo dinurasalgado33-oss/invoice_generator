@@ -707,3 +707,20 @@ button.is-busy { cursor: progress; }
 }
 /* Keeps the banner from covering the last row of any scrolling screen. */
 body.has-demo-banner .screen { padding-bottom: 52px; }
+
+/* The re-issue choice on the void sheet. Deliberately prominent rather
+   than a bare checkbox: it decides whether money can still be collected,
+   which is not something to tuck away in small print. */
+.void-reissue {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  margin: 4px 0 12px;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.void-reissue input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
+.void-reissue strong { display: block; font-size: 14px; }
+.void-reissue small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.45; opacity: .75; }

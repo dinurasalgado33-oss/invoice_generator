@@ -87,6 +87,39 @@ export function markCharged(charges, invoiceId) {
   return charges;
 }
 
+// Puts an invoice's charges back on the tab.
+//
+// Voiding a bill used to strand its money: the charges stayed BILLED
+// against an invoice that no longer counted, the guest's tab read empty,
+// and nothing anywhere could bill them again. A typo on a printed bill
+// therefore made that money permanently uncollectable, which is a strange
+// thing for an accounting app to do.
+//
+// Only ever called for a void that is being re-issued, and never
+// automatically: a void because the guest walked out without paying must
+// NOT return the charges to a tab, because there is nobody left to bill.
+// The two cases look identical to the code, so the person voiding says
+// which it is.
+export function releaseChargesFor(invoiceId) {
+  if (invoiceId === null || invoiceId === undefined) return 0;
+  const billed = GUEST_CHARGES.filter(
+    c => c.invoiceId === invoiceId && c.status === CHARGE_STATUS.BILLED
+  );
+  billed.forEach(c => {
+    update(COLLECTIONS.GUEST_CHARGES, c, {
+      status: CHARGE_STATUS.OPEN,
+      invoiceId: null,
+      billedAt: null,
+      // Kept rather than cleared, so the charge's own history still shows
+      // it was once on a bill that was voided — the tab is not silently
+      // rewritten to look as though it never happened.
+      releasedFromInvoiceId: invoiceId,
+      releasedAt: new Date().toISOString(),
+    });
+  });
+  return billed.length;
+}
+
 // A cancelled check-in writes off whatever was on the tab. Marked, not
 // removed: the food was still cooked and the stock still went, so the
 // record has to survive even though no invoice will ever carry it.

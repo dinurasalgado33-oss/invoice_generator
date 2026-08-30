@@ -1,4 +1,5 @@
 import { appState } from "./state.js";
+import { releaseChargesFor } from "./data/guest-charges.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, formatDateTime, setLogoSrc, showToast, toDateISO } from "./utils.js";
 import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue, invoiceLKR } from "./data/reports.js";
@@ -1035,6 +1036,10 @@ function openVoidSheet(invoiceId) {
   document.getElementById("void-sheet-summary").textContent =
     `${inv.id} — ${inv.guest} · ${inv.branch} · ${formatDate(inv.date)} · ${invoiceAmountLabel(inv)}`;
   document.getElementById("void-reason").value = "";
+  // Reset too, or a tick left from the last void silently returns the
+  // charges on the next one — and the next one might be a guest who left
+  // without paying.
+  document.getElementById("void-reissue").checked = false;
   document.getElementById("void-sheet-overlay").classList.add("open");
 }
 
@@ -1073,12 +1078,33 @@ document.getElementById("void-form").addEventListener("submit", async (e) => {
   // An invoice records who prepared it; cancelling one is the bigger
   // financial act and recorded nobody. Two managers share these accounts,
   // and "who voided this" is the first question an audit asks.
+  // Whether this void frees its charges to be billed again. Read before
+  // the update, because closeVoidSheet() resets the form.
+  const reissuing = document.getElementById("void-reissue").checked;
+
   update(COLLECTIONS.INVOICES, inv, {
     status: "Void",
     voidReason: reason,
     voidedAt: new Date().toISOString(),
     voidedBy: appState.currentUser || "",
+    reissued: reissuing,
   });
+
+  // Returning the charges is the difference between a bill with a typo on
+  // it and money the hotel never collected. Without this, voiding stranded
+  // the charges: still marked billed against an invoice that no longer
+  // counts, invisible on the tab, and billable by nothing. A typo made the
+  // money permanently uncollectable.
+  //
+  // Not automatic, because the other kind of void — the guest left without
+  // paying — must leave them closed. There is nobody to re-bill, and
+  // putting the charges back would show a tab for a guest who has gone.
+  if (reissuing) {
+    const returned = releaseChargesFor(inv.id);
+    if (returned) {
+      showToast(`${returned} charge${returned === 1 ? "" : "s"} back on the tab`);
+    }
+  }
 
   closeVoidSheet();
   renderAll();

@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=124" />
-<link rel="stylesheet" href="css/brand-home.css?v=124" />
-<link rel="stylesheet" href="css/rooms.css?v=124" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=124" />
-<link rel="stylesheet" href="css/invoice.css?v=124" />
-<link rel="stylesheet" href="css/dashboard.css?v=124" />
-<link rel="stylesheet" href="css/reports.css?v=124" />
-<link rel="stylesheet" href="css/reservation.css?v=124" />
-  <link rel="stylesheet" href="css/grc.css?v=124" />
-  <link rel="stylesheet" href="css/proforma.css?v=124" />
-  <link rel="stylesheet" href="css/history.css?v=124" />
+<link rel="stylesheet" href="css/base.css?v=125" />
+<link rel="stylesheet" href="css/brand-home.css?v=125" />
+<link rel="stylesheet" href="css/rooms.css?v=125" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=125" />
+<link rel="stylesheet" href="css/invoice.css?v=125" />
+<link rel="stylesheet" href="css/dashboard.css?v=125" />
+<link rel="stylesheet" href="css/reports.css?v=125" />
+<link rel="stylesheet" href="css/reservation.css?v=125" />
+  <link rel="stylesheet" href="css/grc.css?v=125" />
+  <link rel="stylesheet" href="css/proforma.css?v=125" />
+  <link rel="stylesheet" href="css/history.css?v=125" />
 </head>
 <body>
 
@@ -369,7 +369,14 @@
             <label>Reason <span class="label-optional">(recommended)</span></label>
             <textarea id="void-reason" rows="3" placeholder="e.g. Billed to the wrong villa" enterkeyhint="done"></textarea>
           </div>
-          <p class="hint">The invoice stays on record marked VOID and stops counting toward revenue. It does not change the villa or booking — re-issue a corrected invoice separately.</p>
+          <label class="void-reissue">
+            <input type="checkbox" id="void-reissue" />
+            <span>
+              <strong>I'm re-issuing a corrected bill</strong>
+              <small>Puts this invoice's charges back on the guest's tab so they can be billed again. Leave unticked if the guest never paid — the charges then stay closed and the money is recorded as lost.</small>
+            </span>
+          </label>
+          <p class="hint">The invoice stays on record marked VOID and stops counting toward revenue. It does not change the villa or booking.</p>
           <button type="submit" class="primary-btn big" id="void-confirm-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M4.9 4.9l14.2 14.2" /></svg>
             Void This Invoice
@@ -2421,6 +2428,6 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=124"></script>
+<script type="module" src="js/main.js?v=125"></script>
 </body>
 </html>
