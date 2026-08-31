@@ -40,6 +40,7 @@ export const CONFIG_KINDS = {
   NOTICES: "notices",
   INVENTORY: "inventory",
   VAT: "vat",
+  SERVICE_CHARGE: "serviceCharge",
 };
 
 function docId(branch, kind) {
@@ -93,4 +94,53 @@ export function applyArray(target, incoming) {
   if (!Array.isArray(incoming) || !Array.isArray(target)) return false;
   target.splice(0, target.length, ...incoming);
   return true;
+}
+
+
+// Pulls every stored config value back into the in-memory objects the
+// screens already read from.
+//
+// Absent means "never saved", not "empty" — so a value that has never
+// been configured keeps whatever the code ships with, rather than the app
+// blanking its own villa rates on first run. Same reasoning as the menu's
+// keepLocalIfEmpty, and the same trap avoided.
+export async function hydrateConfig(branches) {
+  const { ROOMS_BY_BRANCH } = await import("./rooms.js");
+  const { ACTIVITIES_BY_BRANCH } = await import("./activities.js");
+  const { BRANCH_INFO, RESERVATION_CONDITIONS, CANCELLATION_POLICY, PROFORMA_NOTICES } = await import("./branches.js");
+  const { setServiceChargeRate, setVatRate } = await import("./charges.js");
+  const { INVENTORY_BY_BRANCH } = await import("./inventory.js");
+
+  const loaded = [];
+  for (const branch of branches) {
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat] =
+      await Promise.all([
+        loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.BRANCH_INFO).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.CONDITIONS).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.CANCELLATION).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.NOTICES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.INVENTORY).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.SERVICE_CHARGE).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.VAT).catch(() => undefined),
+      ]);
+
+    if (applyArray(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
+    if (applyArray(ACTIVITIES_BY_BRANCH[branch], activities)) loaded.push(branch + ":activities");
+    if (applyArray(RESERVATION_CONDITIONS[branch], conditions)) loaded.push(branch + ":conditions");
+    if (applyArray(CANCELLATION_POLICY[branch], cancellation)) loaded.push(branch + ":cancellation");
+    if (applyArray(PROFORMA_NOTICES[branch], notices)) loaded.push(branch + ":notices");
+    if (applyArray(INVENTORY_BY_BRANCH[branch], inventory)) loaded.push(branch + ":inventory");
+
+    // Objects rather than arrays: merged in place for the same reason the
+    // arrays are spliced — the screens hold the reference from module load.
+    if (info && typeof info === "object") {
+      Object.assign(BRANCH_INFO[branch] || (BRANCH_INFO[branch] = {}), info);
+      loaded.push(branch + ":branchInfo");
+    }
+    if (serviceCharge !== undefined) { setServiceChargeRate(branch, serviceCharge); loaded.push(branch + ":serviceCharge"); }
+    if (vat !== undefined) { setVatRate(branch, vat); loaded.push(branch + ":vat"); }
+  }
+  return loaded;
 }

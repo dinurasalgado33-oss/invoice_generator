@@ -3,7 +3,11 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast, clampMoney, capNumericInput, MAX_MONEY, setBranchLabel } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, allocateActivityId, clampHotelIncome } from "./data/activities.js";
-import { CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel } from "./data/charges.js";
+import {
+  CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel,
+  serviceChargeRateFor, setServiceChargeRate, invoiceRemark,
+} from "./data/charges.js";
+import { saveConfig, CONFIG_KINDS } from "./data/config-store.js";
 import {
   BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId,
   CANCELLATION_POLICY, allocateCancellationId,
@@ -275,6 +279,15 @@ document.getElementById("open-configure-activities-btn").addEventListener("click
 // One record per branch rather than a list, so this screen is a plain form.
 // Both guest-facing documents read BRANCH_INFO live at render time, so a
 // save here shows up on the very next invoice or confirmation.
+// Shows the manager the exact sentence the guest will see, so the rate
+// and the printed promise can never be imagined to differ — they are the
+// same value now, and this is where that becomes visible.
+function refreshServiceChargeHint() {
+  const hint = document.getElementById("cfg-service-charge-hint");
+  const text = invoiceRemark(appState.selectedBranch);
+  hint.textContent = text ? `Invoices will read: "${text}"` : "No service charge notice will be printed.";
+}
+
 const BRANCH_FIELDS = {
   "cfg-hotel-name": "hotelName",
   "cfg-address": "address",
@@ -288,6 +301,9 @@ const BRANCH_FIELDS = {
 
 function loadBranchDetailsForm() {
   const info = BRANCH_INFO[appState.selectedBranch] || {};
+  document.getElementById("cfg-service-charge").value = String(serviceChargeRateFor(appState.selectedBranch));
+  refreshServiceChargeHint();
+
   Object.entries(BRANCH_FIELDS).forEach(([inputId, key]) => {
     document.getElementById(inputId).value = info[key] || "";
   });
@@ -301,6 +317,15 @@ document.getElementById("branch-details-form").addEventListener("submit", (e) =>
   Object.entries(BRANCH_FIELDS).forEach(([inputId, key]) => {
     BRANCH_INFO[branch][key] = document.getElementById(inputId).value.trim();
   });
+
+  setServiceChargeRate(branch, document.getElementById("cfg-service-charge").value);
+  refreshServiceChargeHint();
+
+  // Both go to the database, per property. A nightly rate and a service
+  // charge decide what a guest is billed, so they are as financial as the
+  // invoice they end up on — and until now they lived only in this tab.
+  saveConfig(branch, CONFIG_KINDS.BRANCH_INFO, BRANCH_INFO[branch]);
+  saveConfig(branch, CONFIG_KINDS.SERVICE_CHARGE, serviceChargeRateFor(branch));
 
   showToast("Branch details saved");
 });

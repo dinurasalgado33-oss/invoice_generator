@@ -7,7 +7,7 @@ import { add, COLLECTIONS } from "./data/store.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
-  isChargeCategory, serviceChargeFor, categoryTotals, INVOICE_REMARK, CURRENCIES, vatRateFor,
+  isChargeCategory, serviceChargeFor, categoryTotals, invoiceRemark, CURRENCIES, vatRateFor,
 } from "./data/charges.js";
 
 const afterGenerateCallbacks = [];
@@ -70,9 +70,13 @@ function capField(input, max) {
   if (Number.isFinite(n) && n > max) input.value = String(max);
 }
 
-// Shown read-only on step 4 so staff can see what the guest will read,
-// set once at load since it never changes.
-document.getElementById("fixed-remark-preview").textContent = INVOICE_REMARK;
+// Shown read-only on step 4 so staff can see what the guest will read.
+// Set when the form opens rather than once at load: the remark now
+// depends on the property's service charge, and which property is
+// selected is not known when this module first evaluates.
+function refreshRemarkPreview() {
+  document.getElementById("fixed-remark-preview").textContent = invoiceRemark(appState.selectedBranch);
+}
 
 // Currency prints on the guest's bill, so a typo there is a typo on a
 // financial document — and it was a free text field. Same list the travel
@@ -145,7 +149,7 @@ function serviceChargeIsAuto() {
 function computeTotals() {
   const items = getItems();
   const billTotal = items.reduce((sum, it) => sum + it.value, 0);
-  const serviceCharge = serviceChargeIsAuto() ? serviceChargeFor(items) : num("service-charge");
+  const serviceCharge = serviceChargeIsAuto() ? serviceChargeFor(items, appState.selectedBranch) : num("service-charge");
   const advance = num("advance");
   const grossAmount = billTotal + serviceCharge;
   // Always a percentage. A flat amount and a percentage in the same field,
@@ -432,7 +436,7 @@ function renderInvoicePreview(r) {
   document.getElementById("prev-advance").textContent = r.advance ? fmt(r.advance, currency) : "-";
   document.getElementById("prev-total").textContent = fmt(r.grandTotal, currency);
 
-  document.getElementById("prev-notes").textContent = INVOICE_REMARK;
+  document.getElementById("prev-notes").textContent = invoiceRemark(appState.selectedBranch);
   document.getElementById("prev-staff").textContent = r.staffName || "";
 
   // A cancelled invoice must not reprint as though it were still owed.
@@ -488,6 +492,7 @@ export function resetForm() {
   // of) would burn a real number on nothing.
   document.getElementById("inv-number").value = "Assigned on Generate";
   document.getElementById("inv-date").value = toDateISO();
+  refreshRemarkPreview();
   document.getElementById("currency").value = "LKR";
   document.getElementById("exchange-rate").value = "";
   document.getElementById("exchange-rate-field").hidden = true;

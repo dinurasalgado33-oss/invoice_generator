@@ -38,29 +38,57 @@ export function chargeCategoryLabel(value) {
   return CHARGE_CATEGORY_LABELS[value] || CHARGE_CATEGORY_LABELS[DEFAULT_CHARGE_CATEGORY];
 }
 
-// Service charge is levied on food only — see note above. Kept here rather
-// than hardcoded in invoice.js so Configure can expose it later without
-// hunting through the form code.
-export const SERVICE_CHARGE_RATE = 0.1;
-
-// Fixed policy notice printed in the Remark box on every invoice. Not a
-// per-invoice field: it states a standing charging policy, so it has to
-// read identically on every bill a guest is handed. Deliberately not
-// editable from the UI — a notice that can be reworded per invoice stops
-// being a policy.
+// Service charge, levied on food only — see note above. Per property and
+// manager-set: their own records show it waived and negotiated, so it was
+// never really a constant.
 //
-// Lives next to SERVICE_CHARGE_RATE on purpose: if the rate ever changes,
-// this sentence is wrong, and having them adjacent makes that obvious.
-export const INVOICE_REMARK =
-  "Please note that a 10% service charge will be added to all BB (Bed & Breakfast), " +
-  "HB (Half Board) and FB (Full Board) Bookings.";
+// Held as a percentage rather than a fraction, because that is what a
+// manager types and what the printed notice says. Ten, not 0.1.
+export const SERVICE_CHARGE_RATES = {
+  "Wilpattu": 10,
+  "Arugam Bay": 10,
+};
+
+export function serviceChargeRateFor(branch) {
+  const rate = Number(SERVICE_CHARGE_RATES[branch]);
+  return Number.isFinite(rate) ? rate : 0;
+}
+
+export function setServiceChargeRate(branch, rate) {
+  const clean = Math.max(0, Math.min(100, Number(rate) || 0));
+  SERVICE_CHARGE_RATES[branch] = clean;
+  return clean;
+}
+
+// The policy notice printed in the Remark box on every invoice. It states
+// a standing charging policy, so it reads identically on every bill and is
+// not a per-invoice field — a notice that can be reworded per invoice
+// stops being a policy.
+//
+// Built from the rate rather than written beside it. It used to be a
+// fixed sentence saying "10%" sitting next to a separate constant, with a
+// comment noting that having them adjacent made a mismatch obvious. That
+// was a fair mitigation while both were constants; the moment a manager
+// can change the rate it becomes a bill that charges one figure and
+// promises another, on the document handed to the guest. One fact, one
+// place.
+export function invoiceRemark(branch) {
+  const rate = serviceChargeRateFor(branch);
+  if (!rate) {
+    // No charge to announce. Saying "a 0% service charge will be added"
+    // would be worse than saying nothing.
+    return "";
+  }
+  return `Please note that a ${rate}% service charge will be added to all BB (Bed & Breakfast), ` +
+    "HB (Half Board) and FB (Full Board) Bookings.";
+}
 
 export function foodSubtotal(items) {
   return items.reduce((sum, it) => (it.category === "food" ? sum + it.value : sum), 0);
 }
 
-export function serviceChargeFor(items) {
-  return Math.round(foodSubtotal(items) * SERVICE_CHARGE_RATE * 100) / 100;
+export function serviceChargeFor(items, branch) {
+  return Math.round(foodSubtotal(items) * (serviceChargeRateFor(branch) / 100) * 100) / 100;
 }
 
 // Totals per category, used by the invoice record and the dashboard split

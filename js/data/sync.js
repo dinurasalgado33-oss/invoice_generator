@@ -16,6 +16,7 @@ import { scopedBranch, currentProfile } from "./session.js";
 import { primeNumbering } from "./numbering.js";
 import { seedMenuIfEmpty } from "./seed-config.js";
 import { deriveOccupancy } from "./occupancy.js";
+import { hydrateConfig } from "./config-store.js";
 import { logError } from "./error-log.js";
 
 import { INVOICES, BOOKINGS, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./reports.js";
@@ -105,6 +106,23 @@ export async function startSync() {
     }
   });
 
+  // Which properties this person works at. Used by config hydration,
+  // and again by numbering below.
+  const profile = currentProfile();
+  const branches = profile && profile.role === "staff"
+    ? [profile.branch].filter(Boolean)
+    : ["Wilpattu", "Arugam Bay"];
+
+  // Config before occupancy: villa rates and names come from here, and
+  // deriving occupancy writes onto those same villa objects.
+  try {
+    await hydrateConfig(branches);
+  } catch (err) {
+    // The app ships with working defaults, so failing to load a manager's
+    // overrides is a degraded state rather than a broken one.
+    logError("Could not load configuration", { source: "sync", stack: err && err.stack });
+  }
+
   // Occupancy is worked out from the bookings that just arrived, rather
   // than stored on the villa. Before this, a reload left every villa
   // reading "available" while Firestore held a booking saying Checked In.
@@ -116,10 +134,6 @@ export async function startSync() {
   // works at, now, while there is signal — so a device that goes offline
   // straight afterwards can still issue an invoice. A manager works at
   // both, so both get primed.
-  const profile = currentProfile();
-  const branches = profile && profile.role === "staff"
-    ? [profile.branch].filter(Boolean)
-    : ["Wilpattu", "Arugam Bay"];
   await Promise.allSettled(branches.map(b => primeNumbering(b)));
 
   return { loaded: COLLECTION_MAP.length - failed.length, failed };
