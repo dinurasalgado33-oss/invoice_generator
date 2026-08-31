@@ -39,6 +39,7 @@ const screenOrder = [
   "screen-grc-form", "screen-grc-preview",
   "screen-inventory", "screen-dashboard", "screen-reports", "screen-form", "screen-preview",
   "screen-reservation-form", "screen-reservation-preview",
+  "screen-staff",
 ];
 
 // Screens that show live data need re-rendering when they are returned to,
@@ -60,7 +61,15 @@ export function showScreen(id) {
   const toIdx = screenOrder.indexOf(id);
   const direction = toIdx >= fromIdx ? "enter-forward" : "enter-back";
 
-  Object.values(screens).forEach(s => s.classList.remove("active", "enter-forward", "enter-back"));
+  // Queried from the DOM, not from the `screens` object above. That
+  // object is hand-maintained, so a screen added to index.html and not
+  // registered here was never deactivated — it stayed visible underneath
+  // whatever came next, two screens on top of each other. The list of
+  // screens then lived in two places, free to disagree, which is the
+  // shape of bug this project keeps having. The DOM is the one that
+  // cannot be forgotten.
+  document.querySelectorAll(".screen").forEach(s =>
+    s.classList.remove("active", "enter-forward", "enter-back"));
 
   const target = document.getElementById(id);
   target.classList.add("active");
