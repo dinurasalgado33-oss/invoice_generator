@@ -231,15 +231,42 @@ new feature.
 
 ## 9. What this audit did not cover
 
-Stated so the next person knows where the edges are:
+Stated so the next person knows where the edges are.
 
-- **Cloud Functions' own writes** — the welcome e-mail's status write and
-  the Sheet mirror's cursor were verified working earlier, but are not
-  re-examined here.
-- **Firestore rules for the new `config` collection** — no rule exists
-  yet; it will be denied by the catch-all until one is written.
-- **Whether every persisted write is *correct*** — this audit asks
-  whether a write happens, not whether it stores the right value. The
-  earlier lifecycle sweeps covered that for records.
-- **The live project's existing data.** Nothing here was tested against
-  `leopard-inn`; all inspection was static plus dev-project runtime.
+**Closed since first writing:**
+
+- **Cloud Functions' own writes** — checked. The welcome e-mail's
+  Sent/Failed write, the Sheet mirror's cursor, and both staff-management
+  writes all persist correctly. No gaps.
+- **Files excluded from the mechanical scan** — checked. `store.js`,
+  `sync.js`, `firestore-adapter.js` and `config-store.js` contain only
+  the persistence machinery itself (the `array.push` in `store.js` *is*
+  the write path). No hidden state.
+
+**Still open — one blocker:**
+
+- **Finding [A] is proven by construction, not by observation.** Rooms are
+  written by nothing, hydrated by nothing, every seed villa is
+  `available`, and no code rebuilds occupancy from bookings — so a reload
+  must show every villa free. That reasoning is sound and each step was
+  checked individually, but nobody has watched it happen.
+
+  Verifying it needs a signed-in session: check a guest in, reload, look
+  at the villa. Demo mode cannot show it (nothing persists there by
+  design), and doing it on `leopard-inn` would put a fake booking in the
+  real books permanently.
+
+  This matters more than usual because two claims in this session turned
+  out to be my own test being wrong rather than the app. A finding this
+  serious should be observed before it is acted on.
+
+**Deliberately out of scope:**
+
+- **Whether every persisted write stores the *right* value.** This audit
+  asks whether a write happens, not whether it is correct. The earlier
+  lifecycle sweeps covered that for records.
+- **The live project's existing data.** All inspection was static plus
+  dev-project runtime; nothing was tested against `leopard-inn`.
+- **Firestore rules for the new `config` collection.** None exists yet;
+  it will be denied by the catch-all until written. That is wiring work,
+  not audit work.
