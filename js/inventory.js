@@ -4,8 +4,7 @@ import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber, cl
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
-  USAGE_LOG, USAGE_REASONS, allocateUsageId,
-} from "./data/inventory.js";
+  USAGE_LOG, USAGE_REASONS, allocateUsageId, logStockMovement } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
 import { add, COLLECTIONS } from "./data/store.js";
 
@@ -54,6 +53,7 @@ function logRestock(branch, item, qty, unitCost, date) {
     unitCost,
     totalCost: Math.round(qty * unitCost * 100) / 100,
     date,
+    by: appState.currentUser || "",
   });
   item.stock = Math.round((item.stock + qty) * 100) / 100;
   item.costPerUnit = unitCost;
@@ -344,6 +344,7 @@ document.getElementById("usage-form").addEventListener("submit", (e) => {
     qty,
     reason,
     date: todayISO(),
+    by: appState.currentUser || "",
   });
 
   closeUsageSheet();
@@ -352,11 +353,41 @@ document.getElementById("usage-form").addEventListener("submit", (e) => {
   showToast(`${qty}${item.unit || ""} of ${item.name} logged as used`);
 });
 
+// The +/- buttons on the inventory list. These used to change stock and
+// record nothing at all — so two of the four things that move stock left
+// no trace of who moved it or why, and the number could not be rebuilt
+// from the logs or defended to anyone asking.
+//
+// A correction is not a purchase and not consumption, but it is one or
+// the other in direction, so it is written to whichever log runs that
+// way: down to usage, up to restocks. That keeps stock derivable as
+// opening + restocks - usage without inventing a third log.
+//
+// Corrections carry no cost. Money did not change hands, and counting a
+// stocktake correction as spend would overstate what the kitchen cost.
 function adjustInventoryStock(itemId, delta) {
   const inventory = INVENTORY_BY_BRANCH[appState.selectedBranch] || [];
   const item = inventory.find(i => i.id === itemId);
-  if (!item) return;
+  if (!item || !delta) return;
+
+  const before = item.stock;
   item.stock = Math.max(0, Math.round((item.stock + delta) * 100) / 100);
+  // The applied amount, not the requested one: stock is floored at zero,
+  // so asking for -5 with 3 in hand actually moves 3. Logging the
+  // request would leave the log unable to reproduce the stock level.
+  const applied = Math.round((item.stock - before) * 100) / 100;
+  if (!applied) return;
+
+  logStockMovement({
+    branch: appState.selectedBranch,
+    item,
+    delta: applied,
+    reason: "Manual correction",
+    kind: "correction",
+    // No cost: a stocktake correction is not a purchase, and counting it
+    // as spend would overstate what the kitchen cost.
+  });
+
   renderInventoryScreen();
   updateInventoryBadge();
 }

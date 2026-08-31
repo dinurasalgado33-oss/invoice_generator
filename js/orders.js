@@ -3,7 +3,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast, todayISO, setBranchLabel } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { MENU_ITEMS } from "./data/menu.js";
-import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
+import { INVENTORY_BY_BRANCH, logStockMovement } from "./data/inventory.js";
 import { FOOD_ORDER_RECORDS, allocateFoodOrderRecordId } from "./data/reports.js";
 import { FOOD_ORDERS, allocateOrderId } from "./data/orders.js";
 import { chargeRoom } from "./rooms.js";
@@ -29,7 +29,18 @@ function deductIngredients(branch, dish, qty) {
     if (!invItem) return;
     const needed = ing.qty * qty;
     if (invItem.stock < needed) shortages.push(invItem.name);
+    const before = invItem.stock;
     invItem.stock = Math.max(0, Math.round((invItem.stock - needed) * 100) / 100);
+    // Logged, because this is one of the two paths that used to move stock
+    // silently. The amount recorded is what actually left — stock floors at
+    // zero, so an order needing 5kg against 3kg in hand consumes 3, and a
+    // log saying 5 could never reproduce the shelf.
+    logStockMovement({
+      branch, item: invItem,
+      delta: Math.round((invItem.stock - before) * 100) / 100,
+      reason: `Kitchen — ${dish.name}`,
+      kind: "order",
+    });
   });
   return shortages;
 }
@@ -38,7 +49,19 @@ function restoreIngredients(branch, dish, qty) {
   const inventory = INVENTORY_BY_BRANCH[branch] || [];
   dish.ingredients.forEach(ing => {
     const invItem = inventory.find(i => i.id === ing.itemId);
-    if (invItem) invItem.stock = Math.round((invItem.stock + ing.qty * qty) * 100) / 100;
+    if (!invItem) return;
+    const before = invItem.stock;
+    invItem.stock = Math.round((invItem.stock + ing.qty * qty) * 100) / 100;
+    // The other silent path. A cancelled order returning ingredients is a
+    // real movement and belongs in the history, not least because without
+    // it the reserve above would look like consumption that never came
+    // back.
+    logStockMovement({
+      branch, item: invItem,
+      delta: Math.round((invItem.stock - before) * 100) / 100,
+      reason: `Order cancelled — ${dish.name}`,
+      kind: "order-return",
+    });
   });
 }
 

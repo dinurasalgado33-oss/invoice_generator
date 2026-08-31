@@ -1,4 +1,7 @@
 import { newId } from "./ids.js";
+import { add, COLLECTIONS } from "./store.js";
+import { appState } from "../state.js";
+import { todayISO } from "../utils.js";
 export const INVENTORY_CATEGORIES = [
   "Meat", "Seafood", "Produce", "Dairy & Eggs", "Grains", "Pantry", "Beverages",
   "Toiletries & Amenities", "Housekeeping", "Linen", "Cleaning Supplies", "Maintenance & Office", "Other",
@@ -226,3 +229,47 @@ export function allocateRestockId() {
 // item looked at purchase time, so an old purchase still reads correctly
 // after the item is renamed or recategorised.
 export const RESTOCK_LOG = [];
+
+
+// Every movement of stock, in one place.
+//
+// Stock has four things that move it — a restock, a recorded use, a
+// manual correction, and an order reserving or returning ingredients —
+// and until now only the first two wrote anything down. The other two
+// changed the number silently, which meant stock could not be rebuilt
+// from its own history and nobody could say who had moved it or why.
+//
+// There is no third log. A movement is either up or down, so it goes to
+// whichever existing log runs that way: down to usage, up to restocks.
+// That keeps stock derivable as opening + restocks - usage.
+//
+// `cost` is only ever set by an actual purchase. A correction or a
+// kitchen reservation moves quantity without money changing hands, and
+// counting either as spend would overstate what the kitchen cost.
+export function logStockMovement({ branch, item, delta, reason, unitCost = 0, kind = "" }) {
+  const moved = Math.round(delta * 100) / 100;
+  if (!item || !moved) return null;
+
+  const entry = {
+    itemId: item.id,
+    branch,
+    itemName: item.name,
+    category: item.category,
+    unit: item.unit,
+    qty: Math.abs(moved),
+    date: todayISO(),
+    by: appState.currentUser || "",
+    kind,
+  };
+
+  if (moved < 0) {
+    return add(COLLECTIONS.STOCK_USAGE, USAGE_LOG, {
+      id: allocateUsageId(), ...entry, reason: reason || "Used",
+    });
+  }
+  return add(COLLECTIONS.RESTOCKS, RESTOCK_LOG, {
+    id: allocateRestockId(), ...entry,
+    unitCost,
+    totalCost: Math.round(Math.abs(moved) * unitCost * 100) / 100,
+  });
+}
