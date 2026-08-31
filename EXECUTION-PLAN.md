@@ -51,16 +51,16 @@ from logs while two of the four things that move it write no log.
 
 ---
 
-## 3. Stage 2 — money (editable + persisted, one pass each)
+## 3. Stage 2 — money ✅ COMPLETE
 
 Highest value: these change what a guest is billed.
 
 | Step | Items | Change |
 |---|---|---|
-| 2.1 | `H1` Service charge rate | Configurable per property, persisted. **Derive `INVOICE_REMARK` from the rate** — today it prints "10%" as words beside a separate constant, so a changed rate would charge one figure and promise another on the guest's copy |
-| 2.2 | `[B]` Villa name and rate | The Configure → Villas form already edits these; make it save |
-| 2.3 | `[C]` Activities and prices | Same, Configure → Activities |
-| 2.4 | `H2` + `[K]` VAT | Build the input (none exists), wire the dead `setVatRate()`, persist. Per property |
+| 2.1 | ~~`H1` Service charge~~ **done** `e57b15b` | Per property, persisted, remark derived from the rate. Verified: 10→12.5% moved the charge 400→500 and the printed sentence with it |
+| 2.2 | ~~`[B]` Villa name and rate~~ **done** `7080cb1` | Only id/name/rate saved — never occupancy; hydration merges rather than replaces |
+| 2.3 | ~~`[C]` Activities~~ **done** `7080cb1` | Add *and* edit both persist — the first pass saved only on add |
+| 2.4 | ~~`H2` + `[K]` VAT~~ **done** | Field built, dead setter wired, persisted. Verified: 18% reached a new bill (1,908 on 10,600) while an existing invoice kept vatRate 0 |
 
 2.1 comes first because it is the only Tier 1 item that is *silently*
 wrong rather than merely absent — the printed promise and the charged

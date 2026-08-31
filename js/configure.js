@@ -6,6 +6,7 @@ import { ACTIVITIES_BY_BRANCH, allocateActivityId, clampHotelIncome } from "./da
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel,
   serviceChargeRateFor, setServiceChargeRate, invoiceRemark,
+  vatRateFor, setVatRate,
 } from "./data/charges.js";
 import { saveConfig, CONFIG_KINDS, villaConfig } from "./data/config-store.js";
 import {
@@ -299,6 +300,18 @@ function refreshServiceChargeHint() {
   hint.textContent = text ? `Invoices will read: "${text}"` : "No service charge notice will be printed.";
 }
 
+// Says plainly that changing this does not touch bills already raised.
+// Each invoice stores the rate that applied when it was written, so a
+// rate change is a setting rather than a restatement of past takings —
+// but a manager typing into a tax field deserves to be told that rather
+// than left to assume either way.
+function refreshVatHint() {
+  const rate = vatRateFor(appState.selectedBranch);
+  document.getElementById("cfg-vat-hint").textContent = rate
+    ? `New invoices will add ${rate}% VAT. Bills already raised keep the rate they were issued at.`
+    : "No VAT line will be printed. Set a rate here once the property is registered.";
+}
+
 const BRANCH_FIELDS = {
   "cfg-hotel-name": "hotelName",
   "cfg-address": "address",
@@ -313,7 +326,9 @@ const BRANCH_FIELDS = {
 function loadBranchDetailsForm() {
   const info = BRANCH_INFO[appState.selectedBranch] || {};
   document.getElementById("cfg-service-charge").value = String(serviceChargeRateFor(appState.selectedBranch));
+  document.getElementById("cfg-vat").value = String(vatRateFor(appState.selectedBranch));
   refreshServiceChargeHint();
+  refreshVatHint();
 
   Object.entries(BRANCH_FIELDS).forEach(([inputId, key]) => {
     document.getElementById(inputId).value = info[key] || "";
@@ -330,13 +345,16 @@ document.getElementById("branch-details-form").addEventListener("submit", (e) =>
   });
 
   setServiceChargeRate(branch, document.getElementById("cfg-service-charge").value);
+  setVatRate(branch, document.getElementById("cfg-vat").value);
   refreshServiceChargeHint();
+  refreshVatHint();
 
   // Both go to the database, per property. A nightly rate and a service
   // charge decide what a guest is billed, so they are as financial as the
   // invoice they end up on — and until now they lived only in this tab.
   saveConfig(branch, CONFIG_KINDS.BRANCH_INFO, BRANCH_INFO[branch]);
   saveConfig(branch, CONFIG_KINDS.SERVICE_CHARGE, serviceChargeRateFor(branch));
+  saveConfig(branch, CONFIG_KINDS.VAT, vatRateFor(branch));
 
   showToast("Branch details saved");
 });
