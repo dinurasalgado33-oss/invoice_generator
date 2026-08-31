@@ -4,7 +4,7 @@ import { escapeHtml, fmtLKR, setLogoSrc, showToast, setBranchLabel } from "./uti
 import { MENU_ITEMS, MENU_CATEGORIES, allocateDishId, allocateDishNumber } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
-import { add, update, COLLECTIONS } from "./data/store.js";
+import { add, update, COLLECTIONS, remove } from "./data/store.js";
 
 let editingDishId = null;
 
@@ -264,8 +264,15 @@ document.getElementById("dish-delete-btn").addEventListener("click", async () =>
   });
   if (!ok) return;
 
-  const idx = MENU_ITEMS.findIndex(d => d.id === editingDishId);
-  MENU_ITEMS.splice(idx, 1);
+  // Through the store, not spliced in place. Splicing removed the dish
+  // from this device's copy and told the database nothing, so the next
+  // hydration pulled it straight back — a dish "deleted" on Monday
+  // reappeared on Tuesday, and reception had no reason to suspect the
+  // delete rather than their own memory.
+  //
+  // remove() handles the local splice too, so the array is still updated;
+  // it just also tells Firestore.
+  remove(COLLECTIONS.MENU, MENU_ITEMS, dish);
   closeDishSheet();
   renderMenuScreen();
   showToast(`${dish.name} removed`);
