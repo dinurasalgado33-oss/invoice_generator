@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=127" />
-<link rel="stylesheet" href="css/brand-home.css?v=127" />
-<link rel="stylesheet" href="css/rooms.css?v=127" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=127" />
-<link rel="stylesheet" href="css/invoice.css?v=127" />
-<link rel="stylesheet" href="css/dashboard.css?v=127" />
-<link rel="stylesheet" href="css/reports.css?v=127" />
-<link rel="stylesheet" href="css/reservation.css?v=127" />
-  <link rel="stylesheet" href="css/grc.css?v=127" />
-  <link rel="stylesheet" href="css/proforma.css?v=127" />
-  <link rel="stylesheet" href="css/history.css?v=127" />
+<link rel="stylesheet" href="css/base.css?v=128" />
+<link rel="stylesheet" href="css/brand-home.css?v=128" />
+<link rel="stylesheet" href="css/rooms.css?v=128" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=128" />
+<link rel="stylesheet" href="css/invoice.css?v=128" />
+<link rel="stylesheet" href="css/dashboard.css?v=128" />
+<link rel="stylesheet" href="css/reports.css?v=128" />
+<link rel="stylesheet" href="css/reservation.css?v=128" />
+  <link rel="stylesheet" href="css/grc.css?v=128" />
+  <link rel="stylesheet" href="css/proforma.css?v=128" />
+  <link rel="stylesheet" href="css/history.css?v=128" />
 </head>
 <body>
 
@@ -180,6 +180,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9M13 17V5M8 17v-4" /></svg>
           <span>Finance</span>
         </button>
+        <button type="button" class="manager-tool-btn" id="open-staff-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+          <span>Staff</span>
+        </button>
         <button type="button" class="manager-tool-btn" id="open-configure-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
           <span>Configure</span>
@@ -188,6 +192,57 @@
     </div>
 
     <span id="inventory-card-subtext" style="display:none"></span>
+  </section>
+
+  <!-- SCREEN: Staff accounts (manager only) -->
+  <section id="screen-staff" class="screen">
+    <button class="back-btn" data-back="screen-home">&larr; Back</button>
+    <div class="brand small">
+      <h2>Staff Accounts</h2>
+    </div>
+
+    <div class="dash-section">
+      <h3 class="dash-section-title">Add someone</h3>
+      <form id="staff-form" class="staff-form">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="staff-name" autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="staff-email" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <select id="staff-role">
+            <option value="staff">Staff — one property only</option>
+            <option value="manager">Manager — both properties, all reports</option>
+          </select>
+        </div>
+        <div class="field" id="staff-branch-field">
+          <label>Property</label>
+          <select id="staff-branch">
+            <option value="Wilpattu">Wilpattu</option>
+            <option value="Arugam Bay">Arugam Bay</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Temporary password <span class="label-optional">(at least 10 characters)</span></label>
+          <input type="text" id="staff-password" autocomplete="off" required />
+          <p class="hint">Shown as you type, on purpose — you have to read it out to them. Tell them to change it, and never reuse one of your own.</p>
+        </div>
+        <p class="field-error" id="staff-error"></p>
+        <button type="submit" class="primary-btn big" id="staff-submit-btn">
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span id="staff-submit-label">Create Account</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="dash-section">
+      <h3 class="dash-section-title">Everyone with an account</h3>
+      <div id="staff-list"><p class="room-detail-empty">Loading…</p></div>
+    </div>
   </section>
 
   <!-- SCREEN: Room bookings & info (theater-style room map) -->
@@ -2428,6 +2483,6 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=127"></script>
+<script type="module" src="js/main.js?v=128"></script>
 </body>
 </html>

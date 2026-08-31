@@ -19,6 +19,10 @@ admin.initializeApp();
 // with a different trigger, sharing only the admin app initialised above.
 exports.mirrorToSheet = require("./sheets-mirror").mirrorToSheet;
 
+// Account management, which the app cannot do itself: users/{uid} is
+// unwritable by the rules on purpose, so this runs with the Admin SDK.
+exports.manageStaff = require("./staff").manageStaff;
+
 // Set with:  firebase functions:secrets:set GMAIL_APP_PASSWORD --project live
 // Never committed, never printed, never in the client bundle.
 const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");

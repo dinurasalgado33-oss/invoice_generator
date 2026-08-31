@@ -724,3 +724,32 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
 .void-reissue input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
 .void-reissue strong { display: block; font-size: 14px; }
 .void-reissue small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.45; opacity: .75; }
+
+/* Staff accounts screen. An account with no role signs in and then sees
+   nothing with no error explaining why — the residue of a half-finished
+   manual setup — so it is called out rather than listed quietly. */
+.staff-form .hint { margin-top: 6px; }
+.staff-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: var(--white);
+}
+.staff-row.is-inactive { opacity: .6; }
+.staff-row.is-broken { border-color: var(--danger, #b3261e); }
+.staff-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.staff-row-name { font-weight: 600; }
+.staff-row-email,
+.staff-row-meta { font-size: 12px; opacity: .75; overflow-wrap: anywhere; }
+.staff-row.is-broken .staff-row-meta { color: var(--danger, #b3261e); opacity: 1; }
+.staff-row-actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.staff-status { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.staff-status.on { color: #1b7f4d; }
+.staff-status.off { color: #8a8a8a; }
+/* 44px, the same floor as every other tap target on this screen. */
+.staff-toggle-btn { min-height: 44px; }

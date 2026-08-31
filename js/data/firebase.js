@@ -18,16 +18,19 @@ let db = null;
 let auth = null;
 let firestoreApi = null;
 let authApi = null;
+let fnsApi = null;
+let fns = null;
 let starting = null;
 
 // Loaded once and shared. Everything that needs Firestore functions asks
 // for them here rather than importing the CDN again, so there is one
 // instance of the SDK and one connection.
 async function boot() {
-  const [{ initializeApp }, fs, au] = await Promise.all([
+  const [{ initializeApp }, fs, au, fn] = await Promise.all([
     import(`${SDK}/firebase-app.js`),
     import(`${SDK}/firebase-firestore.js`),
     import(`${SDK}/firebase-auth.js`),
+    import(`${SDK}/firebase-functions.js`),
   ]);
 
   app = initializeApp(firebaseConfig());
@@ -45,8 +48,13 @@ async function boot() {
   auth = au.getAuth(app);
   firestoreApi = fs;
   authApi = au;
+  // Pinned to the region the functions are deployed in. The default is
+  // us-central1, and calling the wrong region fails as "not found" — which
+  // reads like a missing function rather than a misrouted call.
+  fns = fn.getFunctions(app, "asia-south1");
+  fnsApi = fn;
 
-  return { app, db, auth, fs, au };
+  return { app, db, auth, fs, au, fn };
 }
 
 export function connect() {
@@ -72,6 +80,11 @@ export function authApiRef() {
 
 export function currentProject() {
   return projectId();
+}
+
+// A callable Cloud Function, already pointed at the right region.
+export function callable(name) {
+  return fnsApi.httpsCallable(fns, name);
 }
 
 // Every record carries its own document id, generated on the device.

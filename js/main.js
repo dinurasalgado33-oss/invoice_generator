@@ -27,6 +27,7 @@ import "./reservations.js";
 import "./proforma.js";
 import "./history.js";
 import "./branch.js";
+import "./staff.js";
 import { restoreSession } from "./auth.js";
 import { initLock, lock, hasPin, startPinSetup } from "./lock.js";
 
