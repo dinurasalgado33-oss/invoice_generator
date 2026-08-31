@@ -29,7 +29,7 @@ verified — before the next begins.
 
 ---
 
-## 2. Stage 1 — correctness (no new features)
+## 2. Stage 1 — correctness ✅ COMPLETE
 
 Independent of each other and of everything below. Any can ship alone.
 
@@ -37,8 +37,8 @@ Independent of each other and of everything below. Any can ship alone.
 |---|---|---|---|
 | 1.1 | ~~`[J]` Menu delete~~ **done** `8bc11d5` | Routed through `remove()` | Verified: adapter received `remove:menuItems`, array 161→160 |
 | 1.2 | ~~`[A]` Villa occupancy~~ **done** `4227835` | Derived from bookings; rebuilt on every bookings snapshot, not just at startup | Verified end to end on dev: check in → reload → still occupied, tab reachable; checkout → reload → stays free |
-| 1.3 | `[I-1]` Stock adjustments unlogged | Log every manual +/− to `USAGE_LOG` | Adjust stock, confirm a log row with who and why |
-| 1.4 | `[I-2]` Order stock movement unlogged | Log ingredient reserve and restore | Place an order, confirm rows; delete it, confirm the reversal |
+| 1.3 | ~~`[I-1]` Stock adjustments~~ **done** `472d159` | All four stock paths go through one logStockMovement(); every row records `by` | Verified: decrease→usage, increase→restocks, corrections cost 0, purchase costs 6000, zero writes nothing |
+| 1.4 | ~~`[I-2]` Order stock movement~~ **done** `472d159` | Reserve and return both logged | Verified on a real order: `Kitchen — Papaya Juice` −0.5kg, then `order-return` +0.5kg at zero cost |
 
 **1.2 is the most valuable single change in either audit.** It is also
 the one to resist "fixing" by writing `room.status` to Firestore — that
