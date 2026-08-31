@@ -225,6 +225,26 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Manager-set configuration
+    // ---------------------------------------------------------------
+    // Villa rates, activities, the service charge, VAT, bank details and
+    // the printed policies. Readable by anyone signed in, because every
+    // screen bills and prints from these. Writable only by a manager: a
+    // nightly rate and a VAT percentage decide what a guest is charged,
+    // which makes them exactly as financial as an invoice — they are
+    // simply financial before the bill rather than after it.
+    //
+    // Deletable by a manager too, unlike the financial collections. A
+    // discontinued activity or a retired policy line is config being
+    // tidied, not a record being erased; the invoices that used them
+    // keep their own snapshot of what they said at the time.
+    match /config/{id} {
+      allow read: if signedIn();
+      allow create, update: if isManager();
+      allow delete: if isManager();
+    }
+
+    // ---------------------------------------------------------------
     // Anything not named above
     // ---------------------------------------------------------------
     // Denied. A new collection has to be granted access deliberately
