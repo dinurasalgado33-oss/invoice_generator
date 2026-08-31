@@ -33,6 +33,7 @@ export const COLLECTIONS = {
   MENU: "menuItems",
   ROOMS: "rooms",
   ERRORS: "errors",
+  CONFIG: "config",
 };
 
 const VALID = new Set(Object.values(COLLECTIONS));
