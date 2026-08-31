@@ -7,7 +7,7 @@ import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel,
   serviceChargeRateFor, setServiceChargeRate, invoiceRemark,
 } from "./data/charges.js";
-import { saveConfig, CONFIG_KINDS } from "./data/config-store.js";
+import { saveConfig, CONFIG_KINDS, villaConfig } from "./data/config-store.js";
 import {
   BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId,
   CANCELLATION_POLICY, allocateCancellationId,
@@ -101,6 +101,11 @@ document.getElementById("villa-rate-form").addEventListener("submit", (e) => {
   // keeps its own name snapshot, so past bookings/invoices are untouched.
   room.name = name;
   room.rate = rate;
+  // The whole list for this property, not just the villa that changed.
+  // These are read whole on every screen that bills, and two managers
+  // editing different villas in the same minute is not a real scenario at
+  // ten villas — whereas a rate that reverts on reload very much was.
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.VILLAS, villaConfig(ROOMS_BY_BRANCH[appState.selectedBranch]));
 
   closeVillaRateSheet();
   renderVillaList();
@@ -243,6 +248,11 @@ document.getElementById("activity-form").addEventListener("submit", (e) => {
     branchActivities().push({ id: allocateActivityId(), name, price, hotelIncome, category });
     showToast(`${name} added`);
   }
+  // After both branches, not inside one. Editing a safari's price is the
+  // same kind of change as adding it, and saving only on add would have
+  // left every price correction reverting on reload — the subtler half of
+  // the same bug.
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.ACTIVITIES, branchActivities());
 
   closeActivitySheet();
   renderActivityList();
@@ -263,6 +273,7 @@ document.getElementById("activity-delete-btn").addEventListener("click", async (
   if (!ok) return;
 
   activities.splice(activities.findIndex(a => a.id === editingActivityId), 1);
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.ACTIVITIES, activities);
   closeActivitySheet();
   renderActivityList();
   showToast(`${activity.name} removed`);

@@ -43,6 +43,19 @@ export const CONFIG_KINDS = {
   SERVICE_CHARGE: "serviceCharge",
 };
 
+function stripUndefined(value) {
+  if (Array.isArray(value)) return value.map(stripUndefined);
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v === undefined) continue;
+      out[k] = stripUndefined(v);
+    }
+    return out;
+  }
+  return value;
+}
+
 function docId(branch, kind) {
   // Firestore treats "/" as a path separator and a branch name has a
   // space in it; both go through here rather than being trusted raw.
@@ -61,10 +74,13 @@ export function saveConfig(branch, kind, value) {
       await fs.setDoc(fs.doc(getDb(), COLLECTIONS.CONFIG, docId(branch, kind)), {
         branch,
         kind,
+        // Firestore rejects undefined outright, and a single undefined
+        // anywhere in the payload fails the whole write — so it is
+        // stripped here rather than trusted not to appear.
         // Wrapped rather than spread, because some of these are arrays and
         // some are plain values (the VAT rate is a number). One field name
         // keeps hydration from having to know which is which.
-        value,
+        value: stripUndefined(value),
         updatedAt: new Date().toISOString(),
       });
     } catch (err) {
@@ -90,6 +106,29 @@ export async function loadConfig(branch, kind) {
 // Replaces the contents of an array in place. The screens hold references
 // to these arrays from module load, so reassigning would leave them
 // rendering the old contents forever — the same reason hydrate() splices.
+// A villa's *configuration* — what a manager sets — as distinct from its
+// live state. Occupancy is derived from bookings (see occupancy.js) and
+// must never be written here: storing "is this villa occupied" in config
+// would put that fact in two places again, which is the whole thing 1.2
+// removed. Only what a manager typed goes to the database.
+export function villaConfig(rooms) {
+  return (rooms || []).map(r => ({ id: r.id, name: r.name, rate: r.rate }));
+}
+
+// Config fields are merged onto the existing villas rather than replacing
+// them, for the same reason: replacing would discard the occupancy the
+// app just derived, and a villa would read free with a guest in it.
+export function applyVillaConfig(target, incoming) {
+  if (!Array.isArray(incoming) || !Array.isArray(target)) return false;
+  incoming.forEach(cfg => {
+    const room = target.find(r => r.id === cfg.id);
+    if (!room) return;
+    if (cfg.name != null) room.name = cfg.name;
+    if (cfg.rate != null) room.rate = cfg.rate;
+  });
+  return true;
+}
+
 export function applyArray(target, incoming) {
   if (!Array.isArray(incoming) || !Array.isArray(target)) return false;
   target.splice(0, target.length, ...incoming);
@@ -126,7 +165,7 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.VAT).catch(() => undefined),
       ]);
 
-    if (applyArray(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
+    if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
     if (applyArray(ACTIVITIES_BY_BRANCH[branch], activities)) loaded.push(branch + ":activities");
     if (applyArray(RESERVATION_CONDITIONS[branch], conditions)) loaded.push(branch + ":conditions");
     if (applyArray(CANCELLATION_POLICY[branch], cancellation)) loaded.push(branch + ":cancellation");

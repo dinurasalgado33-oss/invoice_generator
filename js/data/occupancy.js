@@ -65,13 +65,17 @@ export function deriveOccupancy() {
     villasFor(booking).forEach(roomId => {
       const room = rooms.find(r => r.id === roomId);
       if (!room) return;   // villa deleted or renumbered since the stay
+      // Only fields the booking actually has. Assigning undefined would
+      // put an undefined value on the villa, and anything later writing
+      // that villa to Firestore is rejected outright — which is how a
+      // missing guest phone number stopped a nightly rate from saving.
       room.status = "occupied";
-      room.guest = booking.guest;
-      room.phone = booking.phone;
-      room.checkin = booking.checkin;
-      room.checkout = booking.checkout;
-      room.source = booking.source;
       room.bookingId = booking.id;
+      if (booking.guest != null) room.guest = booking.guest;
+      if (booking.phone != null) room.phone = booking.phone;
+      if (booking.checkin != null) room.checkin = booking.checkin;
+      if (booking.checkout != null) room.checkout = booking.checkout;
+      if (booking.source != null) room.source = booking.source;
       occupied++;
     });
   });
