@@ -1,73 +1,245 @@
-# What talks to the database, and what only pretends to
+# Leopard Inn — What Reaches the Database, and What Doesn't
 
-Every piece of shared state in the app, whether a change to it reaches
-Firestore, and whether it survives a reload. Built by scanning all 99
-mutation sites in `js/` and classifying each one, after villa rates were
-found to be memory-only.
+A full sweep of every piece of state the app changes, and whether that
+change survives a reload or reaches another device.
 
-The pattern behind every gap below is the same: the sync work traced
-**records** — bookings, invoices, charges — and never checked **state**
-that is edited rather than created. A villa's nightly rate and a villa's
-occupancy are both as financial as an invoice; they are financial
+Written 2026-08-30, against commit `6b8c0be`. **Audit only — nothing here
+is fixed yet.** The order of work is at the bottom.
+
+The method: every mutation-shaped statement in `js/` was extracted
+mechanically (99 of them), each classified as durable state or not, and
+each durable one checked for a persist call. Then every finding was
+confirmed by reading the surrounding code, because a grep can only say
+what is missing near a line, not whether it matters.
+
+---
+
+## 1. The one-line summary
+
+Records are solid. **Everything a manager configures, the live state of
+every villa, and all stock levels are memory-only** — they work for the
+session, vanish on reload, and never reach a second device.
+
+The reason they were missed is worth stating plainly: the backend work
+traced *records* — bookings, invoices, charges, cards — on the unexamined
+assumption that config is not financial. A villa's nightly rate and a VAT
+percentage are exactly as financial as an invoice. They are financial
 *before* the bill rather than after it.
 
-Status: 🔴 not started · 🟡 in progress · ✅ done and verified
-
 ---
 
-## 1. Critical — wrong answers to a guest at the desk
+## 2. Verdict by area
 
-| # | State | Where | Problem | Status |
-|---|---|---|---|---|
-| 1.1 | Villa occupancy — `status`, `guest`, `bookingId`, `checkin`, `checkout`, `phone`, `source` | `js/rooms.js` (7 sites) | Never written, never derived. Every seed room is `available`, so **after any reload every villa shows free even with guests in them**. A second device never sees occupancy at all. Invites double-booking an occupied villa, and orphans the guest's tab from the room. | 🔴 |
-
-The booking record itself survives — it is persisted. What is lost is the
-room's link to it, which is the thing reception actually looks at.
-
----
-
-## 2. High — money, and things a manager changes
-
-| # | State | Where | Problem | Status |
-|---|---|---|---|---|
-| 2.1 | Villa name and nightly rate | `configure.js:98-99` | `room.rate = rate` and stop | 🔴 |
-| 2.2 | Activities and prices | `configure.js:239,261` | add/delete, no persist | 🔴 |
-| 2.3 | Branch details — hotel name, address, phone, **bank account** | `configure.js:302` | no persist | 🔴 |
-| 2.4 | **VAT rate** per property | `charges.js:111` | no persist | 🔴 |
-| 2.5 | GRC terms & conditions | `configure.js:392,414` | no persist | 🔴 |
-| 2.6 | Cancellation policy | `configure.js:508,511,530` | no persist | 🔴 |
-| 2.7 | Proforma notices | `configure.js:592,611` | no persist | 🔴 |
-| 2.8 | Inventory items — add, edit, delete | `inventory.js:439,462` | no collection exists | 🔴 |
-| 2.9 | Stock levels | `inventory.js:58,359`, `orders.js:32` | mutated in place; the restock/usage **logs** persist but the number does not, so stock resets to seed on reload | 🔴 |
-| 2.10 | Deleting a menu dish | `menu.js:268` | splices locally, never calls `remove()` — the dish **comes back** on next hydration | 🔴 |
-
----
-
-## 3. Already correct
+### ✅ Persisted and hydrated — no action
 
 | State | Collection |
 |---|---|
-| Invoices, incl. void + reissue | `invoices` |
-| Bookings, incl. status changes | `bookings` |
-| Guest charges, incl. billed / written-off / released | `guestCharges` |
-| Food order and activity charge records | `foodOrders`, `activityCharges` |
-| Reservations, incl. cancel with reason | `reservations` |
-| Agent invoices | `proformaInvoices` |
-| Registration cards | `registrationCards` |
-| Restock and usage log entries | `restocks`, `stockUsage` |
-| Welcome e-mail queue | `guestEmails` |
-| Room activity log | `roomActivity` |
-| Sign-ins, errors | `logins`, `errors` |
-| Menu dish **add and edit** (not delete — see 2.10) | `menuItems` |
-| Document number blocks | `counters` |
+| `INVOICES` | `invoices` |
+| `BOOKINGS` | `bookings` |
+| `GUEST_CHARGES` | `guestCharges` |
+| `FOOD_ORDER_RECORDS` | `foodOrders` |
+| `ACTIVITY_RECORDS` | `activityCharges` |
+| `RESERVATIONS` | `reservations` |
+| `PROFORMA_INVOICES` | `proformaInvoices` |
+| `GRC_RECORDS` | `registrationCards` |
+| `RESTOCK_LOG` | `restocks` |
+| `USAGE_LOG` | `stockUsage` |
+| `GUEST_EMAIL_QUEUE` | `guestEmails` |
+| `ROOM_ACTIVITY_LOG` | `roomActivity` |
+| `LOGIN_LOG` | `logins` |
+| `ERROR_LOG` | `errors` |
+| `MENU_ITEMS` — add and edit | `menuItems` |
 
----
+### ❌ Not persisted — the actual findings
 
-## 4. Deliberately not persisted
+| # | State | Where | Consequence |
+|---|---|---|---|
+| **A** | Villa occupancy — `status`, `guest`, `bookingId`, `checkin`, `checkout`, `phone`, `source` | `rooms.js` 341-347, 392-398, 724-726, 841-847 | **Severe.** After any reload every villa reads *available*. See §3. |
+| **B** | Villa name and nightly rate | `configure.js` 98-99 | Rate change reverts on reload; two devices bill different rates |
+| **C** | Activities and prices | `configure.js` 239, 261 | Same |
+| **D** | Branch details — address, phone, **bank account** | `configure.js` 302 | Wrong bank details on an agent invoice |
+| **E** | GRC terms & conditions | `configure.js` 389-392, 414 | Signed cards print stale terms |
+| **F** | Cancellation policy | `configure.js` 508-511, 530 | Agent invoices print stale policy |
+| **G** | Proforma notices | `configure.js` 592, 611 | Same |
+| **H** | Inventory items — add, edit, delete | `inventory.js` 439, 462 | New items vanish on reload |
+| **I** | Stock levels | `inventory.js` 58-59, 359; `orders.js` 32 | Stock resets to seed values. See §4. |
+| **J** | Menu dish **delete** | `menu.js` 268 | Splices locally, never calls `remove()` — **the dish returns on the next hydration** |
+| **K** | VAT rate | `charges.js` 100 | See §5 — worse than a persistence gap |
+
+### ⚪ Deliberately not persisted — confirmed correct
 
 | State | Why |
 |---|---|
-| `FOOD_ORDERS` live queue | "Currently pending" only ever means orders placed just now; cleared each session by design. The *records* of completed orders do persist. |
-| Report filters, search, tab | Per-person view state, not shared fact. |
-| Download links, canvas exports | Transient DOM. |
-| Suggestion lists | Derived from records already stored. |
+| `FOOD_ORDERS` | Live kitchen queue. "Currently pending" only ever means now; documented as session-scoped by design |
+| Suggestion history (guides, agents, countries) | Per-device convenience for `<datalist>`. Arguably *should* be shared — see §6 |
+| Lock PIN, idle timeout | Per-device by definition |
+| Number blocks | Per-device by design — that is the whole point of block allocation |
+| Report filters, download links, DOM state | Not durable state |
+
+---
+
+## 3. Finding A — villa occupancy (most serious)
+
+`ROOMS` is declared in `COLLECTIONS`, has a security rule written for it,
+and is **written by nothing and hydrated by nothing**:
+
+```
+declared but never hydrated: CONFIG, ROOMS
+files writing COLLECTIONS.ROOMS: 0
+```
+
+Every villa in the seed data is `status: "available"` (11 of 11). Nothing
+rebuilds occupancy from bookings — `rooms.js` only ever looks *up* a
+booking by `room.bookingId`, never the reverse.
+
+So: reception checks a guest in, the tablet reloads, and every villa
+reads available. The booking record survives — it is persisted — but the
+room's link to it is gone. A second device never sees the occupancy at
+all.
+
+**What that costs:** double-booking a villa somebody is asleep in; a
+guest's open tab unreachable because the room no longer knows its
+`bookingId`; the home dashboard's occupancy count wrong.
+
+**This one should probably not be fixed by persisting it.** Bookings
+already carry everything needed:
+
+```js
+{ id, roomId, roomIds, guest, villa, branch, checkin, checkout,
+  source, reservationId, status: "Checked In" }
+```
+
+A booking with `status: "Checked In"` says exactly which villas are
+occupied, by whom, for which nights. Deriving occupancy from bookings
+after hydration means one fact stored once. Persisting `room.status`
+instead creates a second copy of "is this villa occupied", free to
+disagree with the bookings — which is this project's signature bug, and
+the reason `guestCharges` stopped being an array on the room.
+
+**Recommendation: derive, don't store.**
+
+---
+
+## 4. Finding I — stock has four inputs and only two are recorded
+
+| Path | Changes stock | Logged? |
+|---|---|---|
+| Restock form | `+qty` | ✅ `RESTOCK_LOG` |
+| "Log as used" form | `−qty` | ✅ `USAGE_LOG` |
+| **Manual +/− adjuster** (`inventory.js` 359) | `±delta` | ❌ **nothing** |
+| **Order placed / deleted** (`orders.js` 32, 40) | `−ingredients` / `+ingredients` | ❌ **nothing** |
+
+So stock is not merely unpersisted — it is **unauditable**. Two of the
+four things that move it leave no record of who moved it or why.
+
+This blocks the tidy answer. Stock *could* be derived the same way
+occupancy can — opening + restocks − usage — but only if every movement
+is logged. Two of them aren't.
+
+**Recommendation: log the two missing paths first, then derive.** That
+fixes the audit gap and the persistence gap with one change, and avoids a
+second copy of "how much chicken is there".
+
+---
+
+## 5. Finding K — VAT is not editable at all
+
+`setVatRate()` is exported from `charges.js` and **called from nowhere**.
+There is no VAT input anywhere in `index.html` — the only `vat` ids are
+`prev-vat` and `prev-vat-row`, which display it on the invoice preview.
+
+So the rate is hardcoded to `0` for both properties and a manager cannot
+change it in the app. This is not a persistence bug; it is a missing
+feature with a dead setter sitting behind it, ready for a UI that was
+never built.
+
+Worth knowing: the rate is correctly frozen onto each invoice when
+raised, so turning VAT on later is a setting rather than a migration.
+That part is right.
+
+---
+
+## 6. Open question — should suggestions be shared?
+
+Guide names, travel agents, countries and vehicles are remembered per
+device in `localStorage`. The module's own comment explains the reasoning:
+these cannot be configured up front because nobody knows the full set in
+advance.
+
+But the stated purpose is stopping "Pradeep", "pradeep" and "Pradeeep"
+becoming three people — and per-device storage only achieves that on one
+device. The tablet and the phone will each learn their own spellings.
+
+Not a bug against its current design. Flagged as a decision.
+
+---
+
+## 7. Dependencies — what has to be wired before what
+
+```
+bookings (persisted)
+   └── villa occupancy .............. DERIVE from bookings   [A]
+          └── guest tab reachable via room.bookingId
+          └── home dashboard occupancy count
+
+restocks + stockUsage (persisted)
+   └── stock levels ................. DERIVE, but first:
+          ├── log manual adjustments ................ [I-1]
+          └── log order reserve/restore ............. [I-2]
+
+config collection (new, not yet created)
+   ├── villas: name, rate ........... [B]
+   ├── activities ................... [C]
+   ├── branch info .................. [D]
+   ├── conditions ................... [E]
+   ├── cancellation ................. [F]
+   ├── notices ...................... [G]
+   ├── inventory items .............. [H]  (items, not stock)
+   └── vat .......................... [K]  (needs a UI first)
+
+menuItems (persisted)
+   └── delete path .................. [J]  one missing remove() call
+```
+
+Two things follow from the shape of this:
+
+**`[J]` is independent and one line.** It has no dependencies and is a
+missing `remove()` call.
+
+**`[A]` and `[I]` are not persistence work.** Treating them as "add a
+write call" would create exactly the duplicated-fact bug this project
+keeps having. They are derivation work, and `[I]` needs its two logging
+gaps closed first or the derivation will be wrong.
+
+---
+
+## 8. Suggested order
+
+| Step | Item | Why here |
+|---|---|---|
+| 1 | `[J]` menu delete | One line, no dependencies, currently resurrects deleted dishes |
+| 2 | `[A]` derive occupancy from bookings | Most serious; unblocks nothing but fixes the worst failure |
+| 3 | `[I-1]`, `[I-2]` log the two silent stock paths | Audit gap in its own right; prerequisite for step 4 |
+| 4 | `[I]` derive stock from logs | Depends on step 3 being complete |
+| 5 | `[B]`–`[H]` config collection + seed + hydrate | Largest, but mechanical and uniform once the pattern exists |
+| 6 | `[K]` VAT UI, then persist with the rest | Needs a feature built before it can be persisted |
+
+Steps 1–4 are correctness. Step 5 is the bulk of the work. Step 6 is a
+new feature.
+
+---
+
+## 9. What this audit did not cover
+
+Stated so the next person knows where the edges are:
+
+- **Cloud Functions' own writes** — the welcome e-mail's status write and
+  the Sheet mirror's cursor were verified working earlier, but are not
+  re-examined here.
+- **Firestore rules for the new `config` collection** — no rule exists
+  yet; it will be denied by the catch-all until one is written.
+- **Whether every persisted write is *correct*** — this audit asks
+  whether a write happens, not whether it stores the right value. The
+  earlier lifecycle sweeps covered that for records.
+- **The live project's existing data.** Nothing here was tested against
+  `leopard-inn`; all inspection was static plus dev-project runtime.
