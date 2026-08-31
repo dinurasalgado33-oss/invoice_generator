@@ -243,22 +243,31 @@ Stated so the next person knows where the edges are.
   the persistence machinery itself (the `array.push` in `store.js` *is*
   the write path). No hidden state.
 
-**Still open — one blocker:**
+**Closed — the blocker is resolved:**
 
-- **Finding [A] is proven by construction, not by observation.** Rooms are
-  written by nothing, hydrated by nothing, every seed villa is
-  `available`, and no code rebuilds occupancy from bookings — so a reload
-  must show every villa free. That reasoning is sound and each step was
-  checked individually, but nobody has watched it happen.
+- **Finding [A] is now observed, not inferred.** On dev, signed in as a
+  manager with everything else hydrating correctly: a guest was checked
+  into Balcony Villa, the booking was confirmed present *on the server*,
+  the page was reloaded, and the result was
+  `booking.status: "Checked In", booking.roomId: 7` alongside
+  `room.status: "available", room.guest: null, room.bookingId: null`.
 
-  Verifying it needs a signed-in session: check a guest in, reload, look
-  at the villa. Demo mode cannot show it (nothing persists there by
-  design), and doing it on `leopard-inn` would put a fake booking in the
-  real books permanently.
+  The database knows a guest is in that villa. The villa does not.
 
-  This matters more than usual because two claims in this session turned
-  out to be my own test being wrong rather than the app. A finding this
-  serious should be observed before it is acted on.
+  Worth recording how nearly this went wrong. The first attempt looked
+  like a clean confirmation and was worthless: the dev profile document
+  had its key stored as `"role "` with a trailing space, so
+  `profile.role` was undefined, `isManager()` was false, and Firestore
+  refused every read *and* every write. The villa read available because
+  nothing had loaded at all — and the check-in was never saved either.
+  A test that cannot fail for the right reason proves nothing, and this
+  one would have written a false confirmation into this document.
+
+  That malformed key is also this project's documented failure mode
+  happening for real: the account signs in, routes down the manager path
+  because `undefined !== "staff"`, looks entirely normal, and silently
+  sees nothing. It affected `leopard-inn-dev` only; the live project's
+  profile is correct.
 
 **Deliberately out of scope:**
 
