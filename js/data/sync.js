@@ -15,6 +15,7 @@ import { firestoreAdapter, hydrate, stopWatching } from "./firestore-adapter.js"
 import { scopedBranch, currentProfile } from "./session.js";
 import { primeNumbering } from "./numbering.js";
 import { seedMenuIfEmpty } from "./seed-config.js";
+import { deriveOccupancy } from "./occupancy.js";
 import { logError } from "./error-log.js";
 
 import { INVOICES, BOOKINGS, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./reports.js";
@@ -34,7 +35,10 @@ import { ERROR_LOG } from "./error-log.js";
 // manager-only by rule rather than by branch.
 const COLLECTION_MAP = [
   [COLLECTIONS.INVOICES, INVOICES],
-  [COLLECTIONS.BOOKINGS, BOOKINGS],
+  // Occupancy is derived from these, so a change from another device has
+  // to rebuild it — otherwise reception's tablet shows a villa free that
+  // the phone just checked somebody into.
+  [COLLECTIONS.BOOKINGS, BOOKINGS, { onChange: deriveOccupancy }],
   [COLLECTIONS.FOOD_ORDERS, FOOD_ORDER_RECORDS],
   [COLLECTIONS.ACTIVITY_CHARGES, ACTIVITY_RECORDS],
   [COLLECTIONS.GUEST_CHARGES, GUEST_CHARGES],
@@ -85,6 +89,7 @@ export async function startSync() {
       hydrate(name, array, {
         branch: opts && opts.everyone ? null : branch,
         keepLocalIfEmpty: Boolean(opts && opts.keepLocalIfEmpty),
+        onChange: (opts && opts.onChange) || null,
       })
     )
   );
@@ -99,6 +104,13 @@ export async function startSync() {
       logError(`Could not load ${name}`, { source: "sync", stack: r.reason && r.reason.stack });
     }
   });
+
+  // Occupancy is worked out from the bookings that just arrived, rather
+  // than stored on the villa. Before this, a reload left every villa
+  // reading "available" while Firestore held a booking saying Checked In.
+  // Runs after hydration for that reason, and again whenever bookings
+  // change — see the watcher installed below.
+  deriveOccupancy();
 
   // Reserve a block of document numbers for every property this person
   // works at, now, while there is signal — so a device that goes offline

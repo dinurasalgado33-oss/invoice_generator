@@ -90,7 +90,7 @@ export const firestoreAdapter = {
 
 const watching = new Map();
 
-export async function hydrate(collection, array, { branch = null, keepLocalIfEmpty = false } = {}) {
+export async function hydrate(collection, array, { branch = null, keepLocalIfEmpty = false, onChange = null } = {}) {
   await connect();
   const fs = fsApi();
 
@@ -123,6 +123,12 @@ export async function hydrate(collection, array, { branch = null, keepLocalIfEmp
         return;
       }
       array.splice(0, array.length, ...rows);
+      // Fires on every snapshot, not just the first — anything derived
+      // from this collection has to be rebuilt when another device
+      // changes it, or the second tablet keeps showing yesterday.
+      if (onChange) {
+        try { onChange(array); } catch (err) { logError(`onChange failed for ${collection}`, { source: "hydrate", stack: err && err.stack }); }
+      }
       if (!settled) { settled = true; resolve(array); }
     }, (err) => {
       report("watch", collection, err);
