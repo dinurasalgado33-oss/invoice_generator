@@ -101,9 +101,15 @@ first** — once stock movements are logged, the reason list becomes the
 vocabulary of the audit trail, and a fixed list of four starts costing
 something.
 
-**Blocked on a decision** (`HARDCODED-AUDIT.md` §8): individual screens
-per list, or one generic "manage lists" screen. Seven separate screens
-for seven small lists is a lot of navigation for rarely-used settings.
+**Decided:** one generic **Manage Lists** screen — pick the list from a
+dropdown, then add/edit/remove. Seven screens for seven rarely-touched
+settings is a lot of navigation, and one screen is one piece of code
+rather than seven near-identical ones.
+
+Currencies and inventory units are **shared across both properties**; a
+euro is a euro and a kilogram is a kilogram. Everything else on this
+screen stays per-property. That split matters for the document key: the
+shared ones drop the branch prefix.
 
 ---
 
@@ -121,19 +127,22 @@ Not from either audit; outstanding from earlier work.
 
 ---
 
-## 7. Decisions still needed
+## 7. Decisions — settled
 
-Two block Stage 4, none block Stages 1–3.
+1. **Tier 3 lists** — one generic **Manage Lists** screen, not seven.
+2. **Scope** — currencies and inventory units shared across both
+   properties; everything else per-property.
+3. **If occupancy will not derive cleanly (1.2)** — **stop and ask**, do
+   not fall back to persisting `room.status` unilaterally. This is the
+   item most likely to cause a double-booking if it is subtly wrong, and
+   it touches check-in, checkout and the dashboard at once.
+4. **Test invoices (5.1)** — Dinura voids them himself, walked through.
+   Voided with a stated reason is a cleaner record than quietly removed.
 
-1. **Tier 3 lists: individual screens or one generic manager?** (§5)
-2. **Per-property or shared?** Most config is per-property. Currencies and
-   inventory units arguably should be shared — a euro is a euro at both
-   hotels. Undecided; affects the document key shape.
+Outstanding input, blocking nothing:
 
-One outstanding input, blocking nothing:
-
-3. **VAT percentages and what they apply to.** Not needed to build 2.4 —
-   the field can ship at 0 and be set later, which is the whole point of
+5. **VAT percentages and what they apply to.** Not needed to build 2.4:
+   the field ships at 0 and is set later, which is the entire point of
    making it configurable.
 
 ---
