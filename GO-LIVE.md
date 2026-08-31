@@ -9,7 +9,7 @@ repeating any of it.
 holds the *state* and the *steps*. Read that one for "why"; read this one
 for "what's done and what's next."
 
-Last updated: 2026-08-30, at commit `75efac9`.
+Last updated: 2026-08-30, at commit `94f0f17`.
 
 ---
 
@@ -26,7 +26,7 @@ data behind a rule nobody has watched actually block anything.
 | 2 | Offline resilience test — network genuinely off | ✅ Done — full stay offline, verified synced after reconnect |
 | 3 | Create the real `leopard-inn` project, go live | ✅ Done — live at https://leopard-inn.web.app, rules deployed before any data, counters + menu seeded, verified |
 | 4 | Cloud Functions — welcome email, Sheets mirror, backups | ✅ Done — backups daily/14d, welcome e-mail deployed (Gmail), Sheets mirror verified writing to the real Sheet |
-| 5 | Staff management screen, PIN unlock, auto sign-out | 🟡 PIN lock + auto-lock done and verified; staff management screen still needs a Cloud Function |
+| 5 | Staff management screen, PIN unlock, auto sign-out | ✅ Done — PIN lock verified; staff screen added via a manager-only callable function |
 | 6 | Firebase Hosting | ✅ Done — deployed to leopard-inn.web.app as part of Phase 3 |
 
 This table is shown after every phase completes, updated in place.
