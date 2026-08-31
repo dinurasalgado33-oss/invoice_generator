@@ -1,0 +1,180 @@
+# Leopard Inn — Merged Execution Plan
+
+The single ordered list for closing both audits. Nothing new is
+identified here; this decides *sequence*.
+
+Written 2026-08-30, against commit `b6b7684`.
+
+Sources:
+- `PERSISTENCE-AUDIT.md` — items `[A]`–`[K]`. Does a change reach the database?
+- `HARDCODED-AUDIT.md` — items `H1`–`H14`. Can a manager make the change at all?
+
+---
+
+## 1. The two rules this order follows
+
+**Correctness before features.** Three items are bugs in behaviour that
+already exists, with no configurable counterpart. They ship first because
+one of them can double-book an occupied villa, and none of them depend on
+anything else.
+
+**Then one pass per item, never two phases.** For everything that is both
+hardcoded *and* unpersisted, "make it editable" and "make it save" are the
+same job. Splitting them means touching every Configure screen twice and
+leaves a window where a manager changes a rate that silently reverts —
+which is worse than either bug alone, because it looks like it worked.
+
+So: each item below is finished — editable, persisted, hydrated,
+verified — before the next begins.
+
+---
+
+## 2. Stage 1 — correctness (no new features)
+
+Independent of each other and of everything below. Any can ship alone.
+
+| Step | Item | Change | Verify by |
+|---|---|---|---|
+| 1.1 | `[J]` Menu delete | Add the missing `remove()` call — `menu.js:268` splices locally only | Delete a dish, reload, confirm it stays gone |
+| 1.2 | `[A]` Villa occupancy | Derive from bookings after hydration, don't persist `room.status` | Check in, reload, villa still reads occupied *and* the tab is reachable |
+| 1.3 | `[I-1]` Stock adjustments unlogged | Log every manual +/− to `USAGE_LOG` | Adjust stock, confirm a log row with who and why |
+| 1.4 | `[I-2]` Order stock movement unlogged | Log ingredient reserve and restore | Place an order, confirm rows; delete it, confirm the reversal |
+
+**1.2 is the most valuable single change in either audit.** It is also
+the one to resist "fixing" by writing `room.status` to Firestore — that
+creates a second copy of "is this villa occupied", free to disagree with
+the bookings. Derivation keeps one fact stored once. Reasoning in
+`PERSISTENCE-AUDIT.md` §3.
+
+**1.3 and 1.4 must both land before Stage 3.** Stock cannot be derived
+from logs while two of the four things that move it write no log.
+
+---
+
+## 3. Stage 2 — money (editable + persisted, one pass each)
+
+Highest value: these change what a guest is billed.
+
+| Step | Items | Change |
+|---|---|---|
+| 2.1 | `H1` Service charge rate | Configurable per property, persisted. **Derive `INVOICE_REMARK` from the rate** — today it prints "10%" as words beside a separate constant, so a changed rate would charge one figure and promise another on the guest's copy |
+| 2.2 | `[B]` Villa name and rate | The Configure → Villas form already edits these; make it save |
+| 2.3 | `[C]` Activities and prices | Same, Configure → Activities |
+| 2.4 | `H2` + `[K]` VAT | Build the input (none exists), wire the dead `setVatRate()`, persist. Per property |
+
+2.1 comes first because it is the only Tier 1 item that is *silently*
+wrong rather than merely absent — the printed promise and the charged
+amount can disagree.
+
+**Prerequisite for all of Stage 2:** the `config` collection needs a
+Firestore rule (readable by signed-in, writable by manager) and a deploy.
+None exists; the catch-all denies it today.
+
+---
+
+## 4. Stage 3 — the rest of config
+
+Mechanical once Stage 2 has established the pattern. Grouped by screen so
+each pass finishes one place a manager visits.
+
+| Step | Items | Screen |
+|---|---|---|
+| 3.1 | `[D]` + `H6` Branch details, bank account | Configure → Branch |
+| 3.2 | `[E]` Conditions · `[F]` Cancellation · `[G]` Notices | Their three screens |
+| 3.3 | `[H]` Inventory items | Inventory |
+| 3.4 | `[I]` Derive stock from logs | Inventory — **requires 1.3 and 1.4** |
+| 3.5 | `H3` Check-in / checkout times | Configure → Branch |
+| 3.6 | `H4` Booking sources · `H5` Currencies | Configure → Branch |
+| 3.7 | `H7` GRC liability notice | Configure → Conditions |
+
+---
+
+## 5. Stage 4 — list management
+
+`H8`–`H14`: room types, meal plans, menu categories, inventory
+categories, units, departments, usage reasons.
+
+All the same mechanism repeated. Nothing breaks while they wait.
+
+**`H14` (usage reasons) is promoted out of this stage if 1.3 lands
+first** — once stock movements are logged, the reason list becomes the
+vocabulary of the audit trail, and a fixed list of four starts costing
+something.
+
+**Blocked on a decision** (`HARDCODED-AUDIT.md` §8): individual screens
+per list, or one generic "manage lists" screen. Seven separate screens
+for seven small lists is a lot of navigation for rarely-used settings.
+
+---
+
+## 6. Stage 5 — closing out the live app
+
+Not from either audit; outstanding from earlier work.
+
+| Step | What | Whose |
+|---|---|---|
+| 5.1 | Void the two test invoices in the live books | Dinura — manager only |
+| 5.2 | Confirm a welcome e-mail actually sends | First real check-in with an address |
+| 5.3 | Exercise the staff screen on live | Create a throwaway account, disable it |
+| 5.4 | Extend the staff screen to flag malformed profiles | Me — it flags a *missing* profile but not one whose key is misspelled, which is exactly what happened on dev |
+| 5.5 | Full QA sweep after all of the above | Fresh session |
+
+---
+
+## 7. Decisions still needed
+
+Two block Stage 4, none block Stages 1–3.
+
+1. **Tier 3 lists: individual screens or one generic manager?** (§5)
+2. **Per-property or shared?** Most config is per-property. Currencies and
+   inventory units arguably should be shared — a euro is a euro at both
+   hotels. Undecided; affects the document key shape.
+
+One outstanding input, blocking nothing:
+
+3. **VAT percentages and what they apply to.** Not needed to build 2.4 —
+   the field can ship at 0 and be set later, which is the whole point of
+   making it configurable.
+
+---
+
+## 8. Estimate
+
+| Stage | Work | Notes |
+|---|---|---|
+| 1 — correctness | ~2 hrs | 1.2 is most of it |
+| 2 — money | ~2.5 hrs | Includes the `config` rule and first deploy |
+| 3 — rest of config | ~2.5 hrs | Mechanical once 2 is done |
+| 4 — lists | ~1.5 hrs | Blocked on a decision |
+| 5 — live close-out | ~1 hr | Mostly Dinura's |
+| | **~9.5 hrs** | 3 sessions |
+
+Dinura's own time across all of it: **under an hour** — deploys,
+sign-ins, and the two decisions in §7.
+
+**Read this estimate with the project's history in mind.** Every estimate
+here has been wrong in the same direction, because auditing properly
+keeps surfacing things: a slash breaking Firestore document ids, two
+screens rendering on top of each other, a reservation that reserves
+nothing, a profile key with a trailing space. That is the process
+working, not failing — but plan for 11–12 hours and be pleased if it
+comes in under.
+
+---
+
+## 9. What would make this plan wrong
+
+Stated so it can be checked rather than trusted.
+
+- **If occupancy cannot be cleanly derived** — multi-villa stays use
+  `roomIds`, and if any flow writes `roomId` without `roomIds`, derivation
+  misses villas. Checked at plan time and it looked sound, but 1.2 should
+  confirm it before committing to the approach.
+- **If config turns out to need per-field writes** rather than
+  whole-list writes, Stage 2's pattern changes and Stage 3 inherits it.
+  Whole-list was chosen because these lists are small and always read
+  whole; two managers editing the same list in the same minute is not a
+  real scenario at ten villas.
+- **If the `config` rule cannot express "manager only"** as cleanly as
+  expected. It should — `isManager()` already exists and is proven — but
+  it is untested for this collection.

@@ -6,11 +6,17 @@ tablet, often on bad signal.
 
 ## Read these first
 
-- **`GO-LIVE.md`** — current state and what's next. The phase plan lives at
-  the top. Start here.
+- **`EXECUTION-PLAN.md`** — the ordered list of what to build next, and
+  why in that order. Start here.
+- **`PERSISTENCE-AUDIT.md`** — what does and does not reach the database.
+- **`HARDCODED-AUDIT.md`** — what a manager cannot change but should.
+- **`GO-LIVE.md`** — backend state, phase by phase. All six phases done.
 - **`BACKEND-PLAN.md`** — the decisions and *why*. Read before proposing a
   different approach; most alternatives were already considered and ruled
   out for a reason.
+
+Nothing a manager would plausibly want to change should be a `const` —
+a rate, a percentage, a time, a policy line. See `HARDCODED-AUDIT.md`.
 
 ## Hard constraints
 
