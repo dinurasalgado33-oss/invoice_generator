@@ -232,6 +232,21 @@ function validateReservationForm() {
     resvCheckoutDateInput.focus();
     return false;
   }
+  // A reservation with no villa reserves nothing. It saved happily, and
+  // the damage showed up later and somewhere else: the agent invoice
+  // builds its lines from the reservation's villas, so it opened with no
+  // charges and refused with "Add at least one charge" — which does not
+  // mention villas, on a screen that has none to add. Caught here, where
+  // the villa list actually is.
+  const chosen = [...villaList.querySelectorAll(".villa-rate-row")]
+    .filter(row => row.querySelector(".villa-name-select").value);
+  if (!chosen.length) {
+    const err = document.getElementById("resv-conflict-error");
+    err.textContent = "Add at least one villa — a reservation has to reserve something.";
+    err.classList.add("show");
+    document.getElementById("resv-add-villa-btn").focus();
+    return false;
+  }
   return true;
 }
 
