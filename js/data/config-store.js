@@ -180,8 +180,7 @@ export async function hydrateConfig(branches) {
 
   const loaded = [];
   for (const branch of branches) {
-    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability,
-           roomTypes, mealPlans, menuCategories, invCategories, usageReasons] =
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability] =
       await Promise.all([
         loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
@@ -195,11 +194,6 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.TIMES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.BOOKING_SOURCES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.LIABILITY).catch(() => undefined),
-        loadConfig(branch, CONFIG_KINDS.ROOM_TYPES).catch(() => undefined),
-        loadConfig(branch, CONFIG_KINDS.MEAL_PLANS).catch(() => undefined),
-        loadConfig(branch, CONFIG_KINDS.MENU_CATEGORIES).catch(() => undefined),
-        loadConfig(branch, CONFIG_KINDS.INVENTORY_CATEGORIES).catch(() => undefined),
-        loadConfig(branch, CONFIG_KINDS.USAGE_REASONS).catch(() => undefined),
       ]);
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
@@ -221,14 +215,28 @@ export async function hydrateConfig(branches) {
     if (Array.isArray(sources) && sources.length) { setBookingSources(branch, sources); loaded.push(branch + ":sources"); }
     if (typeof liability === "string" && liability) { setLiabilityNotice(branch, liability); loaded.push(branch + ":liability"); }
 
-    // The short dropdown lists. Non-empty only: an empty stored list would
-    // mean somebody removed every option, and blanking a dropdown the app
-    // depends on is worse than keeping the shipped defaults.
-    if (applyArray(ROOM_TYPES, roomTypes) && roomTypes.length) loaded.push(branch + ":roomTypes");
-    if (applyArray(MEAL_PLANS, mealPlans) && mealPlans.length) loaded.push(branch + ":mealPlans");
-    if (applyArray(MENU_CATEGORIES, menuCategories) && menuCategories.length) loaded.push(branch + ":menuCategories");
-    if (applyArray(INVENTORY_CATEGORIES, invCategories) && invCategories.length) loaded.push(branch + ":invCategories");
-    if (applyArray(USAGE_REASONS, usageReasons) && usageReasons.length) loaded.push(branch + ":usageReasons");
+  }
+
+  // The short dropdown lists, loaded once rather than once per property.
+  // They are single shared arrays, so loading them inside the loop above
+  // applied one property's copy and then overwrote it with the other's —
+  // whichever came last won, and a manager's edit disappeared on reload.
+  //
+  // Non-empty only: an empty stored list would mean somebody removed every
+  // option, and blanking a dropdown the app depends on is worse than
+  // keeping the shipped defaults.
+  const SHARED_LISTS = [
+    [ROOM_TYPES, CONFIG_KINDS.ROOM_TYPES, "roomTypes"],
+    [MEAL_PLANS, CONFIG_KINDS.MEAL_PLANS, "mealPlans"],
+    [MENU_CATEGORIES, CONFIG_KINDS.MENU_CATEGORIES, "menuCategories"],
+    [INVENTORY_CATEGORIES, CONFIG_KINDS.INVENTORY_CATEGORIES, "invCategories"],
+    [USAGE_REASONS, CONFIG_KINDS.USAGE_REASONS, "usageReasons"],
+  ];
+  for (const [target, kind, label] of SHARED_LISTS) {
+    const stored = await loadShared(kind).catch(() => undefined);
+    if (Array.isArray(stored) && stored.length && applyArray(target, stored)) {
+      loaded.push("shared:" + label);
+    }
   }
   // Shared config, loaded once rather than per property.
   try {

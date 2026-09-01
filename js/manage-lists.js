@@ -22,33 +22,45 @@ import { INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS } from "./data/inv
 
 const el = id => document.getElementById(id);
 
+// Every list here is stored once, shared by both properties, because
+// every list here IS one array — ROOM_TYPES and the rest are single
+// module-level arrays that both properties read. Storing them per
+// property gave the same fact two homes: a manager editing room types
+// at Wilpattu wrote Wilpattu__roomTypes, hydration then applied
+// Wilpattu's copy and immediately overwrote it with Arugam Bay's, and
+// the edit vanished on the next reload with nothing to show it ever
+// happened. Last property in the list won.
+//
+// If one of these ever genuinely needs to differ per property, the
+// array has to become per-property first, in the module that owns it.
+// Changing only the storage recreates the bug.
 const LISTS = {
   roomTypes: {
     label: "Room types",
     array: ROOM_TYPES,
     kind: CONFIG_KINDS.ROOM_TYPES,
-    shared: false,
+    shared: true,
     note: "Offered on the registration card.",
   },
   mealPlans: {
     label: "Meal plans",
     array: MEAL_PLANS,
     kind: CONFIG_KINDS.MEAL_PLANS,
-    shared: false,
+    shared: true,
     note: "R/O, B/B and so on. Printed on the registration card.",
   },
   menuCategories: {
     label: "Menu categories",
     array: MENU_CATEGORIES,
     kind: CONFIG_KINDS.MENU_CATEGORIES,
-    shared: false,
+    shared: true,
     note: "How dishes are grouped on the menu and the printed PDF.",
   },
   inventoryCategories: {
     label: "Inventory categories",
     array: INVENTORY_CATEGORIES,
     kind: CONFIG_KINDS.INVENTORY_CATEGORIES,
-    shared: false,
+    shared: true,
     note: "A category not listed under a department still appears, grouped as Other.",
   },
   inventoryUnits: {
@@ -62,7 +74,7 @@ const LISTS = {
     label: "Stock usage reasons",
     array: USAGE_REASONS,
     kind: CONFIG_KINDS.USAGE_REASONS,
-    shared: false,
+    shared: true,
     note: "Why stock left the shelf. This is the vocabulary of the stock audit trail.",
   },
 };
