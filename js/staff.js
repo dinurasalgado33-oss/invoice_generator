@@ -30,10 +30,13 @@ function showError(message) {
 }
 
 function row(person) {
-  // An account with no profile signs in and then sees nothing, with no
-  // error saying why. It is the residue of a half-finished manual setup,
-  // and it is worth showing loudly rather than hiding.
-  const broken = !person.hasProfile;
+  // An account whose profile is missing OR malformed signs in and then
+  // sees nothing, with no error saying why. Checking only for a missing
+  // profile was not enough: a key saved as "role " with a trailing space
+  // passed that check and still failed every rule. The server now reports
+  // what is actually wrong, and it is shown here rather than hidden.
+  const problems = person.problems || (person.hasProfile ? [] : ["No profile"]);
+  const broken = problems.length > 0;
   const inactive = !person.active || person.disabledInAuth;
   const where = person.role === "manager" ? "Both properties" : (person.branch || "—");
 
@@ -43,7 +46,9 @@ function row(person) {
         <span class="staff-row-name">${escapeHtml(person.name || person.email || "Unnamed")}</span>
         <span class="staff-row-email">${escapeHtml(person.email)}</span>
         <span class="staff-row-meta">
-          ${broken ? "No role set — cannot use the app" : `${escapeHtml(person.role || "?")} · ${escapeHtml(where)}`}
+          ${broken
+            ? problems.map(p => escapeHtml(p)).join(" · ")
+            : `${escapeHtml(person.role || "?")} · ${escapeHtml(where)}`}
         </span>
       </div>
       <div class="staff-row-actions">
@@ -75,7 +80,10 @@ async function refresh() {
     // Broken accounts first — they are the ones needing attention — then
     // active, then disabled.
     staff.sort((a, b) => {
-      const rank = p => (!p.hasProfile ? 0 : p.active ? 1 : 2);
+      // Broken first, whether the profile is missing or malformed — those
+      // are the accounts needing attention, and a malformed one used to
+      // sort in with the healthy ones because it had a document.
+      const rank = p => ((p.problems || []).length ? 0 : p.active ? 1 : 2);
       return rank(a) - rank(b) || (a.name || a.email).localeCompare(b.name || b.email);
     });
     list.innerHTML = staff.map(row).join("");

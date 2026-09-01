@@ -34,6 +34,46 @@ async function requireManager(auth) {
   return profile;
 }
 
+
+// What is actually wrong with a profile, if anything.
+//
+// "Has a document" was the only check, and it is not enough. A profile
+// saved with its key as "role " — a trailing space, typed by hand into
+// the console — produced an account that signed in, routed down the
+// manager path because undefined is not "staff", looked entirely normal,
+// and was refused by every rule. Nothing on any screen said why. That
+// happened for real on the dev project and cost a working session.
+//
+// So the checks below are deliberately about the exact field names and
+// values the rules read. Anything the rules would reject, this reports.
+function profileProblems(p) {
+  if (!p) return ["No profile — this account cannot use the app"];
+  const problems = [];
+  const keys = Object.keys(p);
+
+  // Whitespace in a key is invisible in the console and fatal to the
+  // rules, so it is named specifically rather than lumped in with
+  // "missing field".
+  const untidy = keys.filter(k => k !== k.trim());
+  untidy.forEach(k => problems.push(`Field name "${k}" has a stray space — rename it to "${k.trim()}"`));
+
+  if (!("role" in p)) problems.push("No 'role' field");
+  else if (!ROLES.includes(p.role)) problems.push(`role is "${p.role}" — must be staff or manager`);
+
+  // The rules compare active == true. A string "true" fails that, and
+  // Firestore's console defaults new fields to string.
+  if (!("active" in p)) problems.push("No 'active' field");
+  else if (p.active !== true && p.active !== false) problems.push("'active' must be a boolean, not text");
+
+  if (p.role === "staff") {
+    if (!p.branch) problems.push("Staff account with no branch — it will see nothing");
+    else if (!BRANCHES.includes(p.branch)) {
+      problems.push(`branch is "${p.branch}" — must be exactly Wilpattu or Arugam Bay`);
+    }
+  }
+  return problems;
+}
+
 exports.manageStaff = onCall({ region: "asia-south1" }, async (request) => {
   const caller = await requireManager(request.auth);
   const { action } = request.data || {};
@@ -62,6 +102,9 @@ exports.manageStaff = onCall({ region: "asia-south1" }, async (request) => {
           branch: p ? (p.branch || "") : "",
           active: p ? p.active === true : false,
           hasProfile: Boolean(p),
+          // Everything wrong with this account, in words a manager can
+          // act on — not merely whether a document exists.
+          problems: profileProblems(p),
           disabledInAuth: u.disabled === true,
         };
       }),
