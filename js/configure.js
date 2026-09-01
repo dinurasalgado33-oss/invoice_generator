@@ -446,6 +446,10 @@ document.getElementById("condition-form").addEventListener("submit", (e) => {
     branchConditions().push({ id: allocateConditionId(), text, hideFromGuest });
     showToast("Condition added");
   }
+  // After the if/else, so editing a condition saves as surely as adding
+  // one. Wiring only the add branch is the shape that would let every
+  // correction revert on reload while new lines worked.
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.CONDITIONS, branchConditions());
 
   closeConditionSheet();
   renderConditionList();
@@ -466,6 +470,7 @@ document.getElementById("condition-delete-btn").addEventListener("click", async 
   if (!ok) return;
 
   conditions.splice(conditions.findIndex(c => c.id === editingConditionId), 1);
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.CONDITIONS, conditions);
   closeConditionSheet();
   renderConditionList();
   showToast("Condition removed");
@@ -565,6 +570,7 @@ document.getElementById("cancellation-form").addEventListener("submit", (e) => {
     list.push({ id: allocateCancellationId(), text });
     showToast("Policy line added");
   }
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.CANCELLATION, list);
   closeCancellationSheet();
   renderCancellationList();
 });
@@ -582,6 +588,7 @@ document.getElementById("cancellation-delete-btn").addEventListener("click", asy
   });
   if (!ok) return;
   list.splice(list.findIndex(c => c.id === editingCancellationId), 1);
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.CANCELLATION, list);
   closeCancellationSheet();
   renderCancellationList();
   showToast("Policy line removed");
@@ -646,6 +653,7 @@ document.getElementById("notice-form").addEventListener("submit", (e) => {
     list.push({ id: allocateNoticeId(), text, emphasis });
     showToast("Remark added");
   }
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.NOTICES, list);
   closeNoticeSheet();
   renderNoticesList();
 });
@@ -663,6 +671,7 @@ document.getElementById("notice-delete-btn").addEventListener("click", async () 
   });
   if (!ok) return;
   list.splice(list.findIndex(n => n.id === editingNoticeId), 1);
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.NOTICES, list);
   closeNoticeSheet();
   renderNoticesList();
   showToast("Remark removed");
