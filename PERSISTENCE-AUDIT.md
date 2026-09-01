@@ -3,8 +3,12 @@
 A full sweep of every piece of state the app changes, and whether that
 change survives a reload or reaches another device.
 
-Written 2026-08-30, against commit `6b8c0be`. **Audit only — nothing here
-is fixed yet.** The order of work is at the bottom.
+Written 2026-08-30, against commit `6b8c0be`.
+
+**STATUS: CLOSED.** Every finding below is fixed and verified — see
+`EXECUTION-PLAN.md` for what was done and how each was tested. The
+findings are kept as written so the reasoning behind each fix stays
+attached to the problem it solved.
 
 The method: every mutation-shaped statement in `js/` was extracted
 mechanically (99 of them), each classified as durable state or not, and

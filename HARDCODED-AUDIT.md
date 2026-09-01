@@ -3,8 +3,10 @@
 Everything a manager would plausibly want to change that currently lives
 in a `const` in a data module, reachable only by editing code.
 
-Written 2026-08-30, against commit `b124258`. **Audit only — nothing here
-is fixed yet.**
+Written 2026-08-30, against commit `b124258`.
+
+**STATUS: CLOSED**, except inventory departments — see
+`EXECUTION-PLAN.md` §10 for why those were left and what replaced them.
 
 Companion to `PERSISTENCE-AUDIT.md`. That one asks *does this change reach
 the database*; this one asks *can a manager make the change at all*. They

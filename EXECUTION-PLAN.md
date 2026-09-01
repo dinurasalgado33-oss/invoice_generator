@@ -113,7 +113,7 @@ shared ones drop the branch prefix.
 
 ---
 
-## 6. Stage 5 — closing out the live app
+## 6. Stage 5 — closing out the live app 🟡 ONE ITEM DONE, REST NEED DINURA
 
 Not from either audit; outstanding from earlier work.
 
@@ -122,7 +122,7 @@ Not from either audit; outstanding from earlier work.
 | 5.1 | Void the two test invoices in the live books | Dinura — manager only |
 | 5.2 | Confirm a welcome e-mail actually sends | First real check-in with an address |
 | 5.3 | Exercise the staff screen on live | Create a throwaway account, disable it |
-| 5.4 | Extend the staff screen to flag malformed profiles | Me — it flags a *missing* profile but not one whose key is misspelled, which is exactly what happened on dev |
+| 5.4 | ~~Flag malformed profiles~~ **done** `5d3e468` | Names the exact fault: stray whitespace in a key, `active` stored as text, a branch that is not one of the two exact strings. Verified against all seven shapes including the real `"role "` bug |
 | 5.5 | Full QA sweep after all of the above | Fresh session |
 
 ---
@@ -187,3 +187,41 @@ Stated so it can be checked rather than trusted.
 - **If the `config` rule cannot express "manager only"** as cleanly as
   expected. It should — `isManager()` already exists and is proven — but
   it is untested for this collection.
+
+
+---
+
+## 10. Closing state
+
+Both audits are closed. Every item in `PERSISTENCE-AUDIT.md` (`[A]`–`[K]`)
+and `HARDCODED-AUDIT.md` (`H1`–`H14`) is fixed and verified, except the
+two recorded below as deliberate.
+
+**Deliberately not done, with reasons:**
+
+- **Inventory departments (`H8`–`H14` partial).** They group categories
+  rather than being a flat list, so the generic list editor cannot express
+  them without mangling the structure. Instead, a category belonging to no
+  department now gathers under "Other" — so a manager adding one can never
+  make their own stock invisible, which was the actual risk.
+- **Suggestion history sharing (`PERSISTENCE-AUDIT.md` §6).** Guide and
+  agent names are still remembered per device. Flagged as a decision
+  rather than a bug; nobody has asked for it.
+
+**What is left is Dinura's**, and none of it is code:
+
+| Step | What |
+|---|---|
+| 5.1 | Void the two `SHEET MIRROR TEST` invoices in the live books |
+| 5.2 | Confirm a welcome e-mail actually sends — first real check-in with an address |
+| 5.3 | Exercise the staff screen on live |
+| 5.5 | Full QA sweep, best done by a session that did not write the code |
+
+**Deploys are the recurring trap.** Three times in this work something was
+committed, reported as fixed, and not actually live — the screen-stacking
+fix, invoice `createdAt`, and 5.4. Committing is not deploying. Check the
+served build before believing the live app has a change:
+
+```bash
+curl -s https://leopard-inn.web.app/ | grep -o 'v=1[0-9][0-9]' | head -1
+```
