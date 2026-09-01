@@ -7,8 +7,10 @@ import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, chargeCategoryLabel,
   serviceChargeRateFor, setServiceChargeRate, invoiceRemark,
   vatRateFor, setVatRate,
+  bookingSourcesFor, setBookingSources, CURRENCIES, setCurrencies,
 } from "./data/charges.js";
-import { saveConfig, CONFIG_KINDS, villaConfig } from "./data/config-store.js";
+import { standardTimesFor, setStandardTimes, liabilityNoticeFor, setLiabilityNotice } from "./data/grc.js";
+import { saveConfig, saveShared, CONFIG_KINDS, villaConfig } from "./data/config-store.js";
 import {
   BRANCH_INFO, RESERVATION_CONDITIONS, allocateConditionId,
   CANCELLATION_POLICY, allocateCancellationId,
@@ -327,6 +329,11 @@ function loadBranchDetailsForm() {
   const info = BRANCH_INFO[appState.selectedBranch] || {};
   document.getElementById("cfg-service-charge").value = String(serviceChargeRateFor(appState.selectedBranch));
   document.getElementById("cfg-vat").value = String(vatRateFor(appState.selectedBranch));
+  const times = standardTimesFor(appState.selectedBranch);
+  document.getElementById("cfg-checkin-time").value = times.checkin;
+  document.getElementById("cfg-checkout-time").value = times.checkout;
+  document.getElementById("cfg-booking-sources").value = bookingSourcesFor(appState.selectedBranch).join("\n");
+  document.getElementById("cfg-currencies").value = CURRENCIES.join("\n");
   refreshServiceChargeHint();
   refreshVatHint();
 
@@ -355,6 +362,22 @@ document.getElementById("branch-details-form").addEventListener("submit", (e) =>
   saveConfig(branch, CONFIG_KINDS.BRANCH_INFO, BRANCH_INFO[branch]);
   saveConfig(branch, CONFIG_KINDS.SERVICE_CHARGE, serviceChargeRateFor(branch));
   saveConfig(branch, CONFIG_KINDS.VAT, vatRateFor(branch));
+
+  // One textarea line per entry, blanks dropped — a manager adding an OTA
+  // types it on its own line rather than learning a separator.
+  const lines = id => document.getElementById(id).value.split("\n").map(t => t.trim()).filter(Boolean);
+
+  setStandardTimes(branch,
+    document.getElementById("cfg-checkin-time").value,
+    document.getElementById("cfg-checkout-time").value);
+  saveConfig(branch, CONFIG_KINDS.TIMES, standardTimesFor(branch));
+
+  setBookingSources(branch, lines("cfg-booking-sources"));
+  saveConfig(branch, CONFIG_KINDS.BOOKING_SOURCES, bookingSourcesFor(branch));
+
+  // Shared, not per property.
+  setCurrencies(lines("cfg-currencies"));
+  saveShared(CONFIG_KINDS.CURRENCIES, CURRENCIES);
 
   showToast("Branch details saved");
 });
@@ -476,10 +499,20 @@ document.getElementById("condition-delete-btn").addEventListener("click", async 
   showToast("Condition removed");
 });
 
+document.getElementById("cfg-liability-save").addEventListener("click", () => {
+  const branch = appState.selectedBranch;
+  setLiabilityNotice(branch, document.getElementById("cfg-liability").value);
+  saveConfig(branch, CONFIG_KINDS.LIABILITY, liabilityNoticeFor(branch));
+  showToast("Liability notice saved");
+});
+
 document.getElementById("open-configure-conditions-btn").addEventListener("click", () => {
   setBranchLabel("configure-conditions-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-conditions-logo", appState.selectedBranchLogo);
   renderConditionList();
+  // Populated on open, not at load: it is per property now, and which
+  // property is selected is not known when this module evaluates.
+  document.getElementById("cfg-liability").value = liabilityNoticeFor(appState.selectedBranch);
   showScreen("screen-configure-conditions");
 });
 

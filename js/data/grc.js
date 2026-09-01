@@ -13,19 +13,61 @@ export const MEAL_PLANS = ["R/O", "B/B", "H/B", "F/B"];
 
 // Printed verbatim on the card, above the guest's signature — the guest is
 // signing to acknowledge it, so it can't be edited per booking.
-export const GRC_LIABILITY_NOTICE =
-  "In order to ensure the Safety of your belongings, the Hotel has provided a Safety Locker " +
-  "in Manager's Office. Therefore the Hotel does not accept liability for losses or damages " +
-  "of any Valuable left in the Hotel Premises.";
+// Printed on a document the guest signs, so it is legal wording rather
+// than decoration — and changing it should not need a deploy.
+export const LIABILITY_NOTICES = {
+  "Wilpattu": "In order to ensure the Safety of your belongings, the Hotel has provided a Safety Locker " +
+    "in Manager's Office. Therefore the Hotel does not accept liability for losses or damages " +
+    "of any Valuable left in the Hotel Premises.",
+  "Arugam Bay": "In order to ensure the Safety of your belongings, the Hotel has provided a Safety Locker " +
+    "in Manager's Office. Therefore the Hotel does not accept liability for losses or damages " +
+    "of any Valuable left in the Hotel Premises.",
+};
+
+export function liabilityNoticeFor(branch) {
+  return LIABILITY_NOTICES[branch] || LIABILITY_NOTICES["Wilpattu"];
+}
+
+export function setLiabilityNotice(branch, text) {
+  LIABILITY_NOTICES[branch] = String(text || "").trim();
+  return LIABILITY_NOTICES[branch];
+}
 
 // The hotel's standard times, printed as policy on the card. Distinct from
 // the guest's own arrival/departure times, which are recorded per stay.
-export const STANDARD_CHECKIN_TIME = "02.00pm";
-export const STANDARD_CHECKOUT_TIME = "11.00am";
+// Per property and manager-set: these print on every registration card
+// and confirmation, and a hotel changing its check-in time by an hour
+// should not need a developer.
+//
+// Two formats for one fact, unavoidably: a 24-hour value is what an
+// <input type="time"> reads and writes, and a friendlier form is what
+// goes on the printed document. Derived from the same source rather than
+// stored twice, so they cannot disagree.
+export const STANDARD_TIMES = {
+  "Wilpattu": { checkin: "14:00", checkout: "11:00" },
+  "Arugam Bay": { checkin: "14:00", checkout: "11:00" },
+};
 
-// Defaults for the guest's actual times, matching the policy above.
-export const DEFAULT_ARRIVAL_TIME = "14:00";
-export const DEFAULT_DEPARTURE_TIME = "11:00";
+export function standardTimesFor(branch) {
+  return STANDARD_TIMES[branch] || { checkin: "14:00", checkout: "11:00" };
+}
+
+export function setStandardTimes(branch, checkin, checkout) {
+  STANDARD_TIMES[branch] = {
+    checkin: checkin || "14:00",
+    checkout: checkout || "11:00",
+  };
+  return STANDARD_TIMES[branch];
+}
+
+// "14:00" -> "02.00pm", matching how these already print.
+export function displayTime(hhmm) {
+  const [h, m] = String(hhmm || "").split(":").map(Number);
+  if (!Number.isFinite(h)) return "";
+  const suffix = h >= 12 ? "pm" : "am";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, "0")}.${String(m || 0).padStart(2, "0")}${suffix}`;
+}
 
 // One completed card per check-in. `bookingId`/`roomId` join it to the
 // stay; the rest is a snapshot of what the guest declared and signed, so

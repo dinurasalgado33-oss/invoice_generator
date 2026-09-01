@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=140" />
-<link rel="stylesheet" href="css/brand-home.css?v=140" />
-<link rel="stylesheet" href="css/rooms.css?v=140" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=140" />
-<link rel="stylesheet" href="css/invoice.css?v=140" />
-<link rel="stylesheet" href="css/dashboard.css?v=140" />
-<link rel="stylesheet" href="css/reports.css?v=140" />
-<link rel="stylesheet" href="css/reservation.css?v=140" />
-  <link rel="stylesheet" href="css/grc.css?v=140" />
-  <link rel="stylesheet" href="css/proforma.css?v=140" />
-  <link rel="stylesheet" href="css/history.css?v=140" />
+<link rel="stylesheet" href="css/base.css?v=142" />
+<link rel="stylesheet" href="css/brand-home.css?v=142" />
+<link rel="stylesheet" href="css/rooms.css?v=142" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=142" />
+<link rel="stylesheet" href="css/invoice.css?v=142" />
+<link rel="stylesheet" href="css/dashboard.css?v=142" />
+<link rel="stylesheet" href="css/reports.css?v=142" />
+<link rel="stylesheet" href="css/reservation.css?v=142" />
+  <link rel="stylesheet" href="css/grc.css?v=142" />
+  <link rel="stylesheet" href="css/proforma.css?v=142" />
+  <link rel="stylesheet" href="css/history.css?v=142" />
 </head>
 <body>
 
@@ -461,6 +461,25 @@
         <p class="hint" id="cfg-vat-hint"></p>
       </div>
       <div class="field">
+        <label>Standard check-in time</label>
+        <input type="time" id="cfg-checkin-time" />
+      </div>
+      <div class="field">
+        <label>Standard check-out time</label>
+        <input type="time" id="cfg-checkout-time" />
+        <p class="hint">Printed on every registration card and reservation confirmation.</p>
+      </div>
+      <div class="field">
+        <label>Booking sources <span class="label-optional">(one per line)</span></label>
+        <textarea id="cfg-booking-sources" rows="4" spellcheck="false"></textarea>
+        <p class="hint">Where a booking came from. Add an OTA here when you list on one.</p>
+      </div>
+      <div class="field">
+        <label>Currencies <span class="label-optional">(one per line, shared by both properties)</span></label>
+        <textarea id="cfg-currencies" rows="4" spellcheck="false"></textarea>
+        <p class="hint">LKR should stay first — it is the currency reports are totalled in.</p>
+      </div>
+      <div class="field">
         <label>Hotel Name</label>
         <input type="text" id="cfg-hotel-name" required autocapitalize="words" enterkeyhint="next" />
       </div>
@@ -520,6 +539,13 @@
     <div class="list-wrap">
       <p class="step-subtext">Printed at the bottom of every Reservation Confirmation, in this order.</p>
       <div id="configure-conditions-list"><!-- condition rows injected by JS --></div>
+    </div>
+    <div class="list-wrap">
+      <p class="step-subtext">Liability notice — printed on every registration card the guest signs.</p>
+      <div class="field">
+        <textarea id="cfg-liability" rows="4"></textarea>
+      </div>
+      <button type="button" class="secondary-btn" id="cfg-liability-save">Save notice</button>
     </div>
   </section>
 
@@ -2493,6 +2519,6 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=140"></script>
+<script type="module" src="js/main.js?v=142"></script>
 </body>
 </html>

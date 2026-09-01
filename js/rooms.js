@@ -8,7 +8,7 @@ import { confirmAction } from "./confirm.js";
 import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId, writeOffStayRecords } from "./data/reports.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
-  isChargeCategory, BOOKING_SOURCES, DEFAULT_BOOKING_SOURCE,
+  isChargeCategory, bookingSourcesFor, DEFAULT_BOOKING_SOURCE,
 } from "./data/charges.js";
 import { openGrcForm, reprintGrc } from "./grc.js";
 import {
@@ -694,7 +694,7 @@ function showNewBookingForm() {
         }
       }
 
-      const source = BOOKING_SOURCES.includes(card.reservationMadeBy)
+      const source = bookingSourcesFor(branch).includes(card.reservationMadeBy)
         ? card.reservationMadeBy
         : DEFAULT_BOOKING_SOURCE;
 

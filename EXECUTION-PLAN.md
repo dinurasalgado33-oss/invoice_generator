@@ -72,20 +72,20 @@ None exists; the catch-all denies it today.
 
 ---
 
-## 4. Stage 3 — the rest of config
+## 4. Stage 3 — the rest of config ✅ COMPLETE
 
 Mechanical once Stage 2 has established the pattern. Grouped by screen so
 each pass finishes one place a manager visits.
 
 | Step | Items | Screen |
 |---|---|---|
-| 3.1 | `[D]` + `H6` Branch details, bank account | Configure → Branch |
-| 3.2 | `[E]` Conditions · `[F]` Cancellation · `[G]` Notices | Their three screens |
-| 3.3 | `[H]` Inventory items | Inventory |
-| 3.4 | `[I]` Derive stock from logs | Inventory — **requires 1.3 and 1.4** |
-| 3.5 | `H3` Check-in / checkout times | Configure → Branch |
-| 3.6 | `H4` Booking sources · `H5` Currencies | Configure → Branch |
-| 3.7 | `H7` GRC liability notice | Configure → Conditions |
+| 3.1 | ~~Branch details, bank account~~ **done** `ba05564` | Configure → Branch |
+| 3.2 | ~~Conditions · Cancellation · Notices~~ **done** `ba05564` | Verified via the *edit* path, not just add |
+| 3.3 | ~~Inventory items~~ **done** `6928f66` | Config saved; stock deliberately excluded |
+| 3.4 | ~~Derive stock from logs~~ **done** `6928f66` | 10 + 5 − 2 = 13, rebuilt from Firestore after reload |
+| 3.5 | ~~Check-in / checkout times~~ **done** | 15:00 prints as 03.00pm; killed a duplicate pair of constants |
+| 3.6 | ~~Booking sources · Currencies~~ **done** | Sources per-property (Airbnb at Wilpattu only), currencies shared |
+| 3.7 | ~~GRC liability notice~~ **done** | Per property, survives reload |
 
 ---
 

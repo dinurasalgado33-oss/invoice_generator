@@ -105,7 +105,25 @@ export function categoryTotals(items) {
 
 // How a stay was booked. Direct guests cost no commission; Booking.com
 // takes a cut, which is why the manager tracks the split by hand today.
-export const BOOKING_SOURCES = ["Direct", "Booking.com", "Walk-in", "Agent"];
+// Per property: the OTAs one hotel lists on are not the other's. Feeds
+// the revenue-by-source report, so adding one here is what makes that
+// report able to see it at all.
+export const BOOKING_SOURCES_BY_BRANCH = {
+  "Wilpattu": ["Direct", "Booking.com", "Walk-in", "Agent"],
+  "Arugam Bay": ["Direct", "Booking.com", "Walk-in", "Agent"],
+};
+
+export function bookingSourcesFor(branch) {
+  return BOOKING_SOURCES_BY_BRANCH[branch] || BOOKING_SOURCES_BY_BRANCH["Wilpattu"];
+}
+
+export function setBookingSources(branch, list) {
+  BOOKING_SOURCES_BY_BRANCH[branch] = (list || []).filter(Boolean);
+  return BOOKING_SOURCES_BY_BRANCH[branch];
+}
+
+// Kept for the handful of places that just want a default list.
+export const BOOKING_SOURCES = BOOKING_SOURCES_BY_BRANCH["Wilpattu"];
 export const DEFAULT_BOOKING_SOURCE = "Direct";
 
 // Currencies any guest-facing bill can be raised in. Lives here rather
@@ -114,7 +132,19 @@ export const DEFAULT_BOOKING_SOURCE = "Direct";
 // No conversion happens anywhere in the app: amounts are entered in
 // whichever currency was agreed, and the agent invoice says payment
 // settles at the Central Bank rate on the day.
+// Shared across both properties, deliberately: a euro is a euro at either
+// hotel, and a manager adding one at Wilpattu would be baffled to find
+// Arugam Bay still unable to bill in it.
 export const CURRENCIES = ["LKR", "USD", "EUR", "GBP"];
+
+export function setCurrencies(list) {
+  const clean = (list || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
+  // LKR is what every report totals in; losing it would leave revenue
+  // with no base currency to convert into.
+  if (!clean.includes("LKR")) clean.unshift("LKR");
+  CURRENCIES.splice(0, CURRENCIES.length, ...clean);
+  return CURRENCIES;
+}
 export const DEFAULT_CURRENCY = "LKR";
 
 // VAT, set per property by a manager. Zero until the hotel registers, so

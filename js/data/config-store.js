@@ -41,6 +41,12 @@ export const CONFIG_KINDS = {
   INVENTORY: "inventory",
   VAT: "vat",
   SERVICE_CHARGE: "serviceCharge",
+  TIMES: "times",
+  LIABILITY: "liability",
+  BOOKING_SOURCES: "bookingSources",
+  // Shared across properties rather than per-branch, so its document id
+  // drops the branch prefix — see saveShared/loadShared below.
+  CURRENCIES: "currencies",
 };
 
 function stripUndefined(value) {
@@ -65,6 +71,18 @@ function docId(branch, kind) {
 // Writes one kind of config for one property. Fire-and-forget, like every
 // other write in this app: the value is already applied in memory, and a
 // failed write must never take a manager's screen down mid-edit.
+// Config that is not a property's to decide. A euro is a euro at both
+// hotels, so these live under one document with no branch in the key —
+// otherwise a manager adding a currency at one property would be baffled
+// to find the other still unable to bill in it.
+export function saveShared(kind, value) {
+  return saveConfig("shared", kind, value);
+}
+
+export function loadShared(kind) {
+  return loadConfig("shared", kind);
+}
+
 export function saveConfig(branch, kind, value) {
   if (!branch || !kind) return;
   (async () => {
@@ -147,12 +165,13 @@ export async function hydrateConfig(branches) {
   const { ROOMS_BY_BRANCH } = await import("./rooms.js");
   const { ACTIVITIES_BY_BRANCH } = await import("./activities.js");
   const { BRANCH_INFO, RESERVATION_CONDITIONS, CANCELLATION_POLICY, PROFORMA_NOTICES } = await import("./branches.js");
-  const { setServiceChargeRate, setVatRate } = await import("./charges.js");
+  const { setServiceChargeRate, setVatRate, setBookingSources, setCurrencies } = await import("./charges.js");
+  const { setStandardTimes, setLiabilityNotice } = await import("./grc.js");
   const { INVENTORY_BY_BRANCH, applyInventoryConfig } = await import("./inventory.js");
 
   const loaded = [];
   for (const branch of branches) {
-    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat] =
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability] =
       await Promise.all([
         loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
@@ -163,6 +182,9 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.INVENTORY).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.SERVICE_CHARGE).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.VAT).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.TIMES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.BOOKING_SOURCES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.LIABILITY).catch(() => undefined),
       ]);
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
@@ -180,6 +202,15 @@ export async function hydrateConfig(branches) {
     }
     if (serviceCharge !== undefined) { setServiceChargeRate(branch, serviceCharge); loaded.push(branch + ":serviceCharge"); }
     if (vat !== undefined) { setVatRate(branch, vat); loaded.push(branch + ":vat"); }
+    if (times && times.checkin) { setStandardTimes(branch, times.checkin, times.checkout); loaded.push(branch + ":times"); }
+    if (Array.isArray(sources) && sources.length) { setBookingSources(branch, sources); loaded.push(branch + ":sources"); }
+    if (typeof liability === "string" && liability) { setLiabilityNotice(branch, liability); loaded.push(branch + ":liability"); }
   }
+  // Shared config, loaded once rather than per property.
+  try {
+    const currencies = await loadShared(CONFIG_KINDS.CURRENCIES);
+    if (Array.isArray(currencies) && currencies.length) { setCurrencies(currencies); loaded.push("shared:currencies"); }
+  } catch { /* falls back to the shipped list */ }
+
   return loaded;
 }

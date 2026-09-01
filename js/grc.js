@@ -8,13 +8,12 @@ import { BRANCH_INFO } from "./data/branches.js";
 import { openReservations, findReservationById, RESERVATION_STATUS } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
-import { BOOKING_SOURCES } from "./data/charges.js";
+import { bookingSourcesFor } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 import {
-  GRC_RECORDS, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, GRC_LIABILITY_NOTICE,
-  STANDARD_CHECKIN_TIME, STANDARD_CHECKOUT_TIME,
-  DEFAULT_ARRIVAL_TIME, DEFAULT_DEPARTURE_TIME,
+  GRC_RECORDS, findGrcByBookingId, ROOM_TYPES, MEAL_PLANS, liabilityNoticeFor,
+  standardTimesFor, displayTime,
 } from "./data/grc.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 
@@ -201,13 +200,18 @@ export function openGrcForm({ branch, room, onComplete }) {
 
   el("grc-room-type").innerHTML = ROOM_TYPES.map(t => `<option value="${t}">${t}</option>`).join("");
   el("grc-meal-plan").innerHTML = MEAL_PLANS.map(m => `<option value="${m}">${m}</option>`).join("");
-  el("grc-liability-preview").textContent = GRC_LIABILITY_NOTICE;
+  el("grc-liability-preview").textContent = liabilityNoticeFor(branch);
 
   const today = toDateISO();
   el("grc-arrival-date").value = today;
-  el("grc-arrival-time").value = DEFAULT_ARRIVAL_TIME;
+  // Prefilled from the property's own standard times, not from a separate
+  // pair of constants. They were the same two values written twice, so a
+  // manager moving check-in to 3pm would have changed what the card
+  // *printed* while the form still suggested 2pm.
+  const stdTimes = standardTimesFor(branch);
+  el("grc-arrival-time").value = stdTimes.checkin;
   el("grc-departure-date").value = toDateISO(new Date(Date.now() + 86400000));
-  el("grc-departure-time").value = DEFAULT_DEPARTURE_TIME;
+  el("grc-departure-time").value = stdTimes.checkout;
   el("grc-adults").value = "1";
   el("grc-children").value = "0";
   el("grc-kids").value = "0";
@@ -235,9 +239,9 @@ el("grc-reservation-select").addEventListener("change", (e) => {
   el("grc-guest-name").value = r.guestName || "";
   el("grc-phone").value = r.contact || "";
   el("grc-arrival-date").value = r.checkinDate || "";
-  el("grc-arrival-time").value = r.checkinTime || DEFAULT_ARRIVAL_TIME;
+  el("grc-arrival-time").value = r.checkinTime || standardTimesFor(appState.selectedBranch).checkin;
   el("grc-departure-date").value = r.checkoutDate || "";
-  el("grc-departure-time").value = r.checkoutTime || DEFAULT_DEPARTURE_TIME;
+  el("grc-departure-time").value = r.checkoutTime || standardTimesFor(appState.selectedBranch).checkout;
   el("grc-adults").value = String(r.adults ?? 1);
   el("grc-children").value = String(r.children ?? 0);
   el("grc-reservation-by").value = `${r.no}`;
@@ -493,9 +497,13 @@ function renderGrcPreview(g) {
     ["Adults", g.adults], ["Children", g.children], ["Kids", g.kids], ["Guide", g.guidePax],
   ].map(([label, n]) => `<span class="grc-pax-cell"><span>${label}</span><strong>${n}</strong></span>`).join("");
 
-  el("grc-prev-liability").textContent = GRC_LIABILITY_NOTICE;
-  el("grc-prev-std-in").textContent = STANDARD_CHECKIN_TIME;
-  el("grc-prev-std-out").textContent = STANDARD_CHECKOUT_TIME;
+  el("grc-prev-liability").textContent = liabilityNoticeFor(appState.selectedBranch);
+  // Read at print time, not at module load: the times are a per-property
+  // setting now, and which property is selected is not known when this
+  // module first evaluates.
+  const times = standardTimesFor(appState.selectedBranch);
+  el("grc-prev-std-in").textContent = displayTime(times.checkin);
+  el("grc-prev-std-out").textContent = displayTime(times.checkout);
 
   el("grc-prev-nights").textContent = String(g.nights);
   el("grc-prev-room-no").textContent = orDash(g.roomName);
@@ -521,4 +529,4 @@ attachSuggestions(el("grc-travel-agent"), SUGGESTION_KEYS.TRAVEL_AGENT);
 attachSuggestions(el("grc-country"), SUGGESTION_KEYS.COUNTRY, ["Sri Lanka", "India", "United Kingdom", "Germany", "France", "Netherlands", "Australia"]);
 attachSuggestions(el("grc-nationality"), SUGGESTION_KEYS.NATIONALITY, ["Sri Lankan", "Indian", "British", "German", "French", "Dutch", "Australian"]);
 attachSuggestions(el("grc-vehicle-no"), SUGGESTION_KEYS.VEHICLE);
-attachSuggestions(el("grc-reservation-by"), SUGGESTION_KEYS.RESERVED_BY, BOOKING_SOURCES);
+attachSuggestions(el("grc-reservation-by"), SUGGESTION_KEYS.RESERVED_BY, bookingSourcesFor(appState.selectedBranch));
