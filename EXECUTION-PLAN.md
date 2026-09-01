@@ -113,17 +113,17 @@ shared ones drop the branch prefix.
 
 ---
 
-## 6. Stage 5 — closing out the live app 🟡 ONE ITEM DONE, REST NEED DINURA
+## 6. Stage 5 — closing out the live app 🟡 ONE ITEM LEFT
 
 Not from either audit; outstanding from earlier work.
 
 | Step | What | Whose |
 |---|---|---|
-| 5.1 | Void the two test invoices in the live books | Dinura — manager only |
+| 5.1 | ~~Void the two test invoices~~ **done** | Both voided with a stated reason, attributed to Ashen, `reissued: false` so the money stays closed. Dinura's own `d` / `dinu` test invoices left alone |
 | 5.2 | Confirm a welcome e-mail actually sends | First real check-in with an address |
-| 5.3 | Exercise the staff screen on live | Create a throwaway account, disable it |
+| 5.3 | ~~Exercise the staff screen on live~~ **done** | Created and disabled a throwaway account; confirmed it is disabled in Auth as well as the profile, so an open session stops immediately. Guards verified against live: a lowercase branch, a short password, and a manager disabling themselves are all refused |
 | 5.4 | ~~Flag malformed profiles~~ **done** `5d3e468` | Names the exact fault: stray whitespace in a key, `active` stored as text, a branch that is not one of the two exact strings. Verified against all seven shapes including the real `"role "` bug |
-| 5.5 | Full QA sweep after all of the above | Fresh session |
+| 5.5 | Full QA sweep after all of the above | Fresh session — the one item still open |
 
 ---
 
@@ -208,14 +208,20 @@ two recorded below as deliberate.
   agent names are still remembered per device. Flagged as a decision
   rather than a bug; nobody has asked for it.
 
-**What is left is Dinura's**, and none of it is code:
+**What is left:**
 
 | Step | What |
 |---|---|
-| 5.1 | Void the two `SHEET MIRROR TEST` invoices in the live books |
-| 5.2 | Confirm a welcome e-mail actually sends — first real check-in with an address |
-| 5.3 | Exercise the staff screen on live |
+| 5.2 | Confirm a welcome e-mail actually sends. Cannot be forced — it needs a real check-in with a real address, so it will be answered by the first guest rather than by a test |
 | 5.5 | Full QA sweep, best done by a session that did not write the code |
+
+5.1 and 5.3 are done, verified against the live project.
+
+One thing found while doing 5.1 and worth knowing: Reports opens on the
+current month, and the test invoices were dated the month before, so the
+list looked empty rather than filtered. Not a bug — but "there are no
+invoices" and "there are none in this period" read identically at a
+glance.
 
 **Deploys are the recurring trap.** Three times in this work something was
 committed, reported as fixed, and not actually live — the screen-stacking
