@@ -89,7 +89,7 @@ each pass finishes one place a manager visits.
 
 ---
 
-## 5. Stage 4 — list management
+## 5. Stage 4 — list management ✅ COMPLETE
 
 `H8`–`H14`: room types, meal plans, menu categories, inventory
 categories, units, departments, usage reasons.

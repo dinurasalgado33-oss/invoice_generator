@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=142" />
-<link rel="stylesheet" href="css/brand-home.css?v=142" />
-<link rel="stylesheet" href="css/rooms.css?v=142" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=142" />
-<link rel="stylesheet" href="css/invoice.css?v=142" />
-<link rel="stylesheet" href="css/dashboard.css?v=142" />
-<link rel="stylesheet" href="css/reports.css?v=142" />
-<link rel="stylesheet" href="css/reservation.css?v=142" />
-  <link rel="stylesheet" href="css/grc.css?v=142" />
-  <link rel="stylesheet" href="css/proforma.css?v=142" />
-  <link rel="stylesheet" href="css/history.css?v=142" />
+<link rel="stylesheet" href="css/base.css?v=144" />
+<link rel="stylesheet" href="css/brand-home.css?v=144" />
+<link rel="stylesheet" href="css/rooms.css?v=144" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=144" />
+<link rel="stylesheet" href="css/invoice.css?v=144" />
+<link rel="stylesheet" href="css/dashboard.css?v=144" />
+<link rel="stylesheet" href="css/reports.css?v=144" />
+<link rel="stylesheet" href="css/reservation.css?v=144" />
+  <link rel="stylesheet" href="css/grc.css?v=144" />
+  <link rel="stylesheet" href="css/proforma.css?v=144" />
+  <link rel="stylesheet" href="css/history.css?v=144" />
 </head>
 <body>
 
@@ -192,6 +192,31 @@
     </div>
 
     <span id="inventory-card-subtext" style="display:none"></span>
+  </section>
+
+  <!-- SCREEN: Manage Lists (manager only) -->
+  <section id="screen-manage-lists" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <h2>Manage Lists</h2>
+    </div>
+
+    <div class="list-wrap">
+      <div class="field">
+        <label>Which list</label>
+        <select id="ml-picker"></select>
+        <p class="hint" id="ml-scope"></p>
+      </div>
+    </div>
+
+    <div class="list-wrap">
+      <div id="ml-entries"></div>
+      <form id="ml-add-form" class="ml-add-row">
+        <input type="text" id="ml-new" placeholder="Add an entry" autocomplete="off" />
+        <button type="submit" class="secondary-btn">Add</button>
+      </form>
+      <p class="field-error" id="ml-error"></p>
+    </div>
   </section>
 
   <!-- SCREEN: Staff accounts (manager only) -->
@@ -393,6 +418,14 @@
         <span class="settings-row-text">
           <span class="settings-row-title">Branch &amp; Bank Details</span>
           <span class="settings-row-sub">Hotel name, contact and payment info on guest documents</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-manage-lists-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13" /><path d="M3 6h.01M3 12h.01M3 18h.01" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Manage Lists</span>
+          <span class="settings-row-sub">Room types, meal plans, categories, units, usage reasons</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
@@ -2519,6 +2552,6 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=142"></script>
+<script type="module" src="js/main.js?v=144"></script>
 </body>
 </html>

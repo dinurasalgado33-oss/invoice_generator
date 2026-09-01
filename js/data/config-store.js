@@ -43,6 +43,13 @@ export const CONFIG_KINDS = {
   SERVICE_CHARGE: "serviceCharge",
   TIMES: "times",
   LIABILITY: "liability",
+  ROOM_TYPES: "roomTypes",
+  MEAL_PLANS: "mealPlans",
+  MENU_CATEGORIES: "menuCategories",
+  INVENTORY_CATEGORIES: "inventoryCategories",
+  USAGE_REASONS: "usageReasons",
+  // Shared, like currencies — a kilogram is a kilogram at both hotels.
+  INVENTORY_UNITS: "inventoryUnits",
   BOOKING_SOURCES: "bookingSources",
   // Shared across properties rather than per-branch, so its document id
   // drops the branch prefix — see saveShared/loadShared below.
@@ -167,11 +174,14 @@ export async function hydrateConfig(branches) {
   const { BRANCH_INFO, RESERVATION_CONDITIONS, CANCELLATION_POLICY, PROFORMA_NOTICES } = await import("./branches.js");
   const { setServiceChargeRate, setVatRate, setBookingSources, setCurrencies } = await import("./charges.js");
   const { setStandardTimes, setLiabilityNotice } = await import("./grc.js");
-  const { INVENTORY_BY_BRANCH, applyInventoryConfig } = await import("./inventory.js");
+  const { INVENTORY_BY_BRANCH, applyInventoryConfig, INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS } = await import("./inventory.js");
+  const { ROOM_TYPES, MEAL_PLANS } = await import("./grc.js");
+  const { MENU_CATEGORIES } = await import("./menu.js");
 
   const loaded = [];
   for (const branch of branches) {
-    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability] =
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability,
+           roomTypes, mealPlans, menuCategories, invCategories, usageReasons] =
       await Promise.all([
         loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
@@ -185,6 +195,11 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.TIMES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.BOOKING_SOURCES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.LIABILITY).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.ROOM_TYPES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.MEAL_PLANS).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.MENU_CATEGORIES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.INVENTORY_CATEGORIES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.USAGE_REASONS).catch(() => undefined),
       ]);
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
@@ -205,11 +220,22 @@ export async function hydrateConfig(branches) {
     if (times && times.checkin) { setStandardTimes(branch, times.checkin, times.checkout); loaded.push(branch + ":times"); }
     if (Array.isArray(sources) && sources.length) { setBookingSources(branch, sources); loaded.push(branch + ":sources"); }
     if (typeof liability === "string" && liability) { setLiabilityNotice(branch, liability); loaded.push(branch + ":liability"); }
+
+    // The short dropdown lists. Non-empty only: an empty stored list would
+    // mean somebody removed every option, and blanking a dropdown the app
+    // depends on is worse than keeping the shipped defaults.
+    if (applyArray(ROOM_TYPES, roomTypes) && roomTypes.length) loaded.push(branch + ":roomTypes");
+    if (applyArray(MEAL_PLANS, mealPlans) && mealPlans.length) loaded.push(branch + ":mealPlans");
+    if (applyArray(MENU_CATEGORIES, menuCategories) && menuCategories.length) loaded.push(branch + ":menuCategories");
+    if (applyArray(INVENTORY_CATEGORIES, invCategories) && invCategories.length) loaded.push(branch + ":invCategories");
+    if (applyArray(USAGE_REASONS, usageReasons) && usageReasons.length) loaded.push(branch + ":usageReasons");
   }
   // Shared config, loaded once rather than per property.
   try {
     const currencies = await loadShared(CONFIG_KINDS.CURRENCIES);
     if (Array.isArray(currencies) && currencies.length) { setCurrencies(currencies); loaded.push("shared:currencies"); }
+    const units = await loadShared(CONFIG_KINDS.INVENTORY_UNITS);
+    if (Array.isArray(units) && units.length) { applyArray(INVENTORY_UNITS, units); loaded.push("shared:units"); }
   } catch { /* falls back to the shipped list */ }
 
   return loaded;

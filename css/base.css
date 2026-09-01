@@ -753,3 +753,27 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
 .staff-status.off { color: #8a8a8a; }
 /* 44px, the same floor as every other tap target on this screen. */
 .staff-toggle-btn { min-height: 44px; }
+
+/* Manage Lists — one screen for the short dropdown lists. */
+.ml-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: var(--white);
+}
+.ml-row-text { overflow-wrap: anywhere; }
+.ml-remove-btn { min-height: 44px; flex: none; }
+.ml-add-row { display: flex; gap: 8px; margin-top: 12px; }
+.ml-add-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 10px;
+}
+.ml-add-row button { flex: none; min-height: 44px; }

@@ -28,6 +28,7 @@ import "./proforma.js";
 import "./history.js";
 import "./branch.js";
 import "./staff.js";
+import "./manage-lists.js";
 import { restoreSession } from "./auth.js";
 import { initLock, lock, hasPin, startPinSetup } from "./lock.js";
 

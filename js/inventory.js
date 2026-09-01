@@ -188,7 +188,17 @@ function renderInventoryScreen() {
     });
     Object.values(groups).forEach(items => items.sort((a, b) => a.name.localeCompare(b.name)));
 
-    list.innerHTML = INVENTORY_DEPARTMENTS.map(dept => {
+    // Any category not named in a department, gathered into one group.
+    // The table renders by department, so a category a manager added
+    // without one would otherwise make its items invisible here — stock
+    // that exists, has a value, and cannot be seen.
+    const claimed = new Set(INVENTORY_DEPARTMENTS.flatMap(d => d.categories));
+    const orphans = Object.keys(groups).filter(c => !claimed.has(c));
+    const departments = orphans.length
+      ? [...INVENTORY_DEPARTMENTS, { name: "Other", categories: orphans }]
+      : INVENTORY_DEPARTMENTS;
+
+    list.innerHTML = departments.map(dept => {
       const categories = dept.categories.filter(c => groups[c] && groups[c].length);
       if (!categories.length) return "";
       const isDeptCollapsed = collapsedDepartments.has(dept.name);
