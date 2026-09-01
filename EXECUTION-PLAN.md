@@ -212,10 +212,14 @@ two recorded below as deliberate.
 
 | Step | What |
 |---|---|
-| 5.2 | Confirm a welcome e-mail actually sends. Cannot be forced — it needs a real check-in with a real address, so it will be answered by the first guest rather than by a test |
-| 5.5 | Full QA sweep, best done by a session that did not write the code |
+| 5.2 | **Blocked on a new Gmail App Password.** The e-mail does not send — see §11 |
 
-5.1 and 5.3 are done, verified against the live project.
+5.1, 5.3, 5.4 and 5.5 are done, verified against the live project.
+
+5.2 turned out to be forceable after all: queueing a row straight into
+`guestEmails` fires the trigger without a booking or a guest. That was
+worth doing rather than waiting — it failed, and waiting would have meant
+finding out from a guest.
 
 One thing found while doing 5.1 and worth knowing: Reports opens on the
 current month, and the test invoices were dated the month before, so the
@@ -231,3 +235,102 @@ served build before believing the live app has a change:
 ```bash
 curl -s https://leopard-inn.web.app/ | grep -o 'v=1[0-9][0-9]' | head -1
 ```
+
+
+---
+
+## 11. Stage 5.2 — the welcome e-mail does not send
+
+Forced on live on 2026-09-01 by queueing a row directly into
+`guestEmails` with a real address. Both attempts came back:
+
+    Invalid login: 535-5.7.8 Username and Password not accepted
+
+The stored `GMAIL_APP_PASSWORD` is at version 2 and enabled, so a
+password *was* set — it is simply no longer a password Google accepts.
+That fits: the App Password in it was one of the two revoked after being
+pasted into a chat.
+
+Two things were fixed while chasing it. Neither cured it, and both were
+worth doing anyway:
+
+- **The password is now stripped of whitespace at the point of use.**
+  Google *displays* an App Password as four groups of four, which is what
+  gets copied, and a value set from a file on Windows carries a trailing
+  CR LF. Either is sent verbatim and returns the same "Username and
+  Password not accepted" — a message that reads like a wrong password and
+  is not. `SHEET_ID` had this exact bug already.
+- **`googleapis` is now required lazily.** It takes about eight seconds
+  to load and was required at the top of `sheets-mirror.js`, so the whole
+  functions codebase took 10.6s to declare its exports against a 10s
+  deploy-analyser timeout. Deploys failed with "Cannot determine backend
+  specification", which names no file and no cause. Now 1.6s.
+
+### What unblocks it
+
+Dinura, in their own terminal. **Do not paste the password into a chat** —
+that is how the last two died. `secrets:set` prompts for it with hidden
+input:
+
+    firebase functions:secrets:set GMAIL_APP_PASSWORD --project leopard-inn
+    firebase deploy --only functions:sendWelcomeEmail --project leopard-inn
+
+The redeploy is not optional: a function binds a secret version when it
+deploys, so setting the secret alone changes nothing.
+
+A new App Password comes from Google Account → Security → 2-Step
+Verification → App passwords, signed in as `leopardinnvillas@gmail.com`.
+2-Step Verification must be on or the option is not offered.
+
+To check it worked, queue a row from the browser console on the live app
+and watch the status go from Queued to Sent:
+
+```js
+const ge = await import('/js/data/guest-email.js');
+const row = ge.queueWelcomeEmail({
+  bookingId: "email-test", grcNo: "TEST", branch: "Arugam Bay",
+  guestName: "Test", email: "<your address>"
+});
+// then, a few seconds later:
+ge.GUEST_EMAIL_QUEUE.find(r => r.id === row.id).status;
+```
+
+Four rows in `guestEmails` are test residue — two from 2026-08-30/31 and
+two from this check, all `Failed` with BadCredentials. They are tied to
+booking ids no real booking has, so they show up on no guest's history.
+Nothing is deleted from that collection by design.
+
+---
+
+## 12. Stage 5.5 — QA sweep, done 2026-09-01
+
+Traced on the live project as the signed-in manager.
+
+**One real bug found and fixed** — `4d9b65d`, the flagship shape from
+`CLAUDE.md`: one fact stored twice, free to disagree. Room types, meal
+plans, menu categories, inventory categories and stock usage reasons are
+single shared arrays but were saved per property, and hydration applied
+one property's copy then overwrote it with the other's. A manager's edit
+vanished on the next reload. Proven by writing a different marker under
+each property and reloading — exactly one survived.
+
+**Verified sound:**
+
+| Area | Result |
+|---|---|
+| Config round trip | A villa rate written on live survived a reload and was restored. Only `id`, `name`, `rate` are stored — occupancy still never persisted |
+| Numbering | All eight blocks (2 properties × 4 document types) hold 50 numbers, FY `2026/27` |
+| A slash in an id | Invoice ids read `INV-2026/27-001`. Safe: the adapter stores a separate non-enumerable `__docId`, and the ids are only ever used with `getElementById` and `data-` attributes, never a CSS selector |
+| Invoice lifecycle | Two `Void` with reasons, two `Active` — 5.1 landed and left Dinura's own tests alone |
+| Occupancy | Every villa free, matching four `Checked Out` bookings. Derivation re-runs on every bookings snapshot |
+| Branch scoping | Staff hydrate one property, managers both |
+| Error log | Four entries, all `permission-denied` from 2026-08-30, before the rules were fixed. Nothing since |
+
+**Worth knowing, not worth fixing:**
+
+- `INV-2026/27-001` has no `createdAt` — it predates that fix. Reports
+  sort on `date`, which it has, so nothing is misplaced.
+- The `config` collection was empty on live until this sweep. Everything
+  in Stages 2–4 had only ever been verified on dev. It is now exercised
+  on live, and holds one document: `Wilpattu__villas`, with the correct
+  rates.
