@@ -22,7 +22,12 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
-const { google } = require("googleapis");
+// Required lazily, inside sheetsClient(), not here. `googleapis` takes
+// about eight seconds to load, and the deploy analyser gives the whole
+// codebase ten to declare what it exports — so a top-level require of
+// it made every deploy of every function a coin flip, including
+// functions that have nothing to do with the Sheet. It costs nothing to
+// defer: the mirror runs once a night and has minutes, not seconds.
 
 // The Sheet's id, from its URL. Set with:
 //   firebase functions:secrets:set SHEET_ID --project live
@@ -48,6 +53,7 @@ function invoiceLKR(inv) {
 }
 
 async function sheetsClient() {
+  const { google } = require("googleapis");
   // The function's own service account. The Sheet is shared with it by
   // e-mail, so there is no key file anywhere — nothing to leak, nothing
   // to rotate.

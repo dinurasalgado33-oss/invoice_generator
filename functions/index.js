@@ -99,7 +99,15 @@ exports.sendWelcomeEmail = onDocumentCreated(
 
     const transport = nodemailer.createTransport({
       service: "gmail",
-      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD.value() },
+      // Every space stripped, not merely trimmed. Google *displays* an
+      // App Password as four groups of four ("abcd efgh ijkl mnop") and
+      // that is what gets copied; a value set from a file on Windows also
+      // carries a trailing CR LF. Either one is sent to Gmail verbatim and
+      // comes back as "Username and Password not accepted", which reads
+      // like a wrong password and is not. The same shape of bug already
+      // cost a session on SHEET_ID — a secret is text somebody pasted,
+      // and it must be normalised at the point of use.
+      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD.value().replace(/\s+/g, "") },
     });
 
     const label = BRANCH_LABELS[row.branch] || "Leopard Inn";
