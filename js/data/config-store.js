@@ -148,7 +148,7 @@ export async function hydrateConfig(branches) {
   const { ACTIVITIES_BY_BRANCH } = await import("./activities.js");
   const { BRANCH_INFO, RESERVATION_CONDITIONS, CANCELLATION_POLICY, PROFORMA_NOTICES } = await import("./branches.js");
   const { setServiceChargeRate, setVatRate } = await import("./charges.js");
-  const { INVENTORY_BY_BRANCH } = await import("./inventory.js");
+  const { INVENTORY_BY_BRANCH, applyInventoryConfig } = await import("./inventory.js");
 
   const loaded = [];
   for (const branch of branches) {
@@ -170,7 +170,7 @@ export async function hydrateConfig(branches) {
     if (applyArray(RESERVATION_CONDITIONS[branch], conditions)) loaded.push(branch + ":conditions");
     if (applyArray(CANCELLATION_POLICY[branch], cancellation)) loaded.push(branch + ":cancellation");
     if (applyArray(PROFORMA_NOTICES[branch], notices)) loaded.push(branch + ":notices");
-    if (applyArray(INVENTORY_BY_BRANCH[branch], inventory)) loaded.push(branch + ":inventory");
+    if (applyInventoryConfig(INVENTORY_BY_BRANCH[branch], inventory)) loaded.push(branch + ":inventory");
 
     // Objects rather than arrays: merged in place for the same reason the
     // arrays are spliced — the screens hold the reference from module load.

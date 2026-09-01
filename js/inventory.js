@@ -4,8 +4,10 @@ import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber, cl
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
-  USAGE_LOG, USAGE_REASONS, allocateUsageId, logStockMovement } from "./data/inventory.js";
+  USAGE_LOG, USAGE_REASONS, allocateUsageId, logStockMovement,
+  inventoryConfig, deriveStock } from "./data/inventory.js";
 import { confirmAction } from "./confirm.js";
+import { saveConfig, CONFIG_KINDS } from "./data/config-store.js";
 import { add, COLLECTIONS } from "./data/store.js";
 
 // Inventory is fully editable by every role — staff need to be able to
@@ -464,12 +466,33 @@ document.getElementById("item-form").addEventListener("submit", (e) => {
       showToast("That item no longer exists");
       return;
     }
-    Object.assign(item, { name, category, unit, stock, minStock, costPerUnit });
+    // Config fields are assigned; the stock figure is not. Stock is
+    // derived from the movement logs, so typing a different number here
+    // is a correction — and a correction is a movement, which has to be
+    // recorded like any other or the derived level will disagree with it.
+    Object.assign(item, { name, category, unit, minStock, costPerUnit });
+    const delta = Math.round((stock - item.stock) * 100) / 100;
+    if (delta) {
+      logStockMovement({
+        branch: appState.selectedBranch, item, delta,
+        reason: "Corrected on the item form", kind: "correction",
+      });
+    }
     showToast(`${name} updated`);
   } else {
-    inventory.push({ id: allocateInventoryItemId(), name, category, unit, stock, minStock, costPerUnit });
+    // A new item's opening count is the one number a person sets
+    // directly. Everything after it is movements.
+    inventory.push({
+      id: allocateInventoryItemId(),
+      name, category, unit, minStock, costPerUnit,
+      openingStock: stock,
+      stock,
+    });
     showToast(`${name} added`);
   }
+
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.INVENTORY, inventoryConfig(inventory));
+  deriveStock();
 
   closeItemSheet();
   renderInventoryScreen();
@@ -491,6 +514,7 @@ document.getElementById("item-delete-btn").addEventListener("click", async () =>
 
   const idx = inventory.findIndex(i => i.id === editingItemId);
   inventory.splice(idx, 1);
+  saveConfig(appState.selectedBranch, CONFIG_KINDS.INVENTORY, inventoryConfig(inventory));
   closeItemSheet();
   renderInventoryScreen();
   updateInventoryBadge();

@@ -16,6 +16,7 @@ import { scopedBranch, currentProfile } from "./session.js";
 import { primeNumbering } from "./numbering.js";
 import { seedMenuIfEmpty } from "./seed-config.js";
 import { deriveOccupancy } from "./occupancy.js";
+import { deriveStock } from "./inventory.js";
 import { hydrateConfig } from "./config-store.js";
 import { logError } from "./error-log.js";
 
@@ -46,8 +47,8 @@ const COLLECTION_MAP = [
   [COLLECTIONS.RESERVATIONS, RESERVATIONS],
   [COLLECTIONS.PROFORMAS, PROFORMA_INVOICES],
   [COLLECTIONS.GRC, GRC_RECORDS],
-  [COLLECTIONS.RESTOCKS, RESTOCK_LOG],
-  [COLLECTIONS.STOCK_USAGE, USAGE_LOG],
+  [COLLECTIONS.RESTOCKS, RESTOCK_LOG, { onChange: deriveStock }],
+  [COLLECTIONS.STOCK_USAGE, USAGE_LOG, { onChange: deriveStock }],
   [COLLECTIONS.GUEST_EMAILS, GUEST_EMAIL_QUEUE],
   [COLLECTIONS.ROOM_ACTIVITY, ROOM_ACTIVITY_LOG],
   [COLLECTIONS.MENU, MENU_ITEMS, { everyone: true, keepLocalIfEmpty: true }],
@@ -129,6 +130,10 @@ export async function startSync() {
   // Runs after hydration for that reason, and again whenever bookings
   // change — see the watcher installed below.
   deriveOccupancy();
+  // Stock is the sum of its movements, so it is rebuilt once the logs are
+  // in — and again below whenever either log changes, since a restock
+  // entered on the phone has to reach the tablet's shelf figure.
+  deriveStock();
 
   // Reserve a block of document numbers for every property this person
   // works at, now, while there is signal — so a device that goes offline

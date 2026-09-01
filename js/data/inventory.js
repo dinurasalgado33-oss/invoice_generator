@@ -273,3 +273,84 @@ export function logStockMovement({ branch, item, delta, reason, unitCost = 0, ki
     totalCost: Math.round(Math.abs(moved) * unitCost * 100) / 100,
   });
 }
+
+
+// ---------------------------------------------------------------------
+// Stock, derived
+// ---------------------------------------------------------------------
+// Stock used to be a number stored on the item and mutated by whatever
+// touched it. That made it unpersisted *and* unauditable: it reset to the
+// seed values on reload, and two of the four things that moved it wrote
+// no record, so the figure could not be defended to anyone asking where
+// the chicken went.
+//
+// Now every movement is logged (see logStockMovement above), so stock is
+// what the movements say it is:
+//
+//     stock = openingStock + restocks - usage
+//
+// One fact, derived, exactly like villa occupancy. Nothing writes a stock
+// level to the database, so nothing can disagree with the log.
+//
+// openingStock is config — the count an item started at, set when a
+// manager adds it — and is the only part a person types directly.
+
+// An item's *configuration*, as opposed to its current level. Stock is
+// deliberately absent: persisting it would put "how much is there" in two
+// places and undo the derivation.
+export function inventoryConfig(items) {
+  return (items || []).map(i => ({
+    id: i.id,
+    name: i.name,
+    category: i.category,
+    unit: i.unit,
+    minStock: i.minStock,
+    costPerUnit: i.costPerUnit,
+    // Falls back to the current level for items that predate this field,
+    // which is every seeded item the first time this runs.
+    openingStock: i.openingStock != null ? i.openingStock : i.stock,
+  }));
+}
+
+// Merged onto the existing items rather than replacing them, so a config
+// load cannot wipe the stock just derived. New items arriving from another
+// device are appended.
+export function applyInventoryConfig(target, incoming) {
+  if (!Array.isArray(incoming) || !Array.isArray(target)) return false;
+  incoming.forEach(cfg => {
+    const item = target.find(i => i.id === cfg.id);
+    if (!item) {
+      target.push({ ...cfg, stock: cfg.openingStock ?? 0 });
+      return;
+    }
+    ["name", "category", "unit", "minStock", "costPerUnit", "openingStock"].forEach(k => {
+      if (cfg[k] != null) item[k] = cfg[k];
+    });
+  });
+  return true;
+}
+
+export function deriveStock() {
+  const restockByItem = new Map();
+  RESTOCK_LOG.forEach(r => {
+    restockByItem.set(r.itemId, (restockByItem.get(r.itemId) || 0) + (Number(r.qty) || 0));
+  });
+  const usageByItem = new Map();
+  USAGE_LOG.forEach(u => {
+    usageByItem.set(u.itemId, (usageByItem.get(u.itemId) || 0) + (Number(u.qty) || 0));
+  });
+
+  let counted = 0;
+  Object.values(INVENTORY_BY_BRANCH).forEach(items => {
+    items.forEach(item => {
+      const opening = item.openingStock != null ? item.openingStock : item.stock;
+      if (item.openingStock == null) item.openingStock = opening;
+      const level = opening + (restockByItem.get(item.id) || 0) - (usageByItem.get(item.id) || 0);
+      // Never below zero: a shelf cannot hold minus two kilos, and a
+      // negative would propagate into every cost and reorder figure.
+      item.stock = Math.max(0, Math.round(level * 100) / 100);
+      counted++;
+    });
+  });
+  return counted;
+}
