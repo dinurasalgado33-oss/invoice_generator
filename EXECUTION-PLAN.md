@@ -563,3 +563,55 @@ device can act on the old value, and what does it do wrong meanwhile?
 Signed in on live, no errors: 16 collections (`rooms` gone), 4 invoices,
 4 bookings, 161 dishes, 3 board courses, 10 villas, 4 stock departments,
 numbering block intact at 50, and a welcome e-mail still sends.
+
+
+---
+
+## 16. Offline config, and a correction, 2026-09-02
+
+### Config survives no signal — verified
+
+A manager edits a rate with the network genuinely off:
+
+| | |
+|---|---|
+| Applied in memory | ✅ |
+| Reads back from cache while offline | ✅ |
+| Errors logged while offline | none — `unavailable` is correctly suppressed |
+| On the server after reconnect | ✅ confirmed with a server-only read, `fromCache: false` |
+
+### The correction: "under 1 second" was measured on a rig that could not fail
+
+The two-device propagation figure in §15 came from two browser tabs. Tabs
+of one browser **share Firestore's multi-tab cache**, so tab B saw tab A's
+write through local storage, not over the network. The number is a lower
+bound from a shared cache, not a cross-device measurement.
+
+Caught by a control that was supposed to be a formality. The first
+attempt at the offline test called `disableNetwork()` in one tab and the
+other tab still reached the server — because under multi-tab persistence
+one tab owns the connection and a secondary tab disabling it changes
+nothing. **The test had been passing while never once being offline.**
+The fix was to close the other tab and then assert that a server read
+*fails* before trusting anything that follows.
+
+**What still stands:** the §15 fix is right. Before it there was no
+listener at all, so no amount of shared cache would have helped — device B
+went on reading a stale rate indefinitely. And the listener is
+`onSnapshot`, the identical mechanism the fifteen record collections use,
+which is verified cross-device in GO-LIVE Phases 1 and 2. A snapshot
+listener does not distinguish a cache change from a server change; it
+fires for both.
+
+**What does not stand:** the timing. On two real devices it is a server
+round trip, not a millisecond. Fast enough — it is what every booking and
+invoice already does — but not what was written down.
+
+### The lesson, again
+
+This is the second time in this project that a green result came from a
+check that could not have gone red — the first was in
+`my-testing-can-be-wrong`. Both times the fix was the same: **make the
+control fail on purpose before believing the test**. Assert the server is
+reachable, take the network away, assert the same call now refuses, and
+only then measure the thing being measured.
