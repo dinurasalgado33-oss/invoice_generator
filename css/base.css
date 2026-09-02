@@ -804,3 +804,35 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
   border-radius: 10px;
 }
 .ml-add-row button { flex: none; min-height: 44px; }
+
+/* Board menu editor — what a full/half-board rate includes. Nested
+   deeper than the other list screens, so each course is a card and each
+   option is inset inside it; without the inset it is not obvious which
+   options belong to which course. */
+.bm-block {
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: var(--white);
+}
+.bm-block-head { display: flex; gap: 8px; align-items: center; }
+.bm-block-head .bm-heading { flex: 1 1 auto; min-width: 0; }
+.bm-block input,
+.bm-block textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 6px 0;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  background: var(--white);
+}
+.bm-block textarea { resize: vertical; }
+.bm-block .secondary-btn { min-height: 44px; }
+.bm-option {
+  border-left: 3px solid var(--line, #e3ded7);
+  padding-left: 12px;
+  margin: 10px 0 10px 4px;
+}

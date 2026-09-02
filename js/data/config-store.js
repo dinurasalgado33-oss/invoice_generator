@@ -190,11 +190,11 @@ export async function hydrateConfig(branches) {
   const { INVENTORY_BY_BRANCH, applyInventoryConfig, INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS,
           INVENTORY_DEPARTMENTS, applyCategoryDepartments } = await import("./inventory.js");
   const { ROOM_TYPES, MEAL_PLANS } = await import("./grc.js");
-  const { MENU_CATEGORIES } = await import("./menu.js");
+  const { MENU_CATEGORIES, BOARD_MENU } = await import("./menu.js");
 
   const loaded = [];
   for (const branch of branches) {
-    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability] =
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability, boardMenu] =
       await Promise.all([
         loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
@@ -208,6 +208,7 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.TIMES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.BOOKING_SOURCES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.LIABILITY).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.BOARD_MENU).catch(() => undefined),
       ]);
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
@@ -228,6 +229,10 @@ export async function hydrateConfig(branches) {
     if (times && times.checkin) { setStandardTimes(branch, times.checkin, times.checkout); loaded.push(branch + ":times"); }
     if (Array.isArray(sources) && sources.length) { setBookingSources(branch, sources); loaded.push(branch + ":sources"); }
     if (typeof liability === "string" && liability) { setLiabilityNotice(branch, liability); loaded.push(branch + ":liability"); }
+
+    // Only Wilpattu has a board sheet today, so a property without one
+    // stored is the normal case rather than a failure.
+    if (Array.isArray(boardMenu) && applyArray(BOARD_MENU, boardMenu)) loaded.push(branch + ":boardMenu");
 
   }
 

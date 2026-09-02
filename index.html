@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=150" />
-<link rel="stylesheet" href="css/brand-home.css?v=150" />
-<link rel="stylesheet" href="css/rooms.css?v=150" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=150" />
-<link rel="stylesheet" href="css/invoice.css?v=150" />
-<link rel="stylesheet" href="css/dashboard.css?v=150" />
-<link rel="stylesheet" href="css/reports.css?v=150" />
-<link rel="stylesheet" href="css/reservation.css?v=150" />
-  <link rel="stylesheet" href="css/grc.css?v=150" />
-  <link rel="stylesheet" href="css/proforma.css?v=150" />
-  <link rel="stylesheet" href="css/history.css?v=150" />
+<link rel="stylesheet" href="css/base.css?v=151" />
+<link rel="stylesheet" href="css/brand-home.css?v=151" />
+<link rel="stylesheet" href="css/rooms.css?v=151" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=151" />
+<link rel="stylesheet" href="css/invoice.css?v=151" />
+<link rel="stylesheet" href="css/dashboard.css?v=151" />
+<link rel="stylesheet" href="css/reports.css?v=151" />
+<link rel="stylesheet" href="css/reservation.css?v=151" />
+  <link rel="stylesheet" href="css/grc.css?v=151" />
+  <link rel="stylesheet" href="css/proforma.css?v=151" />
+  <link rel="stylesheet" href="css/history.css?v=151" />
 </head>
 <body>
 
@@ -216,6 +216,24 @@
         <button type="submit" class="secondary-btn">Add</button>
       </form>
       <p class="field-error" id="ml-error"></p>
+    </div>
+  </section>
+
+  <!-- SCREEN: Board menu — what a full/half-board rate includes -->
+  <section id="screen-board-menu" class="screen">
+    <button class="back-btn" data-back="screen-menu">&larr; Back</button>
+    <div class="brand small">
+      <h2>Board Menu</h2>
+    </div>
+
+    <div class="list-wrap">
+      <p class="hint" id="bm-scope"></p>
+    </div>
+
+    <div class="list-wrap">
+      <div id="bm-blocks"></div>
+      <button type="button" class="secondary-btn" id="bm-add-block">Add a course</button>
+      <p class="field-error" id="bm-error"></p>
     </div>
   </section>
 
@@ -761,6 +779,7 @@
       <p class="digital-menu-sub" id="digital-menu-status"></p>
       <div id="menu-pdf-list" class="menu-pdf-list"></div>
       <p class="hint" id="digital-menu-hint"></p>
+      <button type="button" class="secondary-btn" id="open-board-menu-btn">Edit board menu</button>
     </div>
 
     <div class="list-wrap">
@@ -2552,6 +2571,6 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/main.js?v=150"></script>
+<script type="module" src="js/main.js?v=151"></script>
 </body>
 </html>

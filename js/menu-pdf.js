@@ -1,4 +1,4 @@
-import { MENU_ITEMS } from "./data/menu.js";
+import { MENU_ITEMS, BOARD_MENU } from "./data/menu.js";
 import { CINZEL_REGULAR_B64 } from "./data/font-cinzel.js";
 
 // Builds the hotel's menus as real PDF files, from the live menu config.
@@ -56,38 +56,6 @@ const PALETTES = {
     },
   },
 };
-
-// The Wilpattu board sheet has no dish numbers or prices, so it is not
-// driven by MENU_ITEMS. Held in the same shape so a manager can be given
-// an editor for it later.
-const BOARD_MENU = [
-  {
-    heading: "Breakfast",
-    note: "one option included",
-    options: [
-      { name: "Western", detail: "Toast bread · 3 grilled sausages · egg (boiled, scrambled or omelette) · juice · fruit plate" },
-      { name: "Sri Lankan", detail: "4 rotti pieces · katta sambol / pol sambol · chicken curry · dhal curry · tea or coffee" },
-    ],
-  },
-  {
-    heading: "Lunch",
-    note: "one option included",
-    options: [
-      { name: "Rice & Curry", detail: "Kiri samba · dhal curry · pol sambol · two vegetable pots · papadam · meat (beef, pork or chicken) · dessert" },
-      { name: "Fried Rice", detail: "Egg fried rice · chicken devel · chilli paste · dessert" },
-    ],
-    foot: "Portion sizes for every rice & curry and fried rice meal — beef 100g, pork 150g, chicken 150g.",
-  },
-  {
-    heading: "Dinner",
-    note: "one option included",
-    options: [
-      { name: "Fried Rice", detail: "Soup (chicken, vegetable or mushroom) · egg fried rice · chicken devel · chilli paste · pol sambol · dessert · sauce" },
-      { name: "Noodles", detail: "Soup (chicken, vegetable or mushroom) · egg noodles · chicken curry or devel · chilli paste · dessert · sauce" },
-    ],
-    foot: "Portion size for every meal above — chicken 300g.",
-  },
-];
 
 export const MENU_DOCS = {
   "ab-main": {

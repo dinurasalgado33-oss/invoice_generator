@@ -92,6 +92,45 @@ async function readMenu(branch) {
     .sort((a, b) => (Number(a.number) || 0) - (Number(b.number) || 0));
 }
 
+// What a full/half-board rate includes, for the property that has one.
+//
+// A board guest is not ordering from the à la carte list — they have
+// already paid for a set meal — so "what do I actually get" is the
+// question the welcome e-mail leaves unanswered without this. Read from
+// config rather than held here, so the sheet reception prints and the
+// sheet the guest is sent cannot drift apart.
+async function readBoardMenu(branch) {
+  const db = admin.firestore();
+  const id = `${branch}__boardMenu`.replace(/[/\s]+/g, "-");
+  const snap = await db.collection("config").doc(id).get();
+  const value = snap.exists ? snap.data().value : null;
+  return Array.isArray(value) ? value : [];
+}
+
+function renderBoardMenu(blocks) {
+  if (!blocks.length) return "";
+
+  const body = blocks.map(block => {
+    const options = (block.options || [])
+      .filter(o => o && o.name)
+      .map(o => `<p style="margin:8px 0 0"><span style="font-size:15px">${escapeHtml(o.name)}</span>${
+        o.detail ? `<div style="font-size:13px;color:#6b6b6b;margin-top:2px">${escapeHtml(o.detail)}</div>` : ""
+      }</p>`).join("");
+    if (!options) return "";
+    return `<h3 style="margin:22px 0 0;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#4a0e1c">${escapeHtml(block.heading || "")}${
+      block.note ? `<span style="font-weight:400;text-transform:none;letter-spacing:0;color:#a08a52;font-size:13px"> — ${escapeHtml(block.note)}</span>` : ""
+    }</h3>${options}${
+      block.foot ? `<p style="margin:8px 0 0;font-size:12px;color:#8a8a8a">${escapeHtml(block.foot)}</p>` : ""
+    }`;
+  }).join("");
+
+  if (!body) return "";
+
+  return `<h2 style="margin:34px 0 0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a08a52">Included with full and half board</h2>
+    <p style="margin:6px 0 0;font-size:13px;color:#6b6b6b">If your rate includes meals, this is what they are. Anything from the menu above can be added to your bill.</p>
+    ${body}`;
+}
+
 // Category names read "Breakfast - Sri Lankan". Three consecutive
 // headings all starting "Breakfast" is how the data is shaped, not how a
 // menu should read, so the part before the dash becomes a course heading
@@ -231,7 +270,11 @@ exports.sendWelcomeEmail = onDocumentCreated(
     // the send. The guest still gets the greeting and reception's number.
     let menuHtml = "";
     try {
-      menuHtml = renderMenu(await readMenu(row.branch));
+      const [dishes, board] = await Promise.all([
+        readMenu(row.branch),
+        readBoardMenu(row.branch).catch(() => []),
+      ]);
+      menuHtml = renderMenu(dishes) + renderBoardMenu(board);
     } catch (err) {
       logger.error("Could not build the menu for the welcome e-mail", {
         id: event.params.id, branch: row.branch, error: String(err && err.message),
