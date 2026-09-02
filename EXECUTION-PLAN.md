@@ -498,3 +498,68 @@ That board PDF is **1.1MB** for six options. The decision to put the menu
 in the e-mail rather than attach a PDF rested on the claim that the PDFs
 are megabytes because of the embedded font and cover artwork. It is now
 measured rather than asserted.
+
+
+---
+
+## 15. The question the audits did not ask, 2026-09-02
+
+All four documents asked **"does this change reach the database?"** and by
+2026-09-02 the answer everywhere was yes. None of them asked **"does it
+reach the other device while both are open?"** — and that is a different
+question with a different answer.
+
+### Config did not propagate — `8ad7eb1`
+
+Every record collection watches its snapshot: a booking made on the phone
+reaches the tablet in seconds. Config was read once inside `startSync()`
+and never again. A rate changed on the office tablet at 10am was invisible
+to a reception phone that had signed in at 8am, and that phone went on
+billing the old rate until somebody happened to reload it.
+
+That is precisely the scenario `config-store.js`'s own header gives as the
+reason config had to be persisted at all. Persisting it fixed the half
+that survives a reload. Nothing had fixed the half that does not.
+
+| | Before | After |
+|---|---|---|
+| Device A saves a rate | — | — |
+| Device B sees it | never (still stale after 20s) | **under 1 second** |
+
+Two design notes:
+
+- **The watcher re-reads rather than applying the snapshot's own
+  documents.** Live updates and sign-in hydration then run identical code
+  and cannot drift apart. Two dozen cached reads a few times a day is not
+  worth a second code path that could disagree with the first.
+- **A repaint is skipped while a field has focus.** Repainting the form
+  somebody is typing into throws away what they were halfway through
+  writing; a stale label is a far smaller problem than a lost edit. They
+  get it on the next screen entry. Verified: refresh runs when idle, is
+  refused mid-edit, resumes on blur.
+
+### The `rooms` collection is gone — `8ad7eb1`
+
+Declared in `COLLECTIONS`, given a security rule, and read or written by
+nothing. Villa names and rates are config; occupancy is derived from
+bookings.
+
+A rule describing something the app does not do reads, to the next
+person, as a description of something it does. Worse, a named collection
+invites somebody to start using it — and then "is this villa occupied"
+has two homes again, which is the bug `js/data/occupancy.js` exists to
+have removed.
+
+### What this suggests for next time
+
+The audits were mechanical sweeps of *state*, and they were good at that.
+Both misses here were about *time* — when a value is read, and how long a
+device may hold a stale one. A future sweep should walk each piece of
+state and ask: read once, or watched? If read once, what is the longest a
+device can act on the old value, and what does it do wrong meanwhile?
+
+### Regression check after both changes
+
+Signed in on live, no errors: 16 collections (`rooms` gone), 4 invoices,
+4 bookings, 161 dishes, 3 board courses, 10 villas, 4 stock departments,
+numbering block intact at 50, and a welcome e-mail still sends.
