@@ -5,7 +5,10 @@ import { confirmAction } from "./confirm.js";
 import { saveConfig, saveShared, CONFIG_KINDS } from "./data/config-store.js";
 import { ROOM_TYPES, MEAL_PLANS } from "./data/grc.js";
 import { MENU_CATEGORIES } from "./data/menu.js";
-import { INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS } from "./data/inventory.js";
+import {
+  INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS,
+  INVENTORY_DEPARTMENTS, CATEGORY_DEPARTMENT,
+} from "./data/inventory.js";
 
 // The short lists that feed dropdowns all over the app — room types, meal
 // plans, menu and inventory categories, units, usage reasons.
@@ -61,7 +64,27 @@ const LISTS = {
     array: INVENTORY_CATEGORIES,
     kind: CONFIG_KINDS.INVENTORY_CATEGORIES,
     shared: true,
-    note: "A category not listed under a department still appears, grouped as Other.",
+    note: "Each one sits under a department on the stock screen. Leave it unassigned and it still appears, grouped as Other.",
+    // The one list whose entries carry something besides their name.
+    // Declared here rather than special-cased in render(), so the editor
+    // stays one editor.
+    picker: {
+      options: () => INVENTORY_DEPARTMENTS,
+      value: category => CATEGORY_DEPARTMENT[category] || "",
+      set: (category, department) => {
+        if (department) CATEGORY_DEPARTMENT[category] = department;
+        else delete CATEGORY_DEPARTMENT[category];
+        saveShared(CONFIG_KINDS.CATEGORY_DEPARTMENTS, { ...CATEGORY_DEPARTMENT });
+      },
+      blank: "Other",
+    },
+  },
+  inventoryDepartments: {
+    label: "Inventory departments",
+    array: INVENTORY_DEPARTMENTS,
+    kind: CONFIG_KINDS.INVENTORY_DEPARTMENTS,
+    shared: true,
+    note: "How the stock screen groups categories. Removing one drops its categories into Other rather than hiding them.",
   },
   inventoryUnits: {
     label: "Inventory units",
@@ -103,15 +126,35 @@ function render() {
     list.innerHTML = `<p class="room-detail-empty">Nothing in this list yet.</p>`;
     return;
   }
-  list.innerHTML = cfg.array.map((entry, i) => `
+  const picker = cfg.picker;
+  list.innerHTML = cfg.array.map((entry, i) => {
+    const select = picker ? `
+      <select class="ml-row-picker" data-entry="${escapeHtml(entry)}"
+              aria-label="Department for ${escapeHtml(entry)}">
+        <option value="">${escapeHtml(picker.blank)}</option>
+        ${picker.options().map(o => `
+          <option value="${escapeHtml(o)}"${picker.value(entry) === o ? " selected" : ""}>${escapeHtml(o)}</option>`).join("")}
+      </select>` : "";
+    return `
     <div class="ml-row">
       <span class="ml-row-text">${escapeHtml(entry)}</span>
+      ${select}
       <button type="button" class="secondary-btn ml-remove-btn" data-index="${i}"
               aria-label="Remove ${escapeHtml(entry)}">Remove</button>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 
   list.querySelectorAll(".ml-remove-btn").forEach(btn => {
     btn.addEventListener("click", () => removeEntry(Number(btn.dataset.index)));
+  });
+
+  list.querySelectorAll(".ml-row-picker").forEach(sel => {
+    sel.addEventListener("change", () => {
+      picker.set(sel.dataset.entry, sel.value);
+      showToast(sel.value
+        ? `${sel.dataset.entry} moved to ${sel.value}`
+        : `${sel.dataset.entry} moved to ${picker.blank}`);
+    });
   });
 }
 
@@ -132,6 +175,10 @@ async function removeEntry(index) {
   if (!ok) return;
 
   cfg.array.splice(index, 1);
+  // A removed category should not leave its department behind. Nothing
+  // reads a stale entry, but a map that only ever grows is a map nobody
+  // can read either.
+  if (cfg.picker) cfg.picker.set(entry, "");
   persist();
   render();
   showToast(`${entry} removed`);

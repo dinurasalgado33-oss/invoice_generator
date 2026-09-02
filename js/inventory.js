@@ -3,6 +3,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, setLogoSrc, showToast, fmtLKR, todayISO, toFiniteNumber, clampMoney, capNumericInput, MAX_COUNT, MAX_MONEY, setBranchLabel } from "./utils.js";
 import {
   INVENTORY_BY_BRANCH, INVENTORY_CATEGORIES, INVENTORY_DEPARTMENTS, INVENTORY_UNITS,
+  CATEGORY_DEPARTMENT, departmentsWithCategories,
   allocateInventoryItemId, RESTOCK_LOG, allocateRestockId,
   USAGE_LOG, USAGE_REASONS, allocateUsageId, logStockMovement,
   inventoryConfig, deriveStock } from "./data/inventory.js";
@@ -16,7 +17,7 @@ let editingItemId = null;
 
 // Department > category > item. Everything starts collapsed so the table
 // opens short — staff drill down into only what they need.
-const collapsedDepartments = new Set(INVENTORY_DEPARTMENTS.map(d => d.name));
+const collapsedDepartments = new Set(INVENTORY_DEPARTMENTS);
 const collapsedCategories = new Set(INVENTORY_CATEGORIES);
 
 // Search / low-stock filter — bypasses the department/category hierarchy
@@ -188,15 +189,10 @@ function renderInventoryScreen() {
     });
     Object.values(groups).forEach(items => items.sort((a, b) => a.name.localeCompare(b.name)));
 
-    // Any category not named in a department, gathered into one group.
-    // The table renders by department, so a category a manager added
-    // without one would otherwise make its items invisible here — stock
-    // that exists, has a value, and cannot be seen.
-    const claimed = new Set(INVENTORY_DEPARTMENTS.flatMap(d => d.categories));
-    const orphans = Object.keys(groups).filter(c => !claimed.has(c));
-    const departments = orphans.length
-      ? [...INVENTORY_DEPARTMENTS, { name: "Other", categories: orphans }]
-      : INVENTORY_DEPARTMENTS;
+    // Grouped by department, rebuilt from the two flat lists rather than
+    // stored. A category with no department gathers under "Other" — see
+    // departmentsWithCategories().
+    const departments = departmentsWithCategories(Object.keys(groups));
 
     list.innerHTML = departments.map(dept => {
       const categories = dept.categories.filter(c => groups[c] && groups[c].length);

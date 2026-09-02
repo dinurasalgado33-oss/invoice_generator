@@ -187,7 +187,8 @@ export async function hydrateConfig(branches) {
   const { BRANCH_INFO, RESERVATION_CONDITIONS, CANCELLATION_POLICY, PROFORMA_NOTICES } = await import("./branches.js");
   const { setServiceChargeRate, setVatRate, setBookingSources, setCurrencies } = await import("./charges.js");
   const { setStandardTimes, setLiabilityNotice } = await import("./grc.js");
-  const { INVENTORY_BY_BRANCH, applyInventoryConfig, INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS } = await import("./inventory.js");
+  const { INVENTORY_BY_BRANCH, applyInventoryConfig, INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS,
+          INVENTORY_DEPARTMENTS, applyCategoryDepartments } = await import("./inventory.js");
   const { ROOM_TYPES, MEAL_PLANS } = await import("./grc.js");
   const { MENU_CATEGORIES } = await import("./menu.js");
 
@@ -244,6 +245,7 @@ export async function hydrateConfig(branches) {
     [MENU_CATEGORIES, CONFIG_KINDS.MENU_CATEGORIES, "menuCategories"],
     [INVENTORY_CATEGORIES, CONFIG_KINDS.INVENTORY_CATEGORIES, "invCategories"],
     [USAGE_REASONS, CONFIG_KINDS.USAGE_REASONS, "usageReasons"],
+    [INVENTORY_DEPARTMENTS, CONFIG_KINDS.INVENTORY_DEPARTMENTS, "invDepartments"],
   ];
   for (const [target, kind, label] of SHARED_LISTS) {
     const stored = await loadShared(kind).catch(() => undefined);
@@ -257,6 +259,15 @@ export async function hydrateConfig(branches) {
     if (Array.isArray(currencies) && currencies.length) { setCurrencies(currencies); loaded.push("shared:currencies"); }
     const units = await loadShared(CONFIG_KINDS.INVENTORY_UNITS);
     if (Array.isArray(units) && units.length) { applyArray(INVENTORY_UNITS, units); loaded.push("shared:units"); }
+
+    // The category-to-department map. An empty object is meaningful here
+    // in a way an empty list is not — it means a manager deliberately
+    // assigned nothing, and everything should gather under "Other" — so
+    // this checks for a stored object rather than for a non-empty one.
+    const deptMap = await loadShared(CONFIG_KINDS.CATEGORY_DEPARTMENTS);
+    if (deptMap && typeof deptMap === "object" && applyCategoryDepartments(deptMap)) {
+      loaded.push("shared:categoryDepartments");
+    }
   } catch { /* falls back to the shipped list */ }
 
   // Learned values, not configured ones — kept apart from the block above

@@ -766,8 +766,35 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
   margin-bottom: 8px;
   background: var(--white);
 }
-.ml-row-text { overflow-wrap: anywhere; }
+.ml-row-text { overflow-wrap: anywhere; flex: 1 1 auto; min-width: 0; }
 .ml-remove-btn { min-height: 44px; flex: none; }
+/* The department picker on an inventory category row. 44px so it is a
+   real touch target on the phone reception actually uses. */
+.ml-row-picker {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 8px;
+  background: var(--white);
+  font: inherit;
+  color: inherit;
+}
+/* On a narrow screen the name, its department and Remove will not sit on
+   one line without the picker shrinking to nothing. The name takes its own
+   line, then the picker and Remove share the next one — two lines, not
+   three. Thirteen categories at three lines each is a screen nobody
+   scrolls to the bottom of.
+   `flex: 1 1 0` with min-width:0 is what lets the picker shrink; on
+   `auto` it sizes to its longest option and shoves Remove onto a third
+   line. */
+@media (max-width: 480px) {
+  .ml-row { flex-wrap: wrap; row-gap: 8px; }
+  .ml-row-text { flex: 1 0 100%; }
+  .ml-row-picker { max-width: none; flex: 1 1 0; }
+}
 .ml-add-row { display: flex; gap: 8px; margin-top: 12px; }
 .ml-add-row input {
   flex: 1 1 auto;

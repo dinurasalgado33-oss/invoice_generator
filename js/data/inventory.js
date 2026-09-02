@@ -11,12 +11,74 @@ export const INVENTORY_UNITS = ["kg", "g", "L", "ml", "pcs"];
 // Groups the flat categories above into departments, so the inventory
 // table can show department > category > item instead of one long list
 // of 12 category sections.
+// Departments are a flat list of names, and each category says which one
+// it belongs to. They used to be one nested structure —
+// [{ name, categories: [...] }] — which stored every category name twice:
+// once in INVENTORY_CATEGORIES, which a manager edits, and again inside a
+// department, which they could not. Renaming a category in the list editor
+// silently orphaned it from its department. Same shape as every other bug
+// here: one fact, two homes, free to disagree.
+//
+// Split this way, both halves are editable with the ordinary list editor
+// and neither can contradict the other: a category names its department,
+// and nothing names its categories.
 export const INVENTORY_DEPARTMENTS = [
-  { name: "Food & Beverage", categories: ["Meat", "Seafood", "Produce", "Dairy & Eggs", "Grains", "Pantry", "Beverages"] },
-  { name: "Guest Amenities", categories: ["Toiletries & Amenities", "Linen"] },
-  { name: "Housekeeping & Cleaning", categories: ["Housekeeping", "Cleaning Supplies"] },
-  { name: "Maintenance & Office", categories: ["Maintenance & Office", "Other"] },
+  "Food & Beverage",
+  "Guest Amenities",
+  "Housekeeping & Cleaning",
+  "Maintenance & Office",
 ];
+
+// category -> department. A category missing from here is not an error; it
+// gathers under "Other" below.
+export const CATEGORY_DEPARTMENT = {
+  "Meat": "Food & Beverage",
+  "Seafood": "Food & Beverage",
+  "Produce": "Food & Beverage",
+  "Dairy & Eggs": "Food & Beverage",
+  "Grains": "Food & Beverage",
+  "Pantry": "Food & Beverage",
+  "Beverages": "Food & Beverage",
+  "Toiletries & Amenities": "Guest Amenities",
+  "Linen": "Guest Amenities",
+  "Housekeeping": "Housekeeping & Cleaning",
+  "Cleaning Supplies": "Housekeeping & Cleaning",
+  "Maintenance & Office": "Maintenance & Office",
+  "Other": "Maintenance & Office",
+};
+
+// The nested shape the stock table renders from, rebuilt from the two flat
+// lists rather than stored.
+//
+// `present` is the categories that actually have stock right now, so a
+// department with nothing in it does not take up a row. Any category with
+// no department — one a manager just added, or one whose department was
+// removed — gathers under "Other". That bucket is the whole reason this is
+// derived: the table renders by department, so a category belonging to
+// none would otherwise make its items invisible. Stock that exists, has a
+// value, and cannot be seen is worse than stock in the wrong group.
+export function departmentsWithCategories(present) {
+  const known = new Set(present);
+  const groups = INVENTORY_DEPARTMENTS.map(name => ({
+    name,
+    categories: [...known].filter(c => CATEGORY_DEPARTMENT[c] === name),
+  }));
+  const orphans = [...known].filter(c => !INVENTORY_DEPARTMENTS.includes(CATEGORY_DEPARTMENT[c]));
+  if (orphans.length) groups.push({ name: "Other", categories: orphans });
+  return groups.filter(g => g.categories.length);
+}
+
+// Called when the departments list or the assignments change, so a
+// category pointing at a department that no longer exists falls into
+// "Other" rather than taking its items out of sight.
+export function applyCategoryDepartments(incoming) {
+  if (!incoming || typeof incoming !== "object") return false;
+  Object.keys(CATEGORY_DEPARTMENT).forEach(k => { delete CATEGORY_DEPARTMENT[k]; });
+  Object.entries(incoming).forEach(([category, department]) => {
+    if (typeof department === "string" && department) CATEGORY_DEPARTMENT[category] = department;
+  });
+  return true;
+}
 
 // A literal, not a computed max: INVENTORY_BY_BRANCH is declared further
 // down this file, so reading it here hits the temporal dead zone and the
