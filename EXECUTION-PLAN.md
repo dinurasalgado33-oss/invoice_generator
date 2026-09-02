@@ -113,17 +113,17 @@ shared ones drop the branch prefix.
 
 ---
 
-## 6. Stage 5 — closing out the live app 🟡 ONE ITEM LEFT
+## 6. Stage 5 — closing out the live app ✅ COMPLETE
 
 Not from either audit; outstanding from earlier work.
 
 | Step | What | Whose |
 |---|---|---|
 | 5.1 | ~~Void the two test invoices~~ **done** | Both voided with a stated reason, attributed to Ashen, `reissued: false` so the money stays closed. Dinura's own `d` / `dinu` test invoices left alone |
-| 5.2 | Confirm a welcome e-mail actually sends | First real check-in with an address |
+| 5.2 | ~~Confirm a welcome e-mail actually sends~~ **done** | It did not. Forced rather than waited for, and it failed on a dead App Password — see §11. Now sends, verified to a real address |
 | 5.3 | ~~Exercise the staff screen on live~~ **done** | Created and disabled a throwaway account; confirmed it is disabled in Auth as well as the profile, so an open session stops immediately. Guards verified against live: a lowercase branch, a short password, and a manager disabling themselves are all refused |
 | 5.4 | ~~Flag malformed profiles~~ **done** `5d3e468` | Names the exact fault: stray whitespace in a key, `active` stored as text, a branch that is not one of the two exact strings. Verified against all seven shapes including the real `"role "` bug |
-| 5.5 | Full QA sweep after all of the above | Fresh session — the one item still open |
+| 5.5 | ~~Full QA sweep~~ **done** `4d9b65d` | One real bug found and fixed: five shared lists stored per property, so a manager's edit vanished on reload — see §12 |
 
 ---
 
