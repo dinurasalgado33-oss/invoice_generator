@@ -54,6 +54,19 @@ export const CONFIG_KINDS = {
   // Shared across properties rather than per-branch, so its document id
   // drops the branch prefix — see saveShared/loadShared below.
   CURRENCIES: "currencies",
+  // Learned rather than configured: the guides, agents and countries staff
+  // have actually typed. Shared so the phone and the tablet stop keeping
+  // separate lists of the same people — see data/suggestions.js.
+  SUGGESTIONS: "suggestions",
+  // The Wilpattu full/half-board sheet. Stored per property because only
+  // Wilpattu has one, and stored at all so the welcome e-mail can read it
+  // — it is the guest's answer to "what does my board rate include".
+  BOARD_MENU: "boardMenu",
+  // Which department each inventory category belongs to, as
+  // { category: department }. The department names themselves are their
+  // own list; this is only the assignment.
+  INVENTORY_DEPARTMENTS: "inventoryDepartments",
+  CATEGORY_DEPARTMENTS: "categoryDepartments",
 };
 
 function stripUndefined(value) {
@@ -245,6 +258,15 @@ export async function hydrateConfig(branches) {
     const units = await loadShared(CONFIG_KINDS.INVENTORY_UNITS);
     if (Array.isArray(units) && units.length) { applyArray(INVENTORY_UNITS, units); loaded.push("shared:units"); }
   } catch { /* falls back to the shipped list */ }
+
+  // Learned values, not configured ones — kept apart from the block above
+  // so a failure to reach them cannot cost a manager their actual
+  // configuration. A missing suggestion is a mild inconvenience; a missing
+  // villa rate is a wrong bill.
+  try {
+    const { hydrateSuggestions } = await import("./suggestions.js");
+    if (await hydrateSuggestions()) loaded.push("shared:suggestions");
+  } catch { /* the device keeps whatever it learned on its own */ }
 
   return loaded;
 }
