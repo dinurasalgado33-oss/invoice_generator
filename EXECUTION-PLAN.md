@@ -197,16 +197,8 @@ Both audits are closed. Every item in `PERSISTENCE-AUDIT.md` (`[A]`–`[K]`)
 and `HARDCODED-AUDIT.md` (`H1`–`H14`) is fixed and verified, except the
 two recorded below as deliberate.
 
-**Deliberately not done, with reasons:**
-
-- **Inventory departments (`H8`–`H14` partial).** They group categories
-  rather than being a flat list, so the generic list editor cannot express
-  them without mangling the structure. Instead, a category belonging to no
-  department now gathers under "Other" — so a manager adding one can never
-  make their own stock invisible, which was the actual risk.
-- **Suggestion history sharing (`PERSISTENCE-AUDIT.md` §6).** Guide and
-  agent names are still remembered per device. Flagged as a decision
-  rather than a bug; nobody has asked for it.
+**Three items were left as deliberate decisions and have since been
+done — see §14.** Nothing is outstanding.
 
 **Nothing is left. Every step of Stage 5 is done and verified against
 the live project.**
@@ -439,10 +431,70 @@ guest gets one e-mail, in no thread, with nothing to trim against.
 Confirmed by sending to a plus-tagged address, which Gmail treats as a
 separate conversation.
 
-### Still open
+### The board sheet
 
-The Wilpattu full/half-board sheet is fixed text rather than dish rows and
-is not in the e-mail. Nobody has asked for it; it is a decision, not an
-oversight.
+Now in the e-mail, and editable — see §14.
 
 Live: hosting `v=147`, `sendWelcomeEmail` deployed 2026-09-02.
+
+
+---
+
+## 14. The last three, 2026-09-02
+
+All three were recorded as decisions rather than gaps. Each turned out to
+have something behind it worth fixing.
+
+### Suggestions are shared, not learned twice — `3a6f197`
+
+Reception's phone and the office tablet each kept their own list of
+guides, drivers and agents in `localStorage`. The whole point of the
+feature is that "Pradeep", "pradeep" and "Pradeeep" stop becoming three
+people — and that only ever worked for whichever device learned the
+spelling first. One fact, two homes.
+
+Now shared config, merged at sign-in. Local *order* stays per device on
+purpose: the top of the list is what this device used most recently,
+which is what the person holding it most likely wants next. Writes are
+debounced four seconds and read-merge-write rather than blind, so a name
+another device learned meanwhile is not dropped.
+
+Verified by typing a guide, wiping `localStorage`, reloading as a fresh
+device, and watching it come back.
+
+### Inventory departments are a manager's to change — `a81d979`
+
+Left because departments were one nested structure the list editor could
+not express. **The nesting was itself the bug.** It stored every category
+name twice: once in `INVENTORY_CATEGORIES`, which a manager edits, and
+again inside a department, which they could not. Renaming a category in
+the list editor silently orphaned it from its department and moved its
+stock to "Other" with nothing to say why.
+
+Split into two flat lists that cannot contradict each other — department
+names, and a category-to-department map. The nested shape the stock table
+wants is derived. Verified: grouping identical to before the refactor; an
+unassigned category lands in "Other"; a removed department drops its
+categories into "Other" rather than hiding them.
+
+### The board sheet reaches board guests — `e492f7b`
+
+A guest on half board is not ordering from the à la carte list; they have
+already paid for a set meal. "What do I actually get" was the question the
+welcome e-mail left unanswered.
+
+`BOARD_MENU` moved from a const in `js/menu-pdf.js` to `js/data/menu.js`,
+with an editor at **Menu → Edit board menu**. The printed sheet and the
+e-mail read the same array — `MENU_DOCS['wp-board'].board === BOARD_MENU`,
+asserted on live — so an edit changes both or neither. Held apart, they
+would have become the app menu and the printed menu all over again.
+
+Verified: the Wilpattu e-mail grew 19,871 → 22,573 bytes while Arugam Bay
+stayed at 30,286, and the board PDF still builds at three pages.
+
+### One number worth keeping
+
+That board PDF is **1.1MB** for six options. The decision to put the menu
+in the e-mail rather than attach a PDF rested on the claim that the PDFs
+are megabytes because of the embedded font and cover artwork. It is now
+measured rather than asserted.
