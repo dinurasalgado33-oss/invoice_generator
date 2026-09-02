@@ -75,7 +75,7 @@ percentage are exactly as financial as an invoice. They are financial
 | State | Why |
 |---|---|
 | `FOOD_ORDERS` | Live kitchen queue. "Currently pending" only ever means now; documented as session-scoped by design |
-| Suggestion history (guides, agents, countries) | Per-device convenience for `<datalist>`. Arguably *should* be shared — see §6 |
+| ~~Suggestion history (guides, agents, countries)~~ | No longer in this table. It *was* shared as of `3a6f197` — see §6 |
 | Lock PIN, idle timeout | Per-device by definition |
 | Number blocks | Per-device by design — that is the whole point of block allocation |
 | Report filters, download links, DOM state | Not durable state |
@@ -163,7 +163,7 @@ That part is right.
 
 ---
 
-## 6. Open question — should suggestions be shared?
+## 6. Answered — suggestions are shared
 
 Guide names, travel agents, countries and vehicles are remembered per
 device in `localStorage`. The module's own comment explains the reasoning:
@@ -174,7 +174,11 @@ But the stated purpose is stopping "Pradeep", "pradeep" and "Pradeeep"
 becoming three people — and per-device storage only achieves that on one
 device. The tablet and the phone will each learn their own spellings.
 
-Not a bug against its current design. Flagged as a decision.
+Not a bug against its current design. Flagged as a decision — and the
+decision went the other way on 2026-09-02 (`3a6f197`). They are stored as
+shared config and merged at sign-in, so the spelling one device learns is
+the spelling every device offers. Order stays per device: the top of the
+list is what that device used most recently.
 
 ---
 

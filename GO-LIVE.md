@@ -96,8 +96,10 @@ load-bearing work otherwise.
   attempt was being rejected outright, on any project, regardless of
   rules. Fixed in `8dbbb6e`.
 
-**Not built at all:** Functions, hosting, Sheets, backups, the real
-`leopard-inn` project itself.
+**Was "not built at all" when this was written:** Functions, hosting,
+Sheets, backups, and the real `leopard-inn` project. All five are done —
+see the table in §1, which is authoritative. This paragraph described dev
+in August and is kept only so the sequence stays readable.
 
 ---
 
