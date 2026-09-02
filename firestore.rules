@@ -186,6 +186,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // The guest's bill. Same shape as guestEmails: the app adds a row and
+    // the Function that sends it marks it with the Admin SDK, which these
+    // rules do not apply to — so nothing here needs to let a client claim
+    // a send. Never updated or deleted from the app: it carries a copy of
+    // a financial document.
+    match /invoiceEmails/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if false;
+      allow delete: if false;
+    }
+
     match /roomActivity/{id} {
       allow read: if mayTouchExisting();
       allow create: if mayWriteIncoming();

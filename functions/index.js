@@ -23,6 +23,11 @@ exports.mirrorToSheet = require("./sheets-mirror").mirrorToSheet;
 // unwritable by the rules on purpose, so this runs with the Admin SDK.
 exports.manageStaff = require("./staff").manageStaff;
 
+// The guest's bill, with the invoice PDF attached. Its own file because it
+// is a different trigger on a different collection, sharing only the
+// transport and the secret.
+exports.sendInvoiceEmail = require("./invoice-email").sendInvoiceEmail;
+
 // Set with:  firebase functions:secrets:set GMAIL_APP_PASSWORD --project live
 // Never committed, never printed, never in the client bundle.
 const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");

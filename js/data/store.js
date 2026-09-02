@@ -28,6 +28,10 @@ export const COLLECTIONS = {
   RESTOCKS: "restocks",
   STOCK_USAGE: "stockUsage",
   GUEST_EMAILS: "guestEmails",
+  // The guest's bill, with the invoice PDF carried on the row — see
+  // data/invoice-email.js for why the bytes travel rather than being
+  // re-rendered on the server.
+  INVOICE_EMAILS: "invoiceEmails",
   ROOM_ACTIVITY: "roomActivity",
   LOGINS: "logins",
   MENU: "menuItems",

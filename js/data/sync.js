@@ -25,6 +25,7 @@ import { RESERVATIONS, PROFORMA_INVOICES } from "./reservations.js";
 import { GRC_RECORDS } from "./grc.js";
 import { GUEST_CHARGES } from "./guest-charges.js";
 import { GUEST_EMAIL_QUEUE } from "./guest-email.js";
+import { INVOICE_EMAIL_QUEUE } from "./invoice-email.js";
 import { RESTOCK_LOG, USAGE_LOG } from "./inventory.js";
 import { MENU_ITEMS } from "./menu.js";
 import { ROOM_ACTIVITY_LOG } from "./rooms.js";
@@ -60,6 +61,7 @@ const COLLECTION_MAP = [
   [COLLECTIONS.RESTOCKS, RESTOCK_LOG, { onChange: deriveStock }],
   [COLLECTIONS.STOCK_USAGE, USAGE_LOG, { onChange: deriveStock }],
   [COLLECTIONS.GUEST_EMAILS, GUEST_EMAIL_QUEUE],
+  [COLLECTIONS.INVOICE_EMAILS, INVOICE_EMAIL_QUEUE],
   [COLLECTIONS.ROOM_ACTIVITY, ROOM_ACTIVITY_LOG],
   [COLLECTIONS.MENU, MENU_ITEMS, { allBranches: true, keepLocalIfEmpty: true }],
   [COLLECTIONS.LOGINS, LOGIN_LOG, { allBranches: true, managerOnly: true }],

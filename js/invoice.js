@@ -4,6 +4,9 @@ import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO, safeStor
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import { add, COLLECTIONS } from "./data/store.js";
+import { downloadInvoicePdf, isPdfAvailable, invoicePdfBase64 } from "./invoice-pdf.js";
+import { queueInvoiceEmail } from "./data/invoice-email.js";
+import { logError } from "./data/error-log.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
@@ -385,7 +388,13 @@ document.getElementById("invoice-form").addEventListener("keydown", (e) => {
 // if the hotel's phone number changes, a reprint should carry the number
 // that works today. The figures, which are what the guest paid, come
 // entirely from the record and never move.
+// The record the preview is currently showing. Kept so Download PDF works
+// from the same record the page was drawn from — a freshly generated
+// invoice and one reopened from Guest History are then the same file.
+let previewedInvoice = null;
+
 function renderInvoicePreview(r) {
+  previewedInvoice = r;
   const branchInfo = BRANCH_INFO[r.branch] || {};
   document.getElementById("prev-inv-hotel-name").textContent = branchInfo.hotelName || appState.selectedBranchLabel;
   document.getElementById("prev-inv-address").textContent = branchInfo.address || "";
@@ -619,6 +628,28 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     staffName: val("invoice-staff-name") || "",
   };
   add(COLLECTIONS.INVOICES, INVOICES, record);
+
+  // The guest's copy, with the PDF built here on the device and carried on
+  // the row. Built from the record that was just stored, so the file the
+  // guest receives is the file this screen is about to render.
+  //
+  // Never allowed to fail the invoice. A bill that exists but was not
+  // e-mailed is a small problem somebody can fix from Guest History; a
+  // checkout that refuses to complete because an attachment would not build
+  // is a guest standing at the desk.
+  try {
+    const pdf = isPdfAvailable() ? invoicePdfBase64(record) : "";
+    queueInvoiceEmail({
+      invoice: record,
+      pdfBase64: pdf,
+      // Already on the record, stamped from the checkout context — the
+      // address is looked up from the welcome e-mail for the same booking.
+      bookingId: record.bookingId,
+    });
+  } catch (err) {
+    logError(`Could not queue the invoice e-mail: ${err && err.message}`, { source: "invoice-email" });
+  }
+
   renderInvoicePreview(record);
   setInvoicePreviewReturn("screen-form", "Back");
   checkoutContext = null;
@@ -645,6 +676,25 @@ document.getElementById("new-invoice-btn").addEventListener("click", async () =>
 
 // Export actions
 document.getElementById("print-btn").addEventListener("click", () => window.print());
+
+// The same builder the e-mailed copy uses, so "the invoice we sent you"
+// and "the invoice I downloaded" are the same document rather than two
+// renderings that agree today.
+document.getElementById("pdf-btn").addEventListener("click", () => {
+  if (!previewedInvoice) return;
+  if (!isPdfAvailable()) {
+    // jsPDF is a CDN script and both properties have patchy connectivity,
+    // so this genuinely fails sometimes. Print still works offline.
+    showToast("PDF needs a connection — use Print instead");
+    return;
+  }
+  try {
+    downloadInvoicePdf(previewedInvoice);
+  } catch (err) {
+    logError(`Could not build the invoice PDF: ${err && err.message}`, { source: "invoice-pdf" });
+    showToast("Couldn't build the PDF — use Print instead");
+  }
+});
 
 document.getElementById("image-btn").addEventListener("click", () => {
   const target = document.getElementById("invoice-preview");
