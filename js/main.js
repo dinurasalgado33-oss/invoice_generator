@@ -8,7 +8,7 @@
 // run only after every screen has finished wiring itself up, so it's
 // called explicitly, last.
 // First, so it is already listening before any other module evaluates.
-import "./data/error-log.js";
+import { logError } from "./data/error-log.js";
 import { initInventoryDerived } from "./data/inventory.js";
 import "./navigation.js";
 import "./invoice.js";
@@ -32,6 +32,28 @@ import "./manage-lists.js";
 import "./board-menu.js";
 import { restoreSession } from "./auth.js";
 import { initLock, lock, hasPin, startPinSetup } from "./lock.js";
+
+// Two elements sharing an id is silent, and it is not harmless.
+// `getElementById` returns whichever comes first in the document, so the
+// second one becomes unreachable — every read and write goes to the other
+// screen's field instead. That happened for real: the invoice's "Your
+// Name" input and the Staff Accounts "Name" input were both `staff-name`,
+// so reception editing the invoice field changed nothing and the name
+// recorded on the bill came from a form on a different screen.
+//
+// Nothing about that shows up as an error, which is why it is checked
+// here. Costs one pass over the DOM at startup, once.
+(function assertUniqueIds() {
+  const seen = new Set();
+  const clashes = new Set();
+  document.querySelectorAll("[id]").forEach(el => {
+    if (seen.has(el.id)) clashes.add(el.id);
+    seen.add(el.id);
+  });
+  if (clashes.size) {
+    logError(`Duplicate element ids: ${[...clashes].join(", ")}`, { source: "dom" });
+  }
+})();
 
 // Derived inventory state (opening-stock snapshot, seeded costs, id
 // counters) is computed here rather than at module load — with a backend

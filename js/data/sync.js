@@ -32,9 +32,19 @@ import { LOGIN_LOG } from "./accounts.js";
 import { ERROR_LOG } from "./error-log.js";
 
 // Everything that persists, paired with the array the screens read from.
-// `everyone` marks the collections that are not scoped to one property —
-// sign-in records and crash reports belong to whoever is looking, and are
-// manager-only by rule rather than by branch.
+//
+// `allBranches` marks the collections that are not scoped to one property.
+// It was called `everyone`, which read as "everyone may see this" and is
+// not what it meant — sign-in records and crash reports are manager-only
+// by rule. A staff device subscribed to them anyway, was refused, and
+// logged two permission-denied errors on every single sign-in. The error
+// log exists so a genuine fault is visible; two expected failures per
+// sign-in is how it stops being read.
+//
+// `managerOnly` says what the rules say, so the app stops asking for
+// what it cannot have. The seeding code below already reasoned this way
+// about menuItems; these two subscriptions simply never got the same
+// treatment.
 const COLLECTION_MAP = [
   [COLLECTIONS.INVOICES, INVOICES],
   // Occupancy is derived from these, so a change from another device has
@@ -51,9 +61,9 @@ const COLLECTION_MAP = [
   [COLLECTIONS.STOCK_USAGE, USAGE_LOG, { onChange: deriveStock }],
   [COLLECTIONS.GUEST_EMAILS, GUEST_EMAIL_QUEUE],
   [COLLECTIONS.ROOM_ACTIVITY, ROOM_ACTIVITY_LOG],
-  [COLLECTIONS.MENU, MENU_ITEMS, { everyone: true, keepLocalIfEmpty: true }],
-  [COLLECTIONS.LOGINS, LOGIN_LOG, { everyone: true }],
-  [COLLECTIONS.ERRORS, ERROR_LOG, { everyone: true }],
+  [COLLECTIONS.MENU, MENU_ITEMS, { allBranches: true, keepLocalIfEmpty: true }],
+  [COLLECTIONS.LOGINS, LOGIN_LOG, { allBranches: true, managerOnly: true }],
+  [COLLECTIONS.ERRORS, ERROR_LOG, { allBranches: true, managerOnly: true }],
 ];
 
 let running = false;
@@ -86,10 +96,16 @@ export async function startSync() {
     await seedMenuIfEmpty();
   }
 
+  // Staff may still WRITE to logins and errors — their sign-ins are
+  // recorded and their crashes reported. They simply may not read them
+  // back, so there is nothing to subscribe to.
+  const isManager = Boolean(seeder && seeder.role === "manager");
+  const subscribed = COLLECTION_MAP.filter(([, , opts]) => !(opts && opts.managerOnly) || isManager);
+
   const results = await Promise.allSettled(
-    COLLECTION_MAP.map(([name, array, opts]) =>
+    subscribed.map(([name, array, opts]) =>
       hydrate(name, array, {
-        branch: opts && opts.everyone ? null : branch,
+        branch: opts && opts.allBranches ? null : branch,
         keepLocalIfEmpty: Boolean(opts && opts.keepLocalIfEmpty),
         onChange: (opts && opts.onChange) || null,
       })
@@ -101,7 +117,7 @@ export async function startSync() {
   const failed = [];
   results.forEach((r, i) => {
     if (r.status === "rejected") {
-      const name = COLLECTION_MAP[i][0];
+      const name = subscribed[i][0];
       failed.push(name);
       logError(`Could not load ${name}`, { source: "sync", stack: r.reason && r.reason.stack });
     }
@@ -151,7 +167,7 @@ export async function startSync() {
   // both, so both get primed.
   await Promise.allSettled(branches.map(b => primeNumbering(b)));
 
-  return { loaded: COLLECTION_MAP.length - failed.length, failed };
+  return { loaded: subscribed.length - failed.length, failed };
 }
 
 export function stopSync() {

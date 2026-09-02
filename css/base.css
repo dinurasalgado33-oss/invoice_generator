@@ -120,11 +120,20 @@ button, .branch-btn, .primary-btn, .action-btn, .back-btn, .secondary-btn, .row-
 .field-error.show { display: block; }
 input.invalid { border-color: var(--danger); }
 
+/* One gap between fields, everywhere.
+   It used to be four different values on a single screen — 4, 10, 14 and
+   18px — because `.field` carried a 4px margin AND sat inside a grid with
+   its own 14px gap, so a field's spacing depended on which container it
+   happened to be in. Nothing looked broken; it just read as scattered,
+   which is what uneven rhythm always reads as.
+   The margin is the single source now, and the grid contributes nothing
+   vertically, so stacked fields and gridded fields sit the same distance
+   apart. */
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 14px;
 }
 .field label {
   font-size: 0.85rem;
@@ -150,7 +159,11 @@ input.invalid { border-color: var(--danger); }
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  /* Column gap only. The row gap is `.field`'s own margin, so a field in a
+     grid and a field stacked on its own are the same distance from the
+     next one — see the note on `.field`. */
+  column-gap: 14px;
+  row-gap: 0;
   margin-top: 10px;
 }
 @media (max-width: 480px) {
@@ -835,4 +848,43 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
   border-left: 3px solid var(--line, #e3ded7);
   padding-left: 12px;
   margin: 10px 0 10px 4px;
+}
+
+/* Press feedback for the controls that had none.
+   `* { -webkit-tap-highlight-color: transparent }` at the top of this file
+   removes the browser's own tap flash, which is right — it is grey, square
+   and ignores border radius. But it has to be replaced, and eighteen
+   controls never got a replacement: scope filters, chips, the clear and
+   cancel buttons. Tapping them produced literally nothing, and a control
+   that does not acknowledge a press reads as broken long before anyone
+   works out that it did fire.
+   No animation, no movement beyond the same 0.97 nudge the rest of the app
+   already uses — this is about matching what the other buttons do, not
+   adding anything. */
+.scope-option:active,
+.scope-chip:active,
+.scope-reset:active,
+.chip:active,
+.link-btn:active,
+.rooms-filter-clear:active,
+.report-search-close:active,
+#order-edit-cancel-btn:active,
+.bulk-restock-cancel-btn:active {
+  transform: scale(0.97);
+  background: rgba(74, 14, 28, 0.08);
+}
+
+/* Pressing a label focuses its field, so it should look pressable — but
+   only where it actually targets one. A pointer cursor over text that does
+   nothing when clicked is the same lie, in the other direction. */
+.field label[for] { cursor: pointer; }
+
+/* Descriptive text that sits where a label would. It was marked up as a
+   <label> with no target: it looked like a label, offered no focus, and
+   read to a screen reader as a control with no name. */
+.field-note {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
 }

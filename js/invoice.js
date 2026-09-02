@@ -504,7 +504,15 @@ export function resetForm() {
   // The app authenticated this person — no reason to make them type their
   // own name onto every invoice they raise. Still editable, since one
   // device is shared and whoever checked the bill may not be who logged in.
-  document.getElementById("staff-name").value = appState.currentUser || "";
+  // `invoice-staff-name`, not `staff-name`. The Staff Accounts screen has a
+  // field of that name too, and getElementById returns whichever comes
+  // first in the document — which was that one. So this wrote the signed-in
+  // name into a form on another screen and read it back from there, which
+  // looked right only because it round-tripped through the same wrong box.
+  // What actually broke is the sentence above: reception editing this field
+  // changed nothing, and a name left sitting in the Staff Accounts form
+  // would have ridden onto the next invoice.
+  document.getElementById("invoice-staff-name").value = appState.currentUser || "";
   document.getElementById("guest-name-error").classList.remove("show");
   document.getElementById("guest-name").classList.remove("invalid");
   updateLiveTotals();
@@ -608,7 +616,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     billTotal,
     grossAmount,
     grandTotal,
-    staffName: val("staff-name") || "",
+    staffName: val("invoice-staff-name") || "",
   };
   add(COLLECTIONS.INVOICES, INVOICES, record);
   renderInvoicePreview(record);
