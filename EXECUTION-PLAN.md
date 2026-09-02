@@ -208,13 +208,11 @@ two recorded below as deliberate.
   agent names are still remembered per device. Flagged as a decision
   rather than a bug; nobody has asked for it.
 
-**What is left:**
+**Nothing is left. Every step of Stage 5 is done and verified against
+the live project.**
 
-| Step | What |
-|---|---|
-| 5.2 | **Blocked on a new Gmail App Password.** The e-mail does not send — see §11 |
-
-5.1, 5.3, 5.4 and 5.5 are done, verified against the live project.
+5.2 was the last one, and it was genuinely broken rather than merely
+untested — see §11.
 
 5.2 turned out to be forceable after all: queueing a row straight into
 `guestEmails` fires the trigger without a booking or a guest. That was
@@ -239,7 +237,7 @@ curl -s https://leopard-inn.web.app/ | grep -o 'v=1[0-9][0-9]' | head -1
 
 ---
 
-## 11. Stage 5.2 — the welcome e-mail does not send
+## 11. Stage 5.2 — the welcome e-mail, and why it took five tries
 
 Forced on live on 2026-09-01 by queueing a row directly into
 `guestEmails` with a real address. Both attempts came back:
@@ -266,24 +264,51 @@ worth doing anyway:
   deploy-analyser timeout. Deploys failed with "Cannot determine backend
   specification", which names no file and no cause. Now 1.6s.
 
-### What unblocks it
+### Fixed, 2026-09-02
 
-Dinura, in their own terminal. **Do not paste the password into a chat** —
-that is how the last two died. `secrets:set` prompts for it with hidden
-input:
+```
+{"status":"Sent","sentAt":"2026-09-02T05:54:41.806Z","error":""}
+```
 
-    firebase functions:secrets:set GMAIL_APP_PASSWORD --project leopard-inn
-    firebase deploy --only functions:sendWelcomeEmail --project leopard-inn
+It took five secret versions, and the reason is worth writing down: the
+error never changes. Gmail answers "Username and Password not accepted"
+whether the value is the wrong credential, five credentials, or the right
+one — so every wrong attempt looks exactly like the last, and there is
+nothing in the message to tell you which mistake you made.
 
-The redeploy is not optional: a function binds a secret version when it
-deploys, so setting the secret alone changes nothing.
+What actually got there was checking the *shape* of the stored secret
+instead of guessing at its content. A Gmail App Password is exactly 16
+lowercase letters. Printing only the length and character class — never
+the value — named each failure immediately:
 
-A new App Password comes from Google Account → Security → 2-Step
-Verification → App passwords, signed in as `leopardinnvillas@gmail.com`.
-2-Step Verification must be on or the option is not offered.
+| Version | Shape | What it was |
+|---|---|---|
+| 2, 3 | 42 chars, mixed | Not an App Password at all |
+| 4 | 80 chars, lowercase | Five App Passwords in one paste (5 × 16) |
+| 5 | 16 chars, lowercase | Correct — typed by hand, not pasted |
 
-To check it worked, queue a row from the browser console on the live app
-and watch the status go from Queued to Sent:
+```bash
+firebase functions:secrets:access GMAIL_APP_PASSWORD --project leopard-inn 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const s=d.replace(/\s+/g,'');console.log('length='+s.length+' all_lowercase='+/^[a-z]+$/.test(s))})"
+```
+
+`length=16 all_lowercase=true` is the only passing answer. Run this
+before deploying, not after — it costs a second and it is the difference
+between knowing and guessing.
+
+Two more things that matter if this ever needs doing again:
+
+- **Type the password, do not paste it.** Version 4 was five passwords
+  glued together, which is what a multi-line clipboard becomes once the
+  whitespace strip runs. Typing sixteen letters is faster than diagnosing
+  that.
+- **A function binds a secret version when it deploys.** Answering **Yes**
+  to `secrets:set`'s re-deploy prompt handles it. Setting the secret alone
+  changes nothing, and the app keeps failing with the same message.
+
+### How to re-check it
+
+Queue a row from the browser console on the live app, signed in, and
+watch the status go from Queued to Sent:
 
 ```js
 const ge = await import('/js/data/guest-email.js');
@@ -295,10 +320,10 @@ const row = ge.queueWelcomeEmail({
 ge.GUEST_EMAIL_QUEUE.find(r => r.id === row.id).status;
 ```
 
-Four rows in `guestEmails` are test residue — two from 2026-08-30/31 and
-two from this check, all `Failed` with BadCredentials. They are tied to
-booking ids no real booking has, so they show up on no guest's history.
-Nothing is deleted from that collection by design.
+Seven rows in `guestEmails` are test residue — two from 2026-08-30/31 and
+five from this work, four `Failed` with BadCredentials and one `Sent`.
+They are tied to booking ids no real booking has, so they show up on no
+guest's history. Nothing is deleted from that collection by design.
 
 ---
 
