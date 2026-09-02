@@ -75,33 +75,21 @@ async function readMenu(branch) {
   const db = admin.firestore();
 
   const snap = await db.collection("menuItems").where("branch", "==", branch).get();
-  const items = snap.docs.map(d => d.data()).filter(d => d && d.name);
 
-  // The manager's category order, so the e-mail lists courses the way the
-  // printed booklet does rather than however Firestore returned them.
-  // Missing is normal — nothing is stored until a manager edits the list.
-  let order = [];
-  try {
-    const cfg = await db.collection("config").doc("shared__menuCategories").get();
-    const value = cfg.exists ? cfg.data().value : null;
-    if (Array.isArray(value)) order = value;
-  } catch (err) {
-    logger.warn("Could not read menu category order", { error: String(err && err.message) });
-  }
-
-  const rank = new Map(order.map((name, i) => [name, i]));
-  const seen = [];
-  items.forEach(d => { if (!seen.includes(d.category)) seen.push(d.category); });
-
-  const categories = seen.slice().sort((a, b) => {
-    const ra = rank.has(a) ? rank.get(a) : Number.MAX_SAFE_INTEGER;
-    const rb = rank.has(b) ? rank.get(b) : Number.MAX_SAFE_INTEGER;
-    // A category the manager has not ordered goes last, alphabetically,
-    // rather than vanishing or landing somewhere arbitrary.
-    return ra !== rb ? ra - rb : String(a).localeCompare(String(b));
-  });
-
-  return { items, categories };
+  // Ordered by dish number, exactly as menu-pdf.js does it, and for the
+  // reason its own comment gives: the number IS the order the printed menu
+  // runs in, and it is per property — whereas MENU_CATEGORIES is one
+  // shared list in Arugam Bay's order. Sorting by that shared list is not
+  // a near-miss, it is visibly wrong: it opened the Wilpattu e-mail on
+  // Side Dishes at number 51, because Wilpattu's fresh juices are 1-9 and
+  // sit lower in a list written for the other property.
+  //
+  // A guest orders by number. Starting at 51 is the kind of thing that
+  // gets read out down the phone and gets the wrong dish sent up.
+  return snap.docs
+    .map(d => d.data())
+    .filter(d => d && d.name)
+    .sort((a, b) => (Number(a.number) || 0) - (Number(b.number) || 0));
 }
 
 // Category names read "Breakfast - Sri Lankan". Three consecutive
@@ -115,47 +103,57 @@ function splitCategory(name) {
     : { course: String(name).slice(0, at), group: String(name).slice(at + 3) };
 }
 
-// One table per category rather than per dish. The markup is the bulk of
-// the message — the dishes themselves are only about 6KB of actual words —
-// so a wrapper repeated 93 times is what decides whether Gmail clips.
-function renderCategories(menu, withDescriptions) {
+// Walks the dishes in number order and starts a new heading whenever the
+// course or the group changes, so the headings follow the numbering
+// instead of the numbering being shuffled to follow the headings.
+//
+// One table per group rather than per dish. The markup is the bulk of the
+// message — the dishes themselves are only about 6KB of actual words — so
+// a wrapper repeated 93 times is what decides whether Gmail clips.
+function renderCategories(items, withDescriptions) {
   let html = "";
   let lastCourse = null;
+  let lastGroup = null;
+  let open = false;
 
-  menu.categories.forEach(category => {
-    const dishes = menu.items
-      .filter(d => d.category === category)
-      .sort((a, b) => (Number(a.number) || 0) - (Number(b.number) || 0));
-    if (!dishes.length) return;
+  const closeTable = () => { if (open) { html += `</table>`; open = false; } };
 
-    const { course, group } = splitCategory(category);
-    if (course !== lastCourse) {
-      html += `<h2 style="margin:26px 0 2px;font-size:15px;letter-spacing:.10em;text-transform:uppercase;color:#4a0e1c;border-bottom:1px solid #e8dfc9;padding-bottom:5px">${escapeHtml(course)}</h2>`;
-      lastCourse = course;
+  items.forEach(d => {
+    const { course, group } = splitCategory(d.category);
+
+    if (course !== lastCourse || group !== lastGroup) {
+      closeTable();
+      if (course !== lastCourse) {
+        html += `<h2 style="margin:26px 0 2px;font-size:15px;letter-spacing:.10em;text-transform:uppercase;color:#4a0e1c;border-bottom:1px solid #e8dfc9;padding-bottom:5px">${escapeHtml(course)}</h2>`;
+        lastCourse = course;
+      }
+      if (group) {
+        html += `<p style="margin:12px 0 2px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#a08a52">${escapeHtml(group)}</p>`;
+      }
+      lastGroup = group;
     }
-    if (group) {
-      html += `<p style="margin:12px 0 2px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#a08a52">${escapeHtml(group)}</p>`;
+
+    if (!open) {
+      // Two cells, not a float: e-mail clients that ignore CSS still lay a
+      // table out correctly, and the price stays beside its dish.
+      html += `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">`;
+      open = true;
     }
 
-    // Two cells, not a float: e-mail clients that ignore CSS still lay a
-    // table out correctly, and the price stays beside its dish.
-    html += `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">`;
-    dishes.forEach(d => {
-      const desc = withDescriptions && d.description
-        ? `<div style="font-size:13px;color:#6b6b6b;margin-top:2px">${escapeHtml(d.description)}</div>` : "";
-      html += `<tr><td style="padding:7px 0;vertical-align:top;font-size:15px">${d.number ? escapeHtml(d.number) + ". " : ""}${escapeHtml(d.name)}${desc}</td>`
-        + `<td style="padding:7px 0 7px 14px;vertical-align:top;text-align:right;white-space:nowrap;font-size:15px;color:#4a0e1c">${money(d.price)}</td></tr>`;
-    });
-    html += `</table>`;
+    const desc = withDescriptions && d.description
+      ? `<div style="font-size:13px;color:#6b6b6b;margin-top:2px">${escapeHtml(d.description)}</div>` : "";
+    html += `<tr><td style="padding:7px 0;vertical-align:top;font-size:15px">${d.number ? escapeHtml(d.number) + ". " : ""}${escapeHtml(d.name)}${desc}</td>`
+      + `<td style="padding:7px 0 7px 14px;vertical-align:top;text-align:right;white-space:nowrap;font-size:15px;color:#4a0e1c">${money(d.price)}</td></tr>`;
   });
 
+  closeTable();
   return html;
 }
 
-function renderMenu(menu) {
-  if (!menu || !menu.items.length) return "";
+function renderMenu(items) {
+  if (!Array.isArray(items) || !items.length) return "";
 
-  let html = renderCategories(menu, true);
+  let html = renderCategories(items, true);
 
   // Gmail clips a message over about 102KB behind a "View entire message"
   // link — exactly the extra tap this change exists to remove. The real
@@ -164,7 +162,7 @@ function renderMenu(menu) {
   // a guest can still order every dish by name and number.
   if (html.length > MAX_MENU_BYTES) {
     logger.warn("Welcome menu too large with descriptions, dropping them", { bytes: html.length });
-    html = renderCategories(menu, false);
+    html = renderCategories(items, false);
   }
   // Still too big means something is wrong with the data rather than with
   // the layout. Send the greeting alone rather than a menu that gets cut
