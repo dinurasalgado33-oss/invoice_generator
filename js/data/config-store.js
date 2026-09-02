@@ -131,6 +131,60 @@ export function saveConfig(branch, kind, value) {
   })();
 }
 
+// Keeps config in step with the other devices, not just with the database
+// at sign-in.
+//
+// Everything else in this app watches its collection: a booking made on
+// the phone reaches the tablet in seconds. Config did not. It was read
+// once inside startSync() and never again, so a rate changed on the office
+// tablet at 10am was invisible to a reception phone that had signed in at
+// 8am — that phone kept billing the old rate until somebody happened to
+// reload it. Proven with two devices side by side: one saved 11,111, the
+// other still read 9,500 twenty seconds later.
+//
+// That is the exact scenario the header of this file describes as the
+// reason config had to be persisted at all. Persisting it fixed the half
+// that survives a reload; this fixes the half that does not.
+//
+// Re-reads rather than applying the snapshot's own documents. The reads
+// come from Firestore's cache and there are two dozen of them a handful of
+// times a day, which is nothing — and it means live updates and sign-in
+// hydration run the identical code, so they cannot drift apart.
+let stopConfigWatch = null;
+
+export async function watchConfig(branches, onApplied) {
+  await connect();
+  const fs = fsApi();
+  if (stopConfigWatch) stopConfigWatch();
+
+  let first = true;
+  stopConfigWatch = fs.onSnapshot(fs.collection(getDb(), COLLECTIONS.CONFIG), async (snap) => {
+    // The first snapshot is what hydrateConfig has just read. Applying it
+    // again would be harmless but pointless.
+    if (first) { first = false; return; }
+
+    // A snapshot carrying this device's own un-acknowledged writes is the
+    // echo of an edit somebody is still making. Applying it is fine;
+    // repainting the screen underneath them is not.
+    const isLocalEcho = snap.metadata.hasPendingWrites;
+    try {
+      await hydrateConfig(branches);
+      if (!isLocalEcho && onApplied) onApplied();
+    } catch (err) {
+      logError("Could not apply a configuration change", { source: "config", stack: err && err.stack });
+    }
+  }, (err) => {
+    // Not fatal: the device keeps the config it hydrated at sign-in, which
+    // is exactly the behaviour it had before this watcher existed.
+    logError(`Config watch failed${err && err.code ? ` (${err.code})` : ""}`, { source: "config" });
+  });
+}
+
+export function stopWatchingConfig() {
+  if (stopConfigWatch) stopConfigWatch();
+  stopConfigWatch = null;
+}
+
 // Reads one kind back. Returns undefined when nothing is stored, which is
 // meaningfully different from an empty list: it means "never seeded", and
 // the caller must keep what it already has rather than blanking itself.

@@ -79,13 +79,13 @@ service cloud.firestore {
       allow delete: if isManager();
     }
 
-    // Villa names and nightly rates. Staff read them to bill a stay;
-    // only a manager may change what anything costs.
-    match /rooms/{room} {
-      allow read: if signedIn();
-      allow create, update: if isManager();
-      allow delete: if isManager();
-    }
+    // No /rooms rule, deliberately. Villa names and nightly rates are
+    // config — `config/<branch>__villas`, ruled below — and whether a villa
+    // is occupied is derived from the bookings rather than stored at all.
+    // This rule existed for a collection nothing ever read or wrote. An
+    // open door onto an empty room is still an open door, and a rule that
+    // describes something the app does not do reads, to the next person,
+    // as a description of something it does.
 
     // ---------------------------------------------------------------
     // Money — nothing financial is ever deleted

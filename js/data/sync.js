@@ -17,7 +17,7 @@ import { primeNumbering } from "./numbering.js";
 import { seedMenuIfEmpty } from "./seed-config.js";
 import { deriveOccupancy } from "./occupancy.js";
 import { deriveStock } from "./inventory.js";
-import { hydrateConfig } from "./config-store.js";
+import { hydrateConfig, watchConfig, stopWatchingConfig } from "./config-store.js";
 import { logError } from "./error-log.js";
 
 import { INVOICES, BOOKINGS, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./reports.js";
@@ -124,6 +124,16 @@ export async function startSync() {
     logError("Could not load configuration", { source: "sync", stack: err && err.stack });
   }
 
+  // And keep it in step from here on. Records have always watched their
+  // collection; config only read once, so a rate changed on one device
+  // never reached another until that one reloaded.
+  try {
+    const { refreshCurrentScreen } = await import("../navigation.js");
+    await watchConfig(branches, refreshCurrentScreen);
+  } catch (err) {
+    logError("Could not watch configuration", { source: "sync", stack: err && err.stack });
+  }
+
   // Occupancy is worked out from the bookings that just arrived, rather
   // than stored on the villa. Before this, a reload left every villa
   // reading "available" while Firestore held a booking saying Checked In.
@@ -146,6 +156,10 @@ export async function startSync() {
 
 export function stopSync() {
   stopWatching();
+  // Config is watched separately from the record collections, so it has to
+  // be stopped separately too. A listener left running past sign-out keeps
+  // reading as the person who just left.
+  stopWatchingConfig();
   useAdapter(null);
   running = false;
   // The arrays are deliberately left as they are. Emptying them here would

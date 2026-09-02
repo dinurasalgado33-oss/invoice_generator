@@ -55,6 +55,27 @@ export function onScreenEnter(id, fn) {
   screenEnterHandlers[id].push(fn);
 }
 
+// Re-runs the visible screen's own refresh, without navigating.
+//
+// Used when data changes underneath a screen somebody is already looking
+// at — a rate edited on the other tablet, say. Skipped while a field has
+// focus: repainting the form somebody is typing into would throw away
+// what they were halfway through writing, and a stale label is a far
+// smaller problem than a lost edit. They get it on the next entry anyway.
+export function refreshCurrentScreen() {
+  const active = document.querySelector(".screen.active");
+  if (!active) return false;
+
+  const el = document.activeElement;
+  const typing = el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && active.contains(el);
+  if (typing) return false;
+
+  (screenEnterHandlers[active.id] || []).forEach(fn => {
+    try { fn(); } catch (err) { console.error(`Refresh failed for ${active.id}:`, err); }
+  });
+  return true;
+}
+
 export function showScreen(id) {
   const currentEl = document.querySelector(".screen.active");
   const fromIdx = currentEl ? screenOrder.indexOf(currentEl.id) : -1;

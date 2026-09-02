@@ -31,7 +31,12 @@ export const COLLECTIONS = {
   ROOM_ACTIVITY: "roomActivity",
   LOGINS: "logins",
   MENU: "menuItems",
-  ROOMS: "rooms",
+  // No ROOMS. A villa's name and rate are config — `config/<branch>__villas`
+  // — and whether it is occupied is derived from the bookings, never
+  // stored. A `rooms` collection was declared here and given a rule, and
+  // nothing ever read or wrote it. Naming a collection the app does not
+  // use invites somebody to start using it, and then "is this villa
+  // occupied" has two homes again.
   ERRORS: "errors",
   CONFIG: "config",
 };
