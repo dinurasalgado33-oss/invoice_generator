@@ -33,36 +33,20 @@ export function allocateGuestEmailId() {
   return newId();
 }
 
-// Which menus a guest at this property should be given. Keyed to the
-// documents menu-pdf.js builds, so adding a menu there adds it here.
-const MENUS_BY_BRANCH = {
-  "Arugam Bay": ["ab-main", "ab-cocktail"],
-  "Wilpattu": ["wp-main", "wp-board"],
-};
-
-export function menusForBranch(branch) {
-  return MENUS_BY_BRANCH[branch] || [];
-}
-
-// The message itself, composed here rather than on the server so the
-// wording lives with the app the manager can see. The server fills in the
-// menu links, which only it knows, and sends it.
-export function composeWelcome({ guestName, branchLabel, checkoutDate, checkoutTime, phone, menus }) {
-  const first = (guestName || "").trim().split(/\s+/)[0] || "there";
-  return {
-    subject: `Welcome to ${branchLabel}`,
-    greeting: `Dear ${first},`,
-    body: [
-      `Thank you for choosing ${branchLabel}. We hope you have a comfortable stay.`,
-      "Our menu is below — you're welcome to order to your villa at any time.",
-    ],
-    menus,
-    footer: [
-      checkoutDate ? `Check-out is at ${checkoutTime || "11.00am"} on ${checkoutDate}.` : "",
-      phone ? `Anything at all, just call reception on ${phone}.` : "",
-    ].filter(Boolean),
-  };
-}
+// The wording of the e-mail lives in `functions/index.js`, next to the
+// code that sends it — not here.
+//
+// There used to be a composeWelcome() in this file whose comment claimed
+// the opposite: that the wording lived with the app "so the manager can
+// see it", and the server only filled in the links. Nothing called it.
+// Editing it changed no e-mail anybody ever received, and the real text
+// sat on the server all along. Two homes for one message, and the one
+// that looked authoritative was the dead one.
+//
+// The list of menu PDFs that used to be stamped on each row is gone for
+// the same reason. The e-mail now carries the property's menu itself,
+// read from Firestore at the moment of sending, so there is nothing to
+// name and nothing to keep in step.
 
 // Called at check-in. Returns the queued row, or a skipped one when the
 // guest genuinely has no address — a skip is recorded rather than left
@@ -75,7 +59,6 @@ export function queueWelcomeEmail({ bookingId, grcNo, branch, guestName, email, 
     branch,
     guestName,
     email: (email || "").trim(),
-    menus: menusForBranch(branch),
     status: noEmail || !email ? EMAIL_STATUS.SKIPPED : EMAIL_STATUS.QUEUED,
     queuedAt: new Date().toISOString(),
     sentAt: null,

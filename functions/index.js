@@ -44,9 +44,11 @@ const BRANCH_PHONES = {
   "Arugam Bay": "+94 740 559 024",
 };
 
-// Where the guest-facing menus live. Absolute, because an e-mail has no
-// page to be relative to.
-const SITE = "https://leopard-inn.web.app";
+// How much rendered menu to put in one e-mail. Gmail clips a message over
+// about 102KB behind a "View entire message" link, which is exactly the
+// extra tap this change exists to remove, so the budget stays well under
+// it and leaves room for the greeting around it.
+const MAX_MENU_BYTES = 80 * 1024;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -54,30 +56,144 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-function buildHtml(row) {
+
+function money(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toLocaleString("en-US") : "";
+}
+
+// The menu as it stands right now, read at the moment of sending.
+//
+// Read rather than carried on the queue row on purpose. A row written at
+// check-in and sent minutes later would otherwise freeze whatever the
+// menu happened to say at check-in, and a row that failed and was chased
+// days later would send a menu nobody serves any more. Reading here means
+// there is one menu, in one place, and the e-mail cannot disagree with
+// the kitchen. Same reason the app derives occupancy instead of storing
+// it — see PERSISTENCE-AUDIT.md.
+async function readMenu(branch) {
+  const db = admin.firestore();
+
+  const snap = await db.collection("menuItems").where("branch", "==", branch).get();
+  const items = snap.docs.map(d => d.data()).filter(d => d && d.name);
+
+  // The manager's category order, so the e-mail lists courses the way the
+  // printed booklet does rather than however Firestore returned them.
+  // Missing is normal — nothing is stored until a manager edits the list.
+  let order = [];
+  try {
+    const cfg = await db.collection("config").doc("shared__menuCategories").get();
+    const value = cfg.exists ? cfg.data().value : null;
+    if (Array.isArray(value)) order = value;
+  } catch (err) {
+    logger.warn("Could not read menu category order", { error: String(err && err.message) });
+  }
+
+  const rank = new Map(order.map((name, i) => [name, i]));
+  const seen = [];
+  items.forEach(d => { if (!seen.includes(d.category)) seen.push(d.category); });
+
+  const categories = seen.slice().sort((a, b) => {
+    const ra = rank.has(a) ? rank.get(a) : Number.MAX_SAFE_INTEGER;
+    const rb = rank.has(b) ? rank.get(b) : Number.MAX_SAFE_INTEGER;
+    // A category the manager has not ordered goes last, alphabetically,
+    // rather than vanishing or landing somewhere arbitrary.
+    return ra !== rb ? ra - rb : String(a).localeCompare(String(b));
+  });
+
+  return { items, categories };
+}
+
+// Category names read "Breakfast - Sri Lankan". Three consecutive
+// headings all starting "Breakfast" is how the data is shaped, not how a
+// menu should read, so the part before the dash becomes a course heading
+// that prints once and the part after becomes the group under it.
+function splitCategory(name) {
+  const at = String(name).indexOf(" - ");
+  return at === -1
+    ? { course: String(name), group: "" }
+    : { course: String(name).slice(0, at), group: String(name).slice(at + 3) };
+}
+
+// One table per category rather than per dish. The markup is the bulk of
+// the message — the dishes themselves are only about 6KB of actual words —
+// so a wrapper repeated 93 times is what decides whether Gmail clips.
+function renderCategories(menu, withDescriptions) {
+  let html = "";
+  let lastCourse = null;
+
+  menu.categories.forEach(category => {
+    const dishes = menu.items
+      .filter(d => d.category === category)
+      .sort((a, b) => (Number(a.number) || 0) - (Number(b.number) || 0));
+    if (!dishes.length) return;
+
+    const { course, group } = splitCategory(category);
+    if (course !== lastCourse) {
+      html += `<h2 style="margin:26px 0 2px;font-size:15px;letter-spacing:.10em;text-transform:uppercase;color:#4a0e1c;border-bottom:1px solid #e8dfc9;padding-bottom:5px">${escapeHtml(course)}</h2>`;
+      lastCourse = course;
+    }
+    if (group) {
+      html += `<p style="margin:12px 0 2px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#a08a52">${escapeHtml(group)}</p>`;
+    }
+
+    // Two cells, not a float: e-mail clients that ignore CSS still lay a
+    // table out correctly, and the price stays beside its dish.
+    html += `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">`;
+    dishes.forEach(d => {
+      const desc = withDescriptions && d.description
+        ? `<div style="font-size:13px;color:#6b6b6b;margin-top:2px">${escapeHtml(d.description)}</div>` : "";
+      html += `<tr><td style="padding:7px 0;vertical-align:top;font-size:15px">${d.number ? escapeHtml(d.number) + ". " : ""}${escapeHtml(d.name)}${desc}</td>`
+        + `<td style="padding:7px 0 7px 14px;vertical-align:top;text-align:right;white-space:nowrap;font-size:15px;color:#4a0e1c">${money(d.price)}</td></tr>`;
+    });
+    html += `</table>`;
+  });
+
+  return html;
+}
+
+function renderMenu(menu) {
+  if (!menu || !menu.items.length) return "";
+
+  let html = renderCategories(menu, true);
+
+  // Gmail clips a message over about 102KB behind a "View entire message"
+  // link — exactly the extra tap this change exists to remove. The real
+  // menus land around 25KB, so this only bites if the menu grows a long
+  // way. Dropping the dish descriptions is the cheapest thing to lose:
+  // a guest can still order every dish by name and number.
+  if (html.length > MAX_MENU_BYTES) {
+    logger.warn("Welcome menu too large with descriptions, dropping them", { bytes: html.length });
+    html = renderCategories(menu, false);
+  }
+  // Still too big means something is wrong with the data rather than with
+  // the layout. Send the greeting alone rather than a menu that gets cut
+  // off mid-course, which would read as a broken e-mail.
+  if (html.length > MAX_MENU_BYTES) {
+    logger.error("Welcome menu too large to send at all", { bytes: html.length });
+    return "";
+  }
+  if (!html) return "";
+
+  return `<h2 style="margin:30px 0 0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a08a52">Our menu</h2>
+    <p style="margin:6px 0 0;font-size:13px;color:#6b6b6b">You're welcome to order to your villa at any time. All prices are in Sri Lankan Rupees.</p>
+    ${html}`;
+}
+
+function buildHtml(row, menuHtml) {
   const label = BRANCH_LABELS[row.branch] || "Leopard Inn";
   const phone = BRANCH_PHONES[row.branch] || "";
   const first = String(row.guestName || "").trim().split(/\s+/)[0] || "there";
 
-  // The menus the app attached to the row. Linked rather than embedded:
-  // a guest on a Sri Lankan mobile connection should not be made to
-  // download several megabytes of PDF to read a menu.
-  const menuLinks = (row.menus || [])
-    .map(m => {
-      const href = /^https?:\/\//.test(m.url || "") ? m.url : `${SITE}/${String(m.url || "").replace(/^\/+/, "")}`;
-      return `<li style="margin:4px 0"><a href="${escapeHtml(href)}" style="color:#4a0e1c">${escapeHtml(m.label || m.name || "Menu")}</a></li>`;
-    })
-    .join("");
 
   return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#faf7f2;font-family:Georgia,'Times New Roman',serif;color:#2b2b2b">
-  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:28px">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;padding:28px">
     <h1 style="margin:0 0 4px;font-size:22px;color:#4a0e1c">${escapeHtml(label)}</h1>
     <p style="margin:0 0 20px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#a08a52">Welcome</p>
     <p style="margin:0 0 12px">Dear ${escapeHtml(first)},</p>
     <p style="margin:0 0 12px">Thank you for choosing ${escapeHtml(label)}. We hope you have a comfortable stay.</p>
-    ${menuLinks ? `<p style="margin:20px 0 8px">Our menu — you're welcome to order to your villa at any time:</p>
-    <ul style="margin:0 0 16px;padding-left:20px">${menuLinks}</ul>` : ""}
+    ${menuHtml || ""}
     ${phone ? `<p style="margin:16px 0 0;font-size:14px;color:#555">Anything at all, just call reception on ${escapeHtml(phone)}.</p>` : ""}
   </div>
 </body></html>`;
@@ -112,15 +228,29 @@ exports.sendWelcomeEmail = onDocumentCreated(
 
     const label = BRANCH_LABELS[row.branch] || "Leopard Inn";
 
+    // A welcome with no menu is worth far more than no welcome at all, so
+    // a menu that cannot be read is dropped rather than allowed to fail
+    // the send. The guest still gets the greeting and reception's number.
+    let menuHtml = "";
+    try {
+      menuHtml = renderMenu(await readMenu(row.branch));
+    } catch (err) {
+      logger.error("Could not build the menu for the welcome e-mail", {
+        id: event.params.id, branch: row.branch, error: String(err && err.message),
+      });
+    }
+
     try {
       await transport.sendMail({
         from: `"${label}" <${GMAIL_USER}>`,
         to: row.email,
         subject: `Welcome to ${label}`,
-        html: buildHtml(row),
+        html: buildHtml(row, menuHtml),
       });
       await snap.ref.update({ status: "Sent", sentAt: new Date().toISOString(), error: "" });
-      logger.info("Welcome e-mail sent", { id: event.params.id, branch: row.branch });
+      logger.info("Welcome e-mail sent", {
+        id: event.params.id, branch: row.branch, menuBytes: menuHtml.length,
+      });
     } catch (err) {
       // Recorded on the row, never thrown away. A bounce that vanishes is
       // one nobody finds out about until the guest mentions it at the
