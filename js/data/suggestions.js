@@ -1,5 +1,7 @@
 import { safeStorage } from "../utils.js";
-import { saveShared, loadShared, CONFIG_KINDS } from "./config-store.js";
+import { connect, getDb, fsApi } from "./firebase.js";
+import { COLLECTIONS } from "./store.js";
+import { logError } from "./error-log.js";
 
 // What has actually been typed into the free-text fields, remembered and
 // offered back.
@@ -22,8 +24,45 @@ import { saveShared, loadShared, CONFIG_KINDS } from "./config-store.js";
 // happened to be holding the device that learned it first. That is the
 // same shape as every other bug in this app: one fact, two homes, free to
 // disagree.
+//
+// Stored in its own collection rather than in `config`, which is where it
+// first went. Config means "what a manager decided" and its rule enforces
+// that — manager-only writes. But guide names and travel agents are typed
+// by reception on the registration card, and reception is staff. Every
+// name they typed was refused by the rules and logged as an error: the
+// exact devices the feature exists for were the ones that could not use
+// it. Different writer, different collection.
 
 const STORE_KEY = "leopardinn-suggestions";
+
+// One document. The map is a few hundred bytes and is always read and
+// written whole, so a document per key would be more round trips for no
+// benefit.
+const DOC_ID = "shared";
+
+async function readRemote() {
+  await connect();
+  const fs = fsApi();
+  const snap = await fs.getDoc(fs.doc(getDb(), COLLECTIONS.SUGGESTIONS, DOC_ID));
+  return snap.exists() ? snap.data().values : undefined;
+}
+
+async function writeRemote(values) {
+  try {
+    await connect();
+    const fs = fsApi();
+    await fs.setDoc(fs.doc(getDb(), COLLECTIONS.SUGGESTIONS, DOC_ID), {
+      values,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Offline is normal and Firestore queues the write anyway. Anything
+    // else is worth knowing about, but never worth interrupting a form.
+    if (err && err.code !== "unavailable") {
+      logError(`Could not save suggestions: ${err.code || err.message}`, { source: "suggestions" });
+    }
+  }
+}
 
 // How long to wait after the last edit before writing. A name is typed,
 // the field is left, and often the next field is another suggestion field
@@ -83,14 +122,13 @@ function mergeInto(target, incoming) {
 async function flush() {
   timer = null;
   try {
-    const remote = await loadShared(CONFIG_KINDS.SUGGESTIONS);
-    mergeInto(store, remote);
+    mergeInto(store, await readRemote());
     persistLocal();
   } catch {
     // Offline, or no document yet. Writing what this device knows is
     // still right — Firestore queues it and it lands on reconnect.
   }
-  saveShared(CONFIG_KINDS.SUGGESTIONS, store);
+  writeRemote(store);
 }
 
 function scheduleWrite() {
@@ -100,7 +138,7 @@ function scheduleWrite() {
 
 // Called once after sign-in, alongside the rest of the configuration.
 export async function hydrateSuggestions() {
-  const remote = await loadShared(CONFIG_KINDS.SUGGESTIONS);
+  const remote = await readRemote();
   if (!remote || typeof remote !== "object") return false;
   mergeInto(store, remote);
   persistLocal();

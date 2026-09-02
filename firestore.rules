@@ -238,6 +238,21 @@ service cloud.firestore {
     // discontinued activity or a retired policy line is config being
     // tidied, not a record being erased; the invoices that used them
     // keep their own snapshot of what they said at the time.
+    // What reception has actually typed into the free-text fields — guide
+    // names, travel agents, countries — offered back as suggestions so the
+    // same person does not become three records under three spellings.
+    //
+    // Writable by anyone signed in, unlike config, and that is the whole
+    // reason it is not in config: the people who type these names are
+    // staff. Nothing here is financial and nothing is read back into a
+    // document; the worst a bad write can do is offer a silly suggestion,
+    // against a real name that is retyped and re-learned immediately.
+    match /suggestions/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if isManager();
+    }
+
     match /config/{id} {
       allow read: if signedIn();
       allow create, update: if isManager();

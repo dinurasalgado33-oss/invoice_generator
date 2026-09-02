@@ -54,10 +54,6 @@ export const CONFIG_KINDS = {
   // Shared across properties rather than per-branch, so its document id
   // drops the branch prefix — see saveShared/loadShared below.
   CURRENCIES: "currencies",
-  // Learned rather than configured: the guides, agents and countries staff
-  // have actually typed. Shared so the phone and the tablet stop keeping
-  // separate lists of the same people — see data/suggestions.js.
-  SUGGESTIONS: "suggestions",
   // The Wilpattu full/half-board sheet. Stored per property because only
   // Wilpattu has one, and stored at all so the welcome e-mail can read it
   // — it is the guest's answer to "what does my board rate include".

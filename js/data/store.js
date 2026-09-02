@@ -39,6 +39,14 @@ export const COLLECTIONS = {
   // occupied" has two homes again.
   ERRORS: "errors",
   CONFIG: "config",
+  // Deliberately NOT inside `config`. Config is what a manager decided,
+  // and its rule says so — manager-only writes. Suggestions are what
+  // reception typed, and reception is staff: guide names and travel agents
+  // are entered on the registration card. Filed under config, every name a
+  // staff member typed was refused by the rules and logged as an error,
+  // which is the opposite of the feature. Different writer, different
+  // collection.
+  SUGGESTIONS: "suggestions",
 };
 
 const VALID = new Set(Object.values(COLLECTIONS));
