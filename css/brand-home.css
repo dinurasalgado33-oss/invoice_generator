@@ -321,8 +321,10 @@
 .dash-header .dash-switch-branch,
 .dash-header .dash-logout-btn {
   flex-shrink: 0;
-  width: 38px;
-  height: 38px;
+  /* 44px, not 38. Sign-out sits in the header beside the lock button and
+     was the smallest target on the busiest screen. */
+  width: 44px;
+  height: 44px;
   min-height: 0;
   padding: 0;
   margin: 0;

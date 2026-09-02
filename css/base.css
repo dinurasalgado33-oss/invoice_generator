@@ -164,7 +164,11 @@ input.invalid { border-color: var(--danger); }
      next one — see the note on `.field`. */
   column-gap: 14px;
   row-gap: 0;
-  margin-top: 10px;
+  /* No top margin. Every field already carries 14px below it, so a grid
+     starting here added its 10px on top and made that one gap 24px —
+     which is how the rhythm broke at grid boundaries specifically, and
+     why it looked arbitrary rather than wrong. */
+  margin-top: 0;
 }
 @media (max-width: 480px) {
   .form-grid { grid-template-columns: 1fr; }
@@ -887,4 +891,37 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
   font-weight: 600;
   color: var(--text-muted);
   margin: 0;
+}
+
+/* Minimum touch target.
+   Reception works on a phone, one-handed, often standing next to a guest.
+   These controls rendered between 21px and 43px tall, so hitting them took
+   aim — and aiming is most of what "it doesn't feel smooth" means. The
+   worst was the "guest has no e-mail" tick at 21px, which is the control
+   that decides whether a welcome e-mail goes out at all.
+   44px is the usual floor and is what the rest of this stylesheet already
+   uses; these are the places that missed it. Nothing moves or animates —
+   the box simply becomes big enough to hit. */
+.inline-check,
+.scope-chip,
+.toolbar-btn,
+.inventory-filter-chip {
+  min-height: 44px;
+}
+/* A checkbox row grows by its padding rather than its font, so the text
+   stays the size it was. */
+.inline-check { padding: 4px 0; }
+
+/* The header's sign-out is sized in brand-home.css, which loads after this
+   file — an override here has the same specificity and loses. Fixed there.
+*/
+
+/* The checkbox itself, not just its row. 15px is a hard thing to hit even
+   inside a large label, and on the registration card it sits beside a text
+   field people are already tapping accurately. */
+.inline-check input[type="checkbox"],
+.void-reissue input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
