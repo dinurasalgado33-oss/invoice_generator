@@ -359,3 +359,90 @@ each property and reloading — exactly one survived.
   in Stages 2–4 had only ever been verified on dev. It is now exercised
   on live, and holds one document: `Wilpattu__villas`, with the correct
   rates.
+
+
+---
+
+## 13. The welcome e-mail carries the menu, 2026-09-02
+
+Settled and live. The e-mail contains the property's menu itself — no
+link, no attachment, no browser.
+
+### What was wrong before
+
+The links did not work at all. The queue row stores menus as strings,
+`["ab-main","ab-cocktail"]`, and `buildHtml` read `.url` and `.label` off
+them — which on a string are `undefined`. Every guest would have received
+two identical links labelled "Menu" pointing at
+`https://leopard-inn.web.app/`, the staff portal login.
+
+### Why inline rather than a PDF
+
+The size worry does not survive contact with the numbers. A menu is about
+6KB of words. The PDFs are megabytes because of the embedded Cinzel font
+and the cover artwork, none of which an e-mail needs.
+
+| Property | Dishes | E-mail |
+|---|---|---|
+| Arugam Bay | 93 | 30KB |
+| Wilpattu | 68 | 20KB |
+
+Gmail clips a message over about 102KB behind a "View entire message"
+link — the exact extra tap this change removes — so there is roughly 3x
+headroom. Past 80KB the dish *descriptions* are dropped first, because a
+guest can still order everything by name and number; only past that is
+the menu left out rather than sent cut off mid-course. Verified at 1x,
+3x, 6x and 20x the real menu.
+
+### Two decisions
+
+**The menu is read when the e-mail sends, not stamped on the row at
+check-in.** A row that failed and was chased days later would otherwise
+carry a menu the kitchen no longer serves. One menu, one place — the same
+reasoning as deriving occupancy instead of storing it.
+
+**A menu that cannot be read is dropped, never allowed to fail the send.**
+The guest still gets the greeting and reception's number. A welcome with
+no menu beats no welcome.
+
+### Ordered by dish number, not by category
+
+The first version sorted courses by `MENU_CATEGORIES`, and the Wilpattu
+e-mail opened on Side Dishes at number 51. That list is shared between
+both properties and written in Arugam Bay's order, so Wilpattu's fresh
+juices — dishes 1-9 — landed wherever it happened to put them.
+
+`js/menu-pdf.js` already carried a comment naming this exact failure. The
+warning was there and the shared list got used anyway. **When a comment
+in this repo explains why something is ordered a particular way, that is
+usually a bug someone already paid for.**
+
+Both properties now read 1..n in order. The check asserts the numbers
+start at 1, ascend, and are all present — and was confirmed to fail
+against the old ordering before being trusted.
+
+### Dead code removed
+
+`composeWelcome()` in `js/data/guest-email.js` was exported and never
+called. Its comment claimed the wording lived with the app "so the
+manager can see it" while the real text sat on the server. The copy that
+looked authoritative was the dead one. Gone, along with `menusForBranch`
+and the `menus` field on the queue row, which nothing reads now that the
+e-mail carries the menu itself.
+
+### One thing that is not a bug
+
+While testing, several near-identical messages went to one address with
+the same subject. Gmail threads them and hides the repeated tail behind a
+small "..." — which reads exactly like the menu stopping partway. A real
+guest gets one e-mail, in no thread, with nothing to trim against.
+Confirmed by sending to a plus-tagged address, which Gmail treats as a
+separate conversation.
+
+### Still open
+
+The Wilpattu full/half-board sheet is fixed text rather than dish rows and
+is not in the e-mail. Nobody has asked for it; it is a decision, not an
+oversight.
+
+Live: hosting `v=147`, `sendWelcomeEmail` deployed 2026-09-02.
