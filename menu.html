@@ -78,8 +78,8 @@
   }
   .art img { display: block; width: 100%; height: auto; }
 
-  .art-left  { top: -1.5rem; left: -3rem;  width: min(46vw, 17rem); transform-origin: top left; }
-  .art-right { top: -2.5rem; right: -3rem; width: min(38vw, 14rem); transform-origin: top right; }
+  .art-left  { top: -1.5rem; left: -3rem;  width: min(46vw, 17rem); transform-origin: top left; z-index: 1; }
+  .art-right { top: -2.5rem; right: -3rem; width: min(38vw, 14rem); transform-origin: top right; z-index: 1; }
   .art-dunes { bottom: -1px; left: 0; right: 0; width: 100%; opacity: .85; }
 
   /* ---- wind ----------------------------------------------------------
@@ -96,30 +96,87 @@
      Transform only, so this stays on the compositor and costs a phone
      nothing. */
   @keyframes swing-left {
-    0%   { transform: rotate(-2.4deg) translate(0, 0); }
-    19%  { transform: rotate(1.2deg)  translate(2px, -3px); }
-    37%  { transform: rotate(-0.6deg) translate(-1px, 1px); }
-    58%  { transform: rotate(3.1deg)  translate(3px, -4px); }
-    74%  { transform: rotate(0.4deg)  translate(0, -1px); }
-    100% { transform: rotate(-2.4deg) translate(0, 0); }
+    0%   { transform: rotate(-5.5deg) translate(0, 0); }
+    17%  { transform: rotate(2.6deg)  translate(6px, -7px); }
+    33%  { transform: rotate(-1.4deg) translate(-3px, 3px); }
+    54%  { transform: rotate(7.2deg)  translate(9px, -11px); }
+    71%  { transform: rotate(0.8deg)  translate(2px, -2px); }
+    86%  { transform: rotate(4.1deg)  translate(5px, -5px); }
+    100% { transform: rotate(-5.5deg) translate(0, 0); }
   }
   @keyframes swing-right {
-    0%   { transform: rotate(2.2deg)  translate(0, 0); }
-    23%  { transform: rotate(-1.4deg) translate(-3px, -2px); }
-    44%  { transform: rotate(0.8deg)  translate(1px, 2px); }
-    66%  { transform: rotate(-3.3deg) translate(-4px, -4px); }
-    85%  { transform: rotate(-0.3deg) translate(-1px, 0); }
-    100% { transform: rotate(2.2deg)  translate(0, 0); }
+    0%   { transform: rotate(5.0deg)  translate(0, 0); }
+    21%  { transform: rotate(-3.2deg) translate(-7px, -5px); }
+    39%  { transform: rotate(1.8deg)  translate(3px, 4px); }
+    61%  { transform: rotate(-7.6deg) translate(-11px, -9px); }
+    78%  { transform: rotate(-0.6deg) translate(-2px, -1px); }
+    91%  { transform: rotate(-4.4deg) translate(-6px, -4px); }
+    100% { transform: rotate(5.0deg)  translate(0, 0); }
   }
 
-  /* The leaf itself flexing — a shallow skew and a breath of stretch,
-     which is what a frond actually does when the branch it is on moves. */
+  /* The leaf itself flexing — a skew and a breath of stretch, which is
+     what a frond does when the branch it is on moves. */
   @keyframes flex-leaf {
-    0%   { transform: skewY(0deg)     scale(1, 1); }
-    31%  { transform: skewY(0.7deg)   scale(1.012, 0.994); }
-    59%  { transform: skewY(-0.5deg)  scale(0.993, 1.008); }
-    100% { transform: skewY(0deg)     scale(1, 1); }
+    0%   { transform: skewY(0deg)    scale(1, 1); }
+    31%  { transform: skewY(1.8deg)  scale(1.03, 0.985); }
+    59%  { transform: skewY(-1.3deg) scale(0.982, 1.022); }
+    100% { transform: skewY(0deg)    scale(1, 1); }
   }
+
+  /* ---- sunlight through the leaves -----------------------------------
+     The thing that actually makes the page feel alive, more than the
+     movement does: a soft warm patch drifting across the paper, the way
+     light does under palms when the branches move.
+
+     A radial gradient rather than a blurred element — same softness, no
+     filter, no re-rasterising on a phone. Multiply so it warms the cream
+     rather than washing over it. */
+  .light {
+    position: fixed;
+    inset: -25vh -25vw;
+    z-index: 0;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    background:
+      radial-gradient(38vmax 30vmax at 22% 18%, rgba(255, 246, 214, 0) 0%, rgba(206, 178, 108, .20) 55%, rgba(206, 178, 108, 0) 72%),
+      radial-gradient(30vmax 26vmax at 78% 30%, rgba(255, 246, 214, 0) 0%, rgba(176, 158, 106, .15) 58%, rgba(176, 158, 106, 0) 75%);
+    animation: dapple 29s ease-in-out infinite;
+  }
+  @keyframes dapple {
+    0%   { transform: translate(0, 0)          scale(1); opacity: .85; }
+    27%  { transform: translate(3vw, 2vh)      scale(1.08); opacity: 1; }
+    53%  { transform: translate(-2vw, 4vh)     scale(1.02); opacity: .78; }
+    76%  { transform: translate(2.5vw, -1.5vh) scale(1.11); opacity: .95; }
+    100% { transform: translate(0, 0)          scale(1); opacity: .85; }
+  }
+
+  /* ---- the shadow the fronds cast on the paper ------------------------
+     Sells the fronds as objects above the page rather than pictures
+     printed on it. The blur sits on the image, which rasterises once; the
+     animation is on the wrapper, which stays composited. It lags the leaf
+     slightly, because a shadow on paper does. */
+  .art-shadow { z-index: 0; opacity: .085; }
+  .art-shadow img { filter: brightness(0) blur(5px); }
+  .shadow-left  { top: .5rem; left: -2.4rem;  width: min(46vw, 17rem); transform-origin: top left; }
+  .shadow-right { top: -.6rem; right: -2.4rem; width: min(38vw, 14rem); transform-origin: top right; }
+  .shadow-left  { animation: swing-left  13s cubic-bezier(.45,.05,.55,.95) infinite -.45s; }
+  .shadow-right { animation: swing-right 17s cubic-bezier(.45,.05,.55,.95) infinite -.55s; }
+
+  /* ---- arrival --------------------------------------------------------
+     The page settles rather than appearing. Once, on load, and never
+     again — a thing that animates every time you look at it is a thing
+     you stop looking at. */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .crest, h1, .tagline, .rule { animation: rise .9s cubic-bezier(.2,.7,.3,1) both; }
+  h1        { animation-delay: .08s; }
+  .tagline  { animation-delay: .16s; }
+  .rule     { animation-delay: .24s; }
+  .property { animation: rise .9s cubic-bezier(.2,.7,.3,1) both; }
+  .property:nth-of-type(1) { animation-delay: .34s; }
+  .property:nth-of-type(2) { animation-delay: .46s; }
 
   /* The dune, drifting. Barely there — it is the sea a long way off, not
      a wave breaking. */
@@ -139,7 +196,8 @@
 
   /* Motion is decoration here — the page works identically without it. */
   @media (prefers-reduced-motion: reduce) {
-    .art-left, .art-right, .art-left img, .art-right img, .art-dunes { animation: none; }
+    .art-left, .art-right, .art-left img, .art-right img, .art-dunes,
+    .art-shadow, .light, .crest, h1, .tagline, .rule, .property { animation: none; }
   }
 
   /* ---- the page ---------------------------------------------------- */
@@ -244,6 +302,11 @@
 </style>
 </head>
 <body>
+
+<div class="light"></div>
+
+<div class="art art-shadow shadow-left"><img src="assets/menu/wp-frond-1.png" alt="" /></div>
+<div class="art art-shadow shadow-right"><img src="assets/menu/ab-frond-1.png" alt="" /></div>
 
 <div class="art art-left"><img src="assets/menu/wp-frond-1.png" alt="" /></div>
 <div class="art art-right"><img src="assets/menu/ab-frond-1.png" alt="" /></div>
