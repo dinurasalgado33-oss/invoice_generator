@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// Leopard Inn — Cloud Storage security rules.
+//
+// This bucket exists for one thing: the guest-facing menu PDFs, which a
+// QR code on a table has to be able to open with nobody signed in. That
+// is the same reason `menuItems` is the one publicly readable collection
+// in firestore.rules, and the scoping here is just as deliberate — the
+// default is deny, and exactly one prefix is opened.
+//
+// Storage rules cannot read Firestore, so `isManager()` as written in
+// firestore.rules has no equivalent here: there is no way from these
+// rules to look up users/{uid} and check a role. The options were custom
+// auth claims, or bounding what a signed-in person can do. Claims are the
+// stricter answer and are noted at the bottom as the upgrade; what is
+// written below is the bounded one.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ---------------------------------------------------------------
+    // The guest-facing menus
+    // ---------------------------------------------------------------
+    // Readable by anyone, because that is the entire point — a guest
+    // scanning a code at a table is not signed in and never will be.
+    //
+    // Writable by any signed-in member of staff, which is looser than the
+    // Firestore rule for menu *data* (manager only). The bound is on what
+    // can be written rather than on who: a PDF, under 8MB, in this folder
+    // and nowhere else. The worst a staff account can do here is replace
+    // one menu PDF with another PDF — it cannot change a price, because
+    // prices live in Firestore where the manager-only rule still applies,
+    // and it cannot reach anything outside this prefix.
+    //
+    // Deletes are refused. A menu is replaced by writing over it, and
+    // nothing about this feature needs the ability to leave a guest's QR
+    // code pointing at nothing.
+    match /menus/{file} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType == 'application/pdf';
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Everything else
+    // ---------------------------------------------------------------
+    // Denied, explicitly. A bucket with one open folder and an open
+    // default is not a bucket with one open folder.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// If this bucket ever holds more than menus — a guest's signed
+// registration card, a passport scan — the write rule above is no longer
+// good enough, and the upgrade is custom auth claims: have manageStaff
+// call setCustomUserClaims({ role }) when it creates or changes an
+// account, then check `request.auth.token.role == 'manager'` here. That
+// was not done today because it makes every existing signed-in device
+// wait for a token refresh before it can publish a menu, which is a real
+// cost for a file that is not sensitive.

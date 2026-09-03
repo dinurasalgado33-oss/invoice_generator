@@ -1,4 +1,5 @@
 import { appState } from "./state.js";
+import { scheduleMenuRepublish } from "./menu-publish.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast, setBranchLabel } from "./utils.js";
 import { MENU_ITEMS, MENU_CATEGORIES, allocateDishId, allocateDishNumber } from "./data/menu.js";
@@ -242,9 +243,11 @@ document.getElementById("dish-form").addEventListener("submit", (e) => {
   if (editingDishId) {
     const dish = MENU_ITEMS.find(d => d.id === editingDishId);
     update(COLLECTIONS.MENU, dish, { name, category, price, description, ingredients });
+    scheduleMenuRepublish(appState.selectedBranch);
     showToast(`${name} updated`);
   } else {
     add(COLLECTIONS.MENU, MENU_ITEMS, { id: allocateDishId(), number: allocateDishNumber(appState.selectedBranch), name, category, price, description, ingredients, branch: appState.selectedBranch });
+    scheduleMenuRepublish(appState.selectedBranch);
     showToast(`${name} added`);
   }
 
@@ -273,6 +276,7 @@ document.getElementById("dish-delete-btn").addEventListener("click", async () =>
   // remove() handles the local splice too, so the array is still updated;
   // it just also tells Firestore.
   remove(COLLECTIONS.MENU, MENU_ITEMS, dish);
+  scheduleMenuRepublish(appState.selectedBranch);
   closeDishSheet();
   renderMenuScreen();
   showToast(`${dish.name} removed`);

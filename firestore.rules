@@ -69,10 +69,29 @@ service cloud.firestore {
     // ---------------------------------------------------------------
     // The guest-facing menu
     // ---------------------------------------------------------------
-    // The one thing the world may read without signing in, because a QR
-    // code on a table has nobody signed in behind it. Scoped to this
-    // collection alone and nothing else — the same database holds passport
-    // and NIC numbers, and a broader public rule would expose them.
+    // Two collections the world may read without signing in, because a QR
+    // code on a table has nobody signed in behind it. Scoped to these
+    // alone and nothing else — the same database holds passport and NIC
+    // numbers, and a broader public rule would expose them.
+    //
+    // The list of published menu PDFs, read by the public menu page at
+    // /menu.html.
+    //
+    // It lives here rather than beside the PDFs in Storage because a
+    // browser cannot fetch a Storage object cross-origin without CORS
+    // configured on the bucket, and configuring that needs gcloud. A
+    // Firestore read has none of that trouble, and the PDFs themselves are
+    // opened by ordinary link navigation, which CORS does not touch.
+    //
+    // It holds four links and two hotel names. Nothing here is a secret.
+    match /publicMenus/{id} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    // The dishes themselves. Still public: the PDFs are what a guest is
+    // pointed at now, but this is what any future live menu page would
+    // read, and it was opened for that reason before the PDFs existed.
     match /menuItems/{item} {
       allow read: if true;
       allow create, update: if isManager();

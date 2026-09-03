@@ -5,163 +5,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Menu — Leopard Inn</title>
 <!--
-  The guest-facing menu.
+  One address for every menu, at both properties.
+  https://leopard-inn.web.app/menu.html
 
-  Deliberately undesigned. This is the functional version: dish number,
-  name, what is in it, and the price, in the order the printed menu runs.
-  Styling comes later and belongs in one place when it does — there is no
-  CSS here at all beyond the viewport meta, which is not decoration: it
-  stops a phone rendering the page zoomed out to nothing.
+  This page is a list, not a menu. Each entry opens the PDF the staff
+  portal builds — the same file a manager gets from Open PDF, with the
+  property's own artwork. There is no second rendering of the menu
+  anywhere, which is the point: what a guest reads and what the manager
+  published are one document.
 
-  Standalone on purpose. It does not import the staff portal's modules,
-  so it stays a small, fast, public page and cannot be broken by a change
-  to the app. The only thing it shares is firebase-config.js, so there is
-  one place that says which project this is.
+  Undesigned on purpose. It exists to get out of the way in one tap.
 
-  Nobody signs in here. `menuItems` is the one collection the rules make
-  publicly readable, and firestore.rules says why: "a QR code on a table
-  has nobody signed in behind it". Nothing else in the database is
-  reachable from this page.
+  It reads menus/index.json from Storage, written by the portal when a
+  menu is published. That means a menu added later appears here on its
+  own — the page carries no list of its own to fall out of date.
 
-  It reads live. A manager changing a price in the staff portal changes
-  this page on the next load, with nothing to publish or regenerate.
+  Nobody signs in. Storage rules make menus/ publicly readable and
+  nothing else, the same way firestore.rules opens menuItems and nothing
+  else, and for the same reason: a QR code on a table has nobody signed
+  in behind it.
 -->
 </head>
 <body>
 
-<h1 id="title">Menu</h1>
-<p id="status">Loading the menu…</p>
-
-<nav id="branches" hidden>
-  <p>Choose a property:</p>
-  <ul>
-    <li><a href="?branch=Wilpattu">Leopard Inn Wilpattu</a></li>
-    <li><a href="?branch=Arugam%20Bay">Leopard Inn Arugam Bay</a></li>
-  </ul>
-</nav>
-
-<main id="menu"></main>
+<h1>Leopard Inn</h1>
+<p id="status">Loading…</p>
+<div id="menus"></div>
 
 <script type="module">
 import { firebaseConfig } from "./js/data/firebase-config.js";
 
-const SDK = "https://www.gstatic.com/firebasejs/10.12.2";
+// The same SDK version the portal boots with — a different URL is a
+// different copy of the SDK with its own service registry.
+const SDK = "https://www.gstatic.com/firebasejs/11.0.2";
 
-const el = id => document.getElementById(id);
-const params = new URLSearchParams(location.search);
-const branch = params.get("branch");
+// The list comes from Firestore, not from Storage.
+//
+// Storage was the obvious place — the list sat beside the PDFs it
+// describes. It does not work: a browser cannot `fetch` a Storage object
+// from another origin unless CORS is configured on the bucket, and the
+// failure is a bare "Failed to fetch" that says nothing about why. A
+// Firestore read has no such trouble.
+//
+// The PDFs are unaffected, because they are opened by ordinary link
+// navigation and CORS does not apply to that.
+async function readIndex() {
+  const [{ initializeApp }, fs] = await Promise.all([
+    import(`${SDK}/firebase-app.js`),
+    import(`${SDK}/firebase-firestore.js`),
+  ]);
+  const db = fs.getFirestore(initializeApp(firebaseConfig()));
+  const snap = await fs.getDoc(fs.doc(db, "publicMenus", "index"));
+  return snap.exists() ? snap.data() : { menus: [] };
+}
 
-// The two properties, and what a guest should see them called.
-const LABELS = {
-  "Wilpattu": "Leopard Inn Wilpattu",
-  "Arugam Bay": "Leopard Inn Arugam Bay",
-};
-
-function escapeHtml(value) {
-  return String(value == null ? "" : value)
+function escapeHtml(v) {
+  return String(v == null ? "" : v)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-function money(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toLocaleString("en-US") : "";
+function render(menus) {
+  // Grouped by property, because a guest at one hotel should not have to
+  // read past the other hotel's menus to find theirs.
+  const byBranch = {};
+  menus.forEach(m => { (byBranch[m.branchLabel || m.branch] ||= []).push(m); });
+
+  return Object.entries(byBranch).map(([label, items]) => `
+    <h2>${escapeHtml(label)}</h2>
+    <ul>
+      ${items.map(m => `<li><a href="${escapeHtml(m.url)}">${escapeHtml(m.title)}</a></li>`).join("")}
+    </ul>`).join("");
 }
 
-// "Breakfast - Sri Lankan" is one category in the data and two levels on
-// a menu. Splitting it stops three consecutive headings all reading
-// "Breakfast".
-function splitCategory(name) {
-  const at = String(name).indexOf(" - ");
-  return at === -1
-    ? { course: String(name), group: "" }
-    : { course: String(name).slice(0, at), group: String(name).slice(at + 3) };
-}
-
-// Ordered by dish number, never by the category list.
-//
-// The number IS the order the printed menu runs in, and it is per
-// property — whereas the category list is shared between both and written
-// in Arugam Bay's order. Sorting by that list opened the Wilpattu menu on
-// Side Dishes at number 51, because its fresh juices are 1-9. A guest
-// orders by number; starting at 51 gets the wrong dish sent up.
-function render(dishes) {
-  let html = "";
-  let lastCourse = null;
-  let lastGroup = null;
-
-  dishes.forEach(d => {
-    const { course, group } = splitCategory(d.category);
-    if (course !== lastCourse) {
-      html += `<h2>${escapeHtml(course)}</h2>`;
-      lastCourse = course;
-      lastGroup = null;
-    }
-    if (group && group !== lastGroup) {
-      html += `<h3>${escapeHtml(group)}</h3>`;
-      lastGroup = group;
-    }
-    html += `<p>`
-      + `${d.number ? escapeHtml(d.number) + ". " : ""}`
-      + `<strong>${escapeHtml(d.name)}</strong> — ${escapeHtml(money(d.price))}`
-      + (d.description ? `<br />${escapeHtml(d.description)}` : "")
-      + `</p>`;
-  });
-
-  return html;
-}
-
-async function main() {
-  if (!branch || !LABELS[branch]) {
-    // No property chosen, or one that is not ours. Offer the two rather
-    // than guessing — a guest handed the wrong menu orders from it.
-    el("status").hidden = true;
-    el("branches").hidden = false;
-    return;
-  }
-
-  el("title").textContent = LABELS[branch];
-  document.title = LABELS[branch] + " — Menu";
-
-  try {
-    const [{ initializeApp }, fs] = await Promise.all([
-      import(`${SDK}/firebase-app.js`),
-      import(`${SDK}/firebase-firestore.js`),
-    ]);
-
-    // firebaseConfig is a function, not an object — it picks the test or
-    // live project from the hostname, so a page opened locally can never
-    // reach real guest data.
-    const db = fs.getFirestore(initializeApp(firebaseConfig()));
-    const snap = await fs.getDocs(
-      fs.query(fs.collection(db, "menuItems"), fs.where("branch", "==", branch))
-    );
-
-    const dishes = snap.docs
-      .map(d => d.data())
-      .filter(d => d && d.name)
-      .sort((a, b) => (Number(a.number) || 0) - (Number(b.number) || 0));
-
-    if (!dishes.length) {
-      el("status").textContent = "This menu is not available right now.";
+readIndex()
+  .then(data => {
+    const menus = (data.menus || []).filter(m => m && m.url && m.title);
+    if (!menus.length) {
+      document.getElementById("status").textContent = "No menus have been published yet.";
       return;
     }
-
-    el("status").hidden = true;
-    el("menu").innerHTML = render(dishes);
-    el("menu").insertAdjacentHTML("beforeend",
-      "<hr /><p>All prices are in Sri Lankan Rupees.</p>");
-  } catch (err) {
-    // A guest cannot fix this and should not be shown a stack trace. Say
-    // plainly that it did not load and give them the way that always
-    // works — the phone in reception.
-    el("status").textContent =
+    document.getElementById("status").hidden = true;
+    document.getElementById("menus").innerHTML = render(menus);
+  })
+  .catch(err => {
+    // A guest cannot fix this and should not be shown a stack trace. Give
+    // them the thing that always works — the phone in reception.
+    document.getElementById("status").textContent =
       "Sorry — the menu could not be loaded. Please ask reception.";
-    console.error("Menu failed to load:", err);
-  }
-}
-
-main();
+    console.error("Menu index failed:", err);
+  });
 </script>
 
 </body>

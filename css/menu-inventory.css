@@ -459,3 +459,19 @@
 .menu-pdf-actions .menu-pdf-open { background: var(--maroon); color: var(--gold-light); }
 .menu-pdf-actions button:disabled { opacity: .6; cursor: default; }
 .digital-menu-panel .hint { margin: 10px 0 0; }
+
+/* The guest link under each menu in the PDFs panel. */
+.menu-pdf-link { margin: 6px 0 0; font-size: 0.85rem; }
+.menu-pdf-link:empty { display: none; }
+.menu-pdf-copy {
+  min-height: 44px;
+  padding: 0 10px;
+  margin-left: 6px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--maroon);
+  font: inherit;
+  cursor: pointer;
+}
+.menu-pdf-copy:active { transform: scale(0.97); background: rgba(74, 14, 28, 0.08); }

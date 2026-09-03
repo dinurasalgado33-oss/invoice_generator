@@ -1,7 +1,10 @@
 import { appState } from "./state.js";
 import { escapeHtml, showToast } from "./utils.js";
+import { logError } from "./data/error-log.js";
 import { MENU_ITEMS } from "./data/menu.js";
-import { MENU_DOCS, openMenuPdf, downloadMenuPdf } from "./menu-pdf.js";
+import { MENU_DOCS, openMenuPdf, downloadMenuPdf, buildMenuPdf } from "./menu-pdf.js";
+import { publishMenuPdf, publishedMenuUrl, publishManifest } from "./data/menu-hosting.js";
+import { BRANCH_INFO } from "./data/branches.js";
 
 // The Menu PDFs panel on the Menu Config screen. Two menus per property,
 // matching the printed booklets, each with a link that opens the PDF and a
@@ -36,6 +39,85 @@ async function withBusy(btn, label, fn) {
   }
 }
 
+// Shows the public address, and offers to copy it — a QR code is
+// generated from this string, and retyping a Firebase download URL by
+// hand is not something anybody should be asked to do.
+function showLink(key, url) {
+  const el = document.querySelector(`.menu-pdf-link[data-link="${key}"]`);
+  if (!el) return;
+  el.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Guest link</a> `
+    + `<button type="button" class="menu-pdf-copy">Copy</button>`;
+  const copy = el.querySelector(".menu-pdf-copy");
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("Link copied");
+    } catch {
+      // Clipboard access is refused often enough on mobile browsers that
+      // failing silently would look like a dead button.
+      showToast("Couldn't copy — press and hold the link instead");
+    }
+  });
+}
+
+// Publishes one menu and refreshes the public index.
+//
+// The index is rewritten every time rather than patched, because it is
+// small and because a half-updated list is worse than a rebuilt one — a
+// guest seeing a menu that no longer exists is a worse failure than a
+// second of extra upload.
+async function publishOne(key) {
+  const { pdf } = await buildMenuPdf(key);
+  const url = await publishMenuPdf(key, pdf.output("blob"));
+
+  const entries = [];
+  for (const [k, doc] of Object.entries(MENU_DOCS)) {
+    const live = k === key ? url : await publishedMenuUrl(k);
+    if (!live) continue;
+    entries.push({
+      key: k,
+      title: doc.title,
+      branch: doc.branch,
+      branchLabel: (BRANCH_INFO[doc.branch] || {}).hotelName || doc.branch,
+      url: live,
+    });
+  }
+  await publishManifest(entries);
+  return url;
+}
+
+// Republish after an edit, so the guest link follows the portal without
+// anybody remembering to press anything.
+//
+// Debounced, and heavily. Each menu is about a megabyte to build and
+// upload, and a manager correcting three prices in a row would otherwise
+// pay for three full publishes of a menu nobody has read yet. Twelve
+// seconds after the last edit is soon enough for a link nobody is
+// standing over, and it collapses a burst of edits into one upload.
+const REPUBLISH_DELAY_MS = 12000;
+let republishTimer = null;
+
+export function scheduleMenuRepublish(branch) {
+  if (!branch) return;
+  if (republishTimer) clearTimeout(republishTimer);
+  republishTimer = setTimeout(async () => {
+    republishTimer = null;
+    // Only menus that have been published before. Publishing is still a
+    // deliberate first act — this keeps an existing link current, it does
+    // not decide on a manager's behalf that a menu should be public.
+    for (const [key, doc] of Object.entries(MENU_DOCS)) {
+      if (doc.branch !== branch) continue;
+      try {
+        if (!(await publishedMenuUrl(key))) continue;
+        await publishOne(key);
+      } catch (err) {
+        logError(`Could not republish ${key}: ${err && (err.code || err.message)}`, { source: "menu-hosting" });
+      }
+    }
+    refreshDigitalMenuPanel();
+  }, REPUBLISH_DELAY_MS);
+}
+
 export function refreshDigitalMenuPanel() {
   const branch = appState.selectedBranch;
   const list = document.getElementById("menu-pdf-list");
@@ -55,7 +137,9 @@ export function refreshDigitalMenuPanel() {
         <div class="menu-pdf-actions">
           <button type="button" class="menu-pdf-open" data-menu="${key}">Open PDF</button>
           <button type="button" class="menu-pdf-save" data-menu="${key}" aria-label="Save ${escapeHtml(doc.title)} as PDF">Save</button>
+          <button type="button" class="menu-pdf-publish" data-menu="${key}" aria-label="Publish ${escapeHtml(doc.title)} to its guest link">Publish</button>
         </div>
+        <p class="menu-pdf-link" data-link="${key}"></p>
       </div>`;
   }).join("");
 
@@ -69,6 +153,23 @@ export function refreshDigitalMenuPanel() {
       await downloadMenuPdf(btn.dataset.menu);
       showToast("Menu saved");
     }));
+  });
+
+  list.querySelectorAll(".menu-pdf-publish").forEach(btn => {
+    btn.addEventListener("click", () => withBusy(btn, "Publishing…", async () => {
+      const key = btn.dataset.menu;
+      // Built here, now, from the current dishes — so what goes to the
+      // link is the same file Open PDF would have shown a second ago.
+      const url = await publishOne(key);
+      showLink(key, url);
+      showToast("Menu published — the guest link now shows this version");
+    }));
+  });
+
+  // Whatever is already live, so a manager can find the link without
+  // republishing to get it.
+  docs.forEach(([key]) => {
+    publishedMenuUrl(key).then(url => { if (url) showLink(key, url); });
   });
 
   const mine = MENU_ITEMS.filter(d => d.branch === branch);

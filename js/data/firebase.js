@@ -66,6 +66,14 @@ export function getDb() {
   return db;
 }
 
+// The initialised app itself, for the SDKs this module does not wrap —
+// Storage, currently. Handing out the existing app rather than letting a
+// caller call initializeApp() again is what keeps one auth session and one
+// Firestore connection across the whole page.
+export function getApp() {
+  return app;
+}
+
 export function getAuthInstance() {
   return auth;
 }
