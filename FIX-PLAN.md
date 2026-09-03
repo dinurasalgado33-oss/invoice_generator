@@ -1,5 +1,56 @@
 # Leopard Inn — Fix Plan
 
+> ## ⚠ Read this before you touch anything
+>
+> ### 1. Committing is not deploying
+>
+> This has gone wrong **three times** in this project. Each time something
+> was fixed, committed, reported as done — and the live app was still
+> running the old code. Twice it was then "re-fixed".
+>
+> Every hosting change needs the cache-busting version bumped in
+> `index.html` (`?v=NNN` appears on ~12 lines) and a deploy:
+>
+> ```bash
+> firebase deploy --only hosting --project leopard-inn
+> ```
+>
+> Then **prove it is live** before believing any test result:
+>
+> ```bash
+> curl -s "https://leopard-inn.web.app/?cb=$(date +%s)" | grep -o 'v=1[0-9][0-9]' | head -1
+> ```
+>
+> The `?cb=` is not optional — a plain `curl` has returned a cached copy
+> and shown the *previous* version number, in this project, today.
+>
+> Rules and Functions deploy separately and are easy to forget:
+>
+> ```bash
+> firebase deploy --only firestore:rules --project leopard-inn
+> firebase deploy --only functions:<name> --project leopard-inn
+> ```
+>
+> A Function does not pick up a changed secret until it is redeployed.
+>
+> ### 2. Make the check fail before you trust it
+>
+> **Three** green results in this project came from checks that could not
+> have gone red: `node --check` passing a malformed ES import, a `.map`
+> over arrays nothing had loaded into, and two browser tabs "proving"
+> cross-device sync while sharing one cache.
+>
+> Before believing a test: remove the thing it depends on and confirm it
+> goes red. Two browser tabs are **not** two devices.
+>
+> ### 3. Verify against the server, not the cache
+>
+> Firestore's local cache will happily confirm a write that never left the
+> device. Use `getDocFromServer` / `getDocsFromServer` and check
+> `metadata.fromCache === false` when it matters.
+
+---
+
 Written 2026-09-02 against hosting `v=162`, commit `6fd2c7e`, live project
 `leopard-inn`. **No code has been changed.** Every item below is an open
 piece of work.
@@ -16,16 +67,6 @@ Each item is self-contained: what is wrong, where, what was observed, how
 to check you fixed it. **The "how to verify" line is the important part** —
 several findings in this project were originally reported wrong, in both
 directions, because they were reasoned about rather than run.
-
-Two rules that come from this codebase's own history and are worth
-keeping while you work:
-
-1. **Committing is not deploying.** Check the served build before
-   believing a change is live:
-   `curl -s https://leopard-inn.web.app/ | grep -o 'v=1[0-9][0-9]' | head -1`
-   Bump the `?v=NNN` in `index.html` on every hosting deploy.
-2. **Make the check fail before you trust it.** Three green results in
-   this project came from checks that could not have gone red.
 
 Severity is about consequence, not effort:
 
