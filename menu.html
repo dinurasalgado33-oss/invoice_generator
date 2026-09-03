@@ -82,15 +82,64 @@
   .art-right { top: -2.5rem; right: -3rem; width: min(38vw, 14rem); transform-origin: top right; }
   .art-dunes { bottom: -1px; left: 0; right: 0; width: 100%; opacity: .85; }
 
-  /* A slow sway, as if a breeze crossed the veranda. Long and shallow —
-     anything faster reads as a loading animation rather than weather. */
-  @keyframes sway-left  { from { transform: rotate(-1.1deg); } to { transform: rotate(1.4deg); } }
-  @keyframes sway-right { from { transform: rotate(1.2deg); }  to { transform: rotate(-1.3deg); } }
-  .art-left  { animation: sway-left  11s ease-in-out infinite alternate; }
-  .art-right { animation: sway-right 13s ease-in-out infinite alternate; }
+  /* ---- wind ----------------------------------------------------------
+     Two layers per frond, on purpose. The wrapper swings the whole branch
+     from where it meets the edge; the image inside skews and stretches a
+     little on its own, slower and out of step. A single rotation reads as
+     a pendulum — it is the two periods drifting against each other that
+     make it look like air rather than machinery.
 
+     The loops are full circuits rather than `alternate`, so the motion
+     never retraces its own path and never pauses at a turning point, and
+     the stop percentages are uneven so no beat lands twice.
+
+     Transform only, so this stays on the compositor and costs a phone
+     nothing. */
+  @keyframes swing-left {
+    0%   { transform: rotate(-2.4deg) translate(0, 0); }
+    19%  { transform: rotate(1.2deg)  translate(2px, -3px); }
+    37%  { transform: rotate(-0.6deg) translate(-1px, 1px); }
+    58%  { transform: rotate(3.1deg)  translate(3px, -4px); }
+    74%  { transform: rotate(0.4deg)  translate(0, -1px); }
+    100% { transform: rotate(-2.4deg) translate(0, 0); }
+  }
+  @keyframes swing-right {
+    0%   { transform: rotate(2.2deg)  translate(0, 0); }
+    23%  { transform: rotate(-1.4deg) translate(-3px, -2px); }
+    44%  { transform: rotate(0.8deg)  translate(1px, 2px); }
+    66%  { transform: rotate(-3.3deg) translate(-4px, -4px); }
+    85%  { transform: rotate(-0.3deg) translate(-1px, 0); }
+    100% { transform: rotate(2.2deg)  translate(0, 0); }
+  }
+
+  /* The leaf itself flexing — a shallow skew and a breath of stretch,
+     which is what a frond actually does when the branch it is on moves. */
+  @keyframes flex-leaf {
+    0%   { transform: skewY(0deg)     scale(1, 1); }
+    31%  { transform: skewY(0.7deg)   scale(1.012, 0.994); }
+    59%  { transform: skewY(-0.5deg)  scale(0.993, 1.008); }
+    100% { transform: skewY(0deg)     scale(1, 1); }
+  }
+
+  /* The dune, drifting. Barely there — it is the sea a long way off, not
+     a wave breaking. */
+  @keyframes drift {
+    0%   { transform: translateX(0)     scaleY(1); }
+    50%  { transform: translateX(-14px) scaleY(1.035); }
+    100% { transform: translateX(0)     scaleY(1); }
+  }
+
+  .art-left  { animation: swing-left  13s cubic-bezier(.45,.05,.55,.95) infinite; }
+  .art-right { animation: swing-right 17s cubic-bezier(.45,.05,.55,.95) infinite; }
+
+  .art-left img  { animation: flex-leaf 9s  ease-in-out infinite; transform-origin: top left; }
+  .art-right img { animation: flex-leaf 11s ease-in-out infinite -3s; transform-origin: top right; }
+
+  .art-dunes { animation: drift 24s ease-in-out infinite; transform-origin: bottom center; }
+
+  /* Motion is decoration here — the page works identically without it. */
   @media (prefers-reduced-motion: reduce) {
-    .art-left, .art-right { animation: none; }
+    .art-left, .art-right, .art-left img, .art-right img, .art-dunes { animation: none; }
   }
 
   /* ---- the page ---------------------------------------------------- */
