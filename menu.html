@@ -80,7 +80,9 @@
 
   .art-left  { top: -1.5rem; left: -3rem;  width: min(46vw, 17rem); transform-origin: top left; z-index: 1; }
   .art-right { top: -2.5rem; right: -3rem; width: min(38vw, 14rem); transform-origin: top right; z-index: 1; }
-  .art-dunes { bottom: -1px; left: 0; right: 0; width: 100%; opacity: .85; }
+  .sea { bottom: -1px; left: -8%; width: 116%; transform-origin: bottom center; }
+  .sea-back  { opacity: .45; bottom: 12px; }
+  .sea-front { opacity: .9; }
 
   /* ---- wind ----------------------------------------------------------
      Two layers per frond, on purpose. The wrapper swings the whole branch
@@ -178,12 +180,28 @@
   .property:nth-of-type(1) { animation-delay: .34s; }
   .property:nth-of-type(2) { animation-delay: .46s; }
 
-  /* The dune, drifting. Barely there — it is the sea a long way off, not
-     a wave breaking. */
-  @keyframes drift {
-    0%   { transform: translateX(0)     scaleY(1); }
-    50%  { transform: translateX(-14px) scaleY(1.035); }
-    100% { transform: translateX(0)     scaleY(1); }
+  /* ---- the sea --------------------------------------------------------
+     Two layers, moving against each other. One wave sliding along is a
+     sliding picture; two at different speeds and opposite directions is
+     water, because the eye reads the changing gap between them as depth
+     rather than reading either shape as travelling.
+
+     Both are the same wave artwork the menu covers use — waveA behind,
+     waveB in front, which is the order menu-pdf.js draws them in.
+
+     Each is wider than the viewport so the drift never exposes an edge,
+     and each also rises and falls, on a period that does not divide into
+     its drift — so the crest never arrives at the same place twice. */
+  @keyframes swell-back {
+    0%   { transform: translate(-3%, 0)    scaleY(1); }
+    50%  { transform: translate(3%, -6px)  scaleY(1.06); }
+    100% { transform: translate(-3%, 0)    scaleY(1); }
+  }
+  @keyframes swell-front {
+    0%   { transform: translate(2%, 0)     scaleY(1); }
+    37%  { transform: translate(-1.5%, 5px) scaleY(0.95); }
+    68%  { transform: translate(-3%, -3px) scaleY(1.05); }
+    100% { transform: translate(2%, 0)     scaleY(1); }
   }
 
   .art-left  { animation: swing-left  13s cubic-bezier(.45,.05,.55,.95) infinite; }
@@ -192,11 +210,12 @@
   .art-left img  { animation: flex-leaf 9s  ease-in-out infinite; transform-origin: top left; }
   .art-right img { animation: flex-leaf 11s ease-in-out infinite -3s; transform-origin: top right; }
 
-  .art-dunes { animation: drift 24s ease-in-out infinite; transform-origin: bottom center; }
+  .sea-back  { animation: swell-back  19s ease-in-out infinite; }
+  .sea-front { animation: swell-front 13s ease-in-out infinite; }
 
   /* Motion is decoration here — the page works identically without it. */
   @media (prefers-reduced-motion: reduce) {
-    .art-left, .art-right, .art-left img, .art-right img, .art-dunes,
+    .art-left, .art-right, .art-left img, .art-right img, .sea,
     .art-shadow, .light, .crest, h1, .tagline, .rule, .property { animation: none; }
   }
 
@@ -310,7 +329,8 @@
 
 <div class="art art-left"><img src="assets/menu/wp-frond-1.png" alt="" /></div>
 <div class="art art-right"><img src="assets/menu/ab-frond-1.png" alt="" /></div>
-<div class="art art-dunes"><img src="assets/menu/ab-wave-b.png" alt="" /></div>
+<div class="art sea sea-back"><img src="assets/menu/ab-wave-a.png" alt="" /></div>
+<div class="art sea sea-front"><img src="assets/menu/ab-wave-b.png" alt="" /></div>
 
 <main>
   <img class="crest" src="assets/menu/crest.png" alt="" />
