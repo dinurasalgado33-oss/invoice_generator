@@ -36,6 +36,15 @@
           }
         ]
       }
+    ],
+    "rewrites": [
+      {
+        "source": "/i/**",
+        "function": {
+          "functionId": "invoicePdf",
+          "region": "asia-south1"
+        }
+      }
     ]
   },
   "functions": [

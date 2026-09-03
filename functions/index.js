@@ -28,6 +28,11 @@ exports.manageStaff = require("./staff").manageStaff;
 // transport and the secret.
 exports.sendInvoiceEmail = require("./invoice-email").sendInvoiceEmail;
 
+// Serves that same invoice PDF at a link, for the guest who would rather
+// tap than download an attachment. Reads the stored bytes; renders
+// nothing — see invoice-link.js.
+exports.invoicePdf = require("./invoice-link").invoicePdf;
+
 // Set with:  firebase functions:secrets:set GMAIL_APP_PASSWORD --project live
 // Never committed, never printed, never in the client bundle.
 const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");

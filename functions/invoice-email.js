@@ -20,6 +20,11 @@ const BRANCH_LABELS = {
   "Arugam Bay": "Leopard Inn Arugam Bay",
 };
 
+// Where the invoice can be opened without downloading anything. The
+// hotel's own domain, not a cloudfunctions.net address — a guest should
+// not have to trust a hostname they have never seen to read their bill.
+const SITE = "https://leopard-inn.web.app";
+
 const BRANCH_PHONES = {
   "Wilpattu": "+94 740 559 024",
   "Arugam Bay": "+94 740 559 024",
@@ -61,14 +66,15 @@ function buildHtml(row) {
     <h1 style="margin:0 0 4px;font-size:22px;color:#4a0e1c">${escapeHtml(label)}</h1>
     <p style="margin:0 0 20px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#a08a52">${row.interim ? "Your bill so far" : "Your invoice"}</p>
     <p style="margin:0 0 12px">Dear ${escapeHtml(first)},</p>
-    <p style="margin:0 0 12px">${row.interim ? "Here is your bill as it stands" : "Please find your invoice attached"}, ${escapeHtml(row.invoiceNo || "")}.</p>
+    <p style="margin:0 0 12px">${row.interim ? "Here is your bill as it stands" : "Here is your invoice"}, ${escapeHtml(row.invoiceNo || "")}.</p>
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:18px 0">
       <tr>
         <td style="padding:10px 0;border-top:1px solid #e8dfc9;border-bottom:1px solid #e8dfc9;font-size:15px">Total</td>
         <td style="padding:10px 0;border-top:1px solid #e8dfc9;border-bottom:1px solid #e8dfc9;font-size:15px;text-align:right;color:#4a0e1c"><strong>${escapeHtml(money(row.grandTotal, row.currency))}</strong></td>
       </tr>
     </table>
-    <p style="margin:0 0 12px;font-size:14px;color:#555">The full breakdown is in the attached PDF.</p>
+    ${row.id ? `<p style="margin:0 0 6px"><a href="${SITE}/i/${escapeHtml(row.id)}" style="color:#4a0e1c">View your invoice</a></p>` : ""}
+    <p style="margin:0 0 12px;font-size:14px;color:#555">It is attached to this e-mail as well, if you would rather keep the file.</p>
     <p style="margin:16px 0 0">${escapeHtml(closing)}</p>
     ${phone ? `<p style="margin:16px 0 0;font-size:14px;color:#555">Any question about this bill, just call reception on ${escapeHtml(phone)}.</p>` : ""}
   </div>
