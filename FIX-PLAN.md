@@ -1,0 +1,450 @@
+# Leopard Inn — Fix Plan
+
+Written 2026-09-02 against hosting `v=162`, commit `6fd2c7e`, live project
+`leopard-inn`. **No code has been changed.** Every item below is an open
+piece of work.
+
+This document is meant to be picked up cold. It does not assume you have
+read `QA-UX-AUDIT.md` or `CODE-AUDIT.md`, though both hold the longer
+reasoning if you want it.
+
+---
+
+## How to use this
+
+Each item is self-contained: what is wrong, where, what was observed, how
+to check you fixed it. **The "how to verify" line is the important part** —
+several findings in this project were originally reported wrong, in both
+directions, because they were reasoned about rather than run.
+
+Two rules that come from this codebase's own history and are worth
+keeping while you work:
+
+1. **Committing is not deploying.** Check the served build before
+   believing a change is live:
+   `curl -s https://leopard-inn.web.app/ | grep -o 'v=1[0-9][0-9]' | head -1`
+   Bump the `?v=NNN` in `index.html` on every hosting deploy.
+2. **Make the check fail before you trust it.** Three green results in
+   this project came from checks that could not have gone red.
+
+Severity is about consequence, not effort:
+
+- **P1** — wrong information on a document a guest keeps, or data loss.
+- **P2** — daily friction, or a performance cost every user pays.
+- **P3** — worth doing, nobody is suffering.
+
+---
+
+## Do not "fix" these — they are deliberate
+
+Listed first because the fastest way to damage this app is to tidy one of
+them away.
+
+| Thing | Why it is like that |
+|---|---|
+| Occupancy derived from bookings, never stored | Storing it put "is this villa occupied" in two places; that bug is fixed and must not return |
+| Stock derived from its movement logs | Same reason. Both derivations measured at **0.01–0.03 ms** — they are not a performance problem |
+| Villa config storing only `id`, `name`, `rate` | Persisting occupancy alongside would undo the above |
+| `allow delete: if false` on financial collections | Invoices are voided, charges written off. Never deleted |
+| Firestore writes fire-and-forget | This is what makes the app work offline and feel instant |
+| Numbering blocks reserved per device | The whole point of block allocation |
+| Record IDs are UUIDs; config IDs are numeric | Guests read dish numbers off a menu; records must not collide between offline devices |
+| Invoice `id` contains a slash (`INV-2026/27-001`) | Safe — the adapter stores a separate `__docId`. Do not "sanitise" it |
+
+---
+
+# P1 — wrong information, or data loss
+
+## F1. The `hidden` attribute does nothing on four elements
+
+**One CSS rule causes all four.** Fixing it is the highest
+value-per-minute change in this document.
+
+### Root cause
+
+`css/base.css:132` — `.field { display: flex; }`
+
+An author class selector beats the browser's built-in `[hidden]` rule, so
+`element.hidden = true` sets the attribute and changes nothing visually.
+Any element whose class sets `display` has the same problem.
+
+### Suggested fix
+
+Add, high in `css/base.css`:
+
+```css
+[hidden] { display: none !important; }
+```
+
+This is the standard guard for exactly this situation. Six other uses of
+`hidden` in the app already work (their classes happen to set
+`display: none`), and this rule does not change those.
+
+### The four affected, in severity order
+
+#### F1a — every zero-VAT invoice prints a bare "VAT" line — **P1**
+
+`js/invoice.js:440` — `vatRow.hidden = !showVat;`
+
+The code's own comment says why this matters:
+
+> *A rate of zero means the hotel is not registered for VAT — printing
+> "VAT 0.00" would imply it is.*
+
+**Observed** on `INV-2026/27-201`, `vatRate: 0`:
+
+```
+Net Amount     LKR 9,500.00
+VAT                              ← visible, no figure at all
+Advance        -
+Grand Total    LKR 9,500.00
+```
+
+Worse than the case the comment feared — an empty line item on a document
+the guest signs and keeps.
+
+**Not affected:** the PDF. `js/invoice-pdf.js` tests
+`Number(r.vatRate) > 0` in JavaScript. Only the on-screen and printed HTML
+is wrong.
+
+**Verify:** open any invoice with `vatRate: 0` in Guest History. The VAT
+row must be absent from the totals block, not merely blank.
+
+#### F1b — check-in offers a reservation belonging to another villa — **P1**
+
+`js/grc.js:190-198`
+
+```js
+matchingReservations = openReservations(branch).filter(r =>
+  (r.villas || []).some(v => v.roomId === room.id));
+const picker = el("grc-reservation-picker");
+picker.hidden = matchingReservations.length === 0;   // ← does nothing
+if (matchingReservations.length) {
+  el("grc-reservation-select").innerHTML = …          // ← only rewritten when there ARE matches
+}
+```
+
+Two faults compound. The hide fails, **and** the dropdown is never
+cleared, so options from the previously opened villa survive in the DOM.
+
+**Observed, in order:**
+
+1. Created `RES-2026/27-251` for Pool Villa 1, checked the guest in
+   against it. Reservation correctly closed to `Checked In`.
+2. Opened a check-in for **Pool Villa 2**, which has no reservation.
+3. The picker was **visible**, still offering `RES-2026/27-251` — already
+   used, different villa.
+4. Selecting it filled the form with no warning **and overwrote the villa
+   field with "Pool Villa 1"**.
+
+Stopped before submitting rather than create a duplicate booking on live,
+so whether a second check-in completes is **untested**. Worth establishing
+while fixing.
+
+**Fix needs both halves:** the `[hidden]` rule (F1), *and* clearing
+`innerHTML` when there are no matches — otherwise stale options remain
+reachable by keyboard and by screen readers even once hidden.
+
+**Verify:** check in against a reservation, then open a check-in for a
+different villa. No picker should appear. Inspect the select's options —
+it must be empty, not merely hidden.
+
+#### F1c — the exchange-rate field never hides — **P2**
+
+`js/invoice.js:97` and `js/invoice.js:507`
+
+`syncExchangeRateField()` hides it for LKR. It does not hide, so every
+ordinary rupee invoice shows an exchange-rate box staff learn to ignore.
+The value *is* cleared correctly, so nothing is mis-billed.
+
+**Verify:** open a new invoice with currency LKR. No exchange-rate field.
+
+#### F1d — Guest History "load more" stays visible with nothing to load — **P3**
+
+`js/history.js:222` and `js/history.js:269`
+
+**Verify:** open Guest History with fewer stays than one page. No button.
+
+---
+
+## F2. The invoice number is labelled "Reservation No" — **P1**
+
+`index.html:1474`
+
+```html
+<p><span>Reservation No</span> <strong id="prev-number"></strong></p>
+```
+
+`prev-number` holds the **invoice** number. The same document then has a
+genuine reservation row at `index.html:1483`:
+
+```html
+<div class="reservation-row"><span>Reservation No</span><strong id="prev-reg-card"></strong></div>
+```
+
+So the printed invoice carries two fields with the same label — one
+holding the invoice number, one holding the registration card number. A
+guest querying a charge, or an agent reconciling a voucher, is given the
+wrong name for the number they will quote back.
+
+**Observed** on `INV-2026/27-201`: top line read `Reservation No
+INV-2026/27-201`, guest block read `Reservation No: N/A`.
+
+**Suggested fix:** label `prev-number` as **Invoice No**. Check
+`index.html:1767` (`pf-prev-resno`, the proforma) for the same pattern
+before changing anything, and check `js/invoice-pdf.js`, which already
+labels it `INVOICE`.
+
+**Verify:** open any invoice. The number at the top reads "Invoice No",
+and only the guest block says "Reservation No".
+
+---
+
+## F3. Pending food orders are lost on reload, unbilled — **P1**
+
+`js/data/orders.js:8` — `export const FOOD_ORDERS = [];`
+
+Nothing ever hydrates this array. `js/data/sync.js:55` subscribes
+`COLLECTIONS.FOOD_ORDERS` to `FOOD_ORDER_RECORDS` — a **different array**,
+holding completed orders. The pending queue is memory in one browser tab.
+
+**Observed:** placed one Papaya Juice, LKR 880, through the Orders screen,
+then reloaded.
+
+```
+pending orders before reload : 1
+pending orders after reload  : 0
+completed order records      : unchanged
+```
+
+Not completed, not cancelled, not recorded. If the kitchen had started
+cooking, the guest is served and never billed.
+
+**This is deliberate and documented** — `js/data/orders.js:2` says
+*"currently pending" only ever means orders placed just now*, and
+`PERSISTENCE-AUDIT.md` lists `FOOD_ORDERS` under "deliberately not
+persisted". That reasoning holds for a queue. It does not hold for money a
+guest owes.
+
+It also means the kitchen tablet never sees an order the phone took —
+probably wanted, worth deciding separately.
+
+**Suggested direction:** persist the pending queue like every other
+collection. It closes F3 and F4 together and gets cross-device visibility
+as a side effect. Needs a `foodOrdersPending` collection, a rule matching
+`foodOrders`, and a `COLLECTION_MAP` entry.
+
+**Verify:** place an order, reload, confirm it is still pending. Then
+complete it and confirm exactly one record reaches `FOOD_ORDER_RECORDS`.
+
+---
+
+## F4. A stranded stock deduction — **P1 when armed, dormant today**
+
+`js/orders.js:263-265`
+
+```js
+deductIngredients(appState.selectedBranch, dish, item.qty)  // → persisted, synced, permanent
+FOOD_ORDERS.push({ … })                                     // → memory in one tab (F3)
+```
+
+`deductIngredients` → `logStockMovement` → `add(COLLECTIONS.STOCK_USAGE, …)`.
+That write is permanent and reaches every device. So whenever F3 happens,
+the stock movement survives and the order that would have returned it does
+not — `restoreIngredients` can never run. The shelf is short, everywhere,
+with nothing to say why. Unexplained stock shortfalls read as theft.
+
+**It does not fire today.** Measured: **0 of 161 dishes have any
+ingredients configured**, so `deductIngredients` iterates an empty list.
+Confirmed in the same test — the usage log did not move.
+
+**It arms itself** the first time a manager uses the working **Add
+Ingredient** editor (`js/menu.js:208`). They will have no reason to expect
+that linking a dish to its ingredients introduces a way to lose stock.
+
+**Fixing F3 fixes this.** If F3 is deferred, consider deferring the
+deduction to Complete instead — that loses the reservation the shortage
+warning depends on, so it is a real trade.
+
+**Verify:** configure an ingredient on a test dish, place an order,
+reload, and confirm the stock returns or the order survives. Undo the
+ingredient afterwards.
+
+---
+
+# P2 — daily friction and speed
+
+## F5. Checkout costs seven taps to change nothing — **P2, highest daily value**
+
+`js/invoice.js:351` — `goToStep` is wired only to Next and Previous. The
+stepper circles are display-only.
+
+A checkout prefills the guest, villa, nights, rate, charges and staff
+name. In the ordinary case the person at the desk agrees with all of it
+and still taps:
+
+```
+Check Out → villa → Check Out → Next → Next → Next → Generate Invoice
+```
+
+Three taps change nothing, on the most repeated action in the building.
+The stepper *looks* pressable, which is its own problem — a control that
+looks interactive and is not teaches people to distrust the interface.
+
+**Same applies to check-in** (`js/grc.js:257`), where only two fields are
+genuinely required: guest name, and passport **or** NIC.
+
+**Suggested direction:** make the stepper circles navigable, reusing the
+existing per-step validation. Or surface **Generate Invoice** from step 1
+when nothing later needs attention.
+
+**Verify:** from step 1 of a prefilled checkout, reach Generate in one
+tap, and confirm validation still refuses an incomplete form.
+
+## F6. Two lists render blank instead of saying they are empty — **P2**
+
+`js/orders.js:293` — `list.innerHTML = pending.map(…)` with no fallback.
+`js/orders.js:109` — `list.innerHTML = matches.map(…)` with no fallback.
+
+- No pending orders → a blank area, not "nothing waiting".
+- A dish search with no match → a blank area, not "no dish matches that".
+
+The second is worse: it happens during service, and blank reads as broken
+or still loading.
+
+The pattern already exists in `history.js`, `inventory.js`, `menu.js`,
+`reservations.js` and `rooms.js` — this is copying, not designing.
+
+**Verify:** open Orders with nothing pending, and search a dish number
+that does not exist. Both must say so.
+
+## F7. Two render-blocking CDN scripts — **P2, one line**
+
+`index.html:2576-2577`
+
+```html
+<script src="…/html2canvas.min.js"></script>   <!-- 37 KB, blocking -->
+<script src="…/chart.umd.min.js"></script>     <!-- 69 KB, blocking -->
+```
+
+jsPDF and qrcode above them already have `defer`; these two were missed.
+**106 KB blocking render** for a Save Image button and the Finance charts,
+neither of which is on the screen reception opens.
+
+Both are only used from event handlers, and both are already guarded by
+`typeof … !== "function"` checks for the case where they failed to load.
+Adding `defer` carries no behavioural risk.
+
+**Verify:** `performance.getEntriesByType('navigation')[0].domInteractive`
+falls, and Save Image plus the Finance charts still work.
+
+## F8. A 163 KB font loads on every visit — **P2, one line**
+
+`js/invoice-pdf.js:4` and `js/menu-pdf.js:2` both statically import
+`./data/font-cinzel.js` — **163 KB raw, 66 KB over the wire**, 22% of all
+application JavaScript. Both files are reachable from `main.js`, so it
+downloads and parses on every page load, including every reception phone
+that never builds a PDF.
+
+It is needed only inside `buildInvoicePdf()` and `buildMenuPdf()`.
+
+**Suggested fix:** `const { CINZEL_REGULAR_B64 } = await
+import("./data/font-cinzel.js")` at the point of use. Both builders are
+already called from async paths, and both already tolerate the PDF library
+being absent.
+
+**Verify:** the font no longer appears in the network log on first paint,
+and both Download PDF and the menu PDFs still embed Cinzel.
+
+## F9. 59 modules, 12 levels deep, no preload hints — **P2, biggest startup win**
+
+`index.html` contains **zero `modulepreload`** hints. The browser cannot
+discover level *n+1* of the import graph until level *n* has arrived and
+been parsed. Measured: **59 static modules, deepest chain 12 levels**.
+
+On a Sri Lankan mobile connection at 300 ms round trip that is **~3.6
+seconds of pure latency**, independent of bandwidth.
+
+A bundler normally solves this and `CLAUDE.md` rules bundlers out for good
+reasons. `<link rel="modulepreload">` is the no-build-step answer: a flat
+list in `index.html` lets the browser fetch all 59 in parallel
+immediately. It needs nothing in the serving path.
+
+**Verify:** `domInteractive` falls; the network waterfall flattens from a
+staircase to a block.
+
+---
+
+# P3 — worth doing
+
+| ID | Finding | Location |
+|---|---|---|
+| **F10** | No password reset anywhere. A locked-out staff member needs a manager and the Firebase console. Firebase Auth provides this natively; the Staff screen is the natural place | app-wide |
+| **F11** | Four of six search fields have no clear button — Order, Guest History, Reservations, Reports. Inventory and Menu have one | various |
+| **F12** | Login has no show-password toggle and no autofocus | `screen-login` |
+| **F13** | The config watcher re-reads all 29 config documents on every config write. Manage Lists writes once per add/remove, so six edits = 174 reads on every open device. Cached and cheap, but it will not scale | `js/data/config-store.js:151` |
+| **F14** | Two import cycles: `reservations → reservation → reservations`, `reservations → proforma → reservations`. Harmless today; cycles decide initialisation order | `js/reservations.js` |
+| **F15** | A record missing its `id` renders an **enabled** reprint button with `data-id="undefined"`. Triggered by malformed data, not by the app — but the guard is missing | `js/history.js` |
+
+---
+
+# Verified working — do not spend time here
+
+All **observed on live**, not inferred.
+
+| Area | Result |
+|---|---|
+| Reservation → check-in | Details carry, reservation closes to `Checked In`, booking links back, villa occupies |
+| Check-in → welcome e-mail | Card numbered from the block, e-mail `Sent` to the typed address |
+| Checkout → invoice → e-mail | `INV-2026/27-201`, PDF attached, 17,164 bytes |
+| Invoice reprint from Guest History | Correct number, guest, total, void banner state |
+| **Revenue excludes voided invoices** | Reports and Finance both show LKR 9,500 against 3 Active / 3 Void |
+| All 9 report types | Render, with proper empty states where there is no data |
+| Staff permissions | 17 assertions: 9 correctly allowed, 8 correctly refused |
+| Offline config editing | Applied, cached, landed on the server after reconnect |
+| Config propagation between devices | Works (timing figure retracted — see below) |
+| Suggestions shared across devices | Written, recovered on a wiped device |
+| Menu add / update / delete | Server-confirmed at each step |
+| Derivation performance | `deriveOccupancy` 0.01 ms, `deriveStock` 0.03 ms |
+| Accessibility hygiene | 0 nameless icon buttons of 162, 0 missing keyboard hints, 0 untyped form buttons |
+| Touch targets | 0 controls under 44 px |
+| Date handling | 0 raw UTC dates; all through `toDateISO()` |
+| Error handling | 0 silent `catch {}` |
+
+---
+
+# Still untested
+
+Do not read the list above as "everything else is fine".
+
+- **A second check-in against an already-used reservation** (F1b step 4) —
+  stopped deliberately to avoid a duplicate booking on live.
+- **Guest Charges screen** and **interim bills** — never exercised.
+- **PIN lock** — no PIN is set on the live device, so the shared-tablet
+  protection is currently dormant. Worth knowing operationally.
+- **Printing** — `window.print()` never sent to a real printer, and the
+  printed invoice is the document the guest signs. F1a and F2 both affect
+  exactly that document.
+- **Real devices.** Two browser tabs share one Firestore cache, which
+  already produced one retracted measurement in this project. Cross-device
+  timing needs two real devices.
+- **Real inboxes.** E-mails confirmed `Sent` with correct attachments;
+  never opened in a guest's own mail client.
+- **Scale.** Everything measured against 4 invoices, 161 dishes, 84 stock
+  items. Reports at four hundred invoices is unknown.
+
+---
+
+# Test residue to clean up
+
+Left on live by this audit, all clearly marked, none counting as revenue.
+
+- Guest History shows stays named `ZZ Staff Probe`, `ZZ TEST`,
+  `ZZ INVOICE TEST`, `ZZ RESERVATION TEST`. All checked out or cancelled.
+- One malformed invoice record with no `id` or `grandTotal` field, status
+  `Void` — written by raw SDK, and the cause of F15's symptom.
+- `RES-2026/27-251`, status `Checked In`.
+- Several `guestEmails` and one `invoiceEmails` row against test bookings.
+
+Nothing here is deletable by design (`allow delete: if false`), which is
+correct. They are inert.
