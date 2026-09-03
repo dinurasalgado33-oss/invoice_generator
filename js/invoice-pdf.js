@@ -1,243 +1,135 @@
-import { formatDate, fmt } from "./utils.js";
-import { BRANCH_INFO } from "./data/branches.js";
-import { invoiceRemark } from "./data/charges.js";
-import { CINZEL_REGULAR_B64 } from "./data/font-cinzel.js";
+import { showToast } from "./utils.js";
 
-// The invoice as a file.
+// The invoice as a PDF — the *same* invoice, not a second drawing of it.
 //
-// Until now an invoice could be printed (the browser's own dialog) or
-// saved as a PNG. Neither gives the app a *file* it can hand to anything
-// else, which is why the guest's copy could not be attached to an e-mail.
+// This used to redraw the bill with jsPDF: a hand-built letterhead, hand
+// placed columns, hand-positioned totals. It was tidy and it was wrong.
+// It had no logo, no watermark, none of the maroon banding, and it drifted
+// from the document on screen the moment either changed. Two renderers of
+// one financial document is the same mistake as the app menu and the
+// printed menu, and it looked it.
 //
-// One builder, used by the download button and by the e-mail. That is the
-// point rather than a convenience: "the same invoice the guest was handed"
-// is only true if it is literally the same bytes from the same code, and
-// a second renderer on the server would be the printed menu and the app
-// menu all over again.
+// So nothing is drawn here. `#invoice-preview` — the element staff read,
+// print and hand across the desk — is photographed and placed on an A4
+// page. What the guest receives is what reception is looking at, by
+// construction rather than by agreement.
 //
-// Values come from the stored record and are never recomputed here — the
-// figures are what the guest paid. The letterhead comes from current
-// branch config, matching renderInvoicePreview(): if the hotel's phone
-// number changes, a reprint should carry the number that works today.
+// The trade is real and worth stating: the page is an image, so its text
+// cannot be selected or searched, and the file is about 250KB rather than
+// 13KB. For a document whose job is to be an exact record of what was
+// charged, being exact matters more than being small or searchable.
 
-const MARGIN = 16;
-const PAGE_W = 210;
-const PAGE_H = 297;
-const RIGHT = PAGE_W - MARGIN;
-const MAROON = [74, 14, 28];
-const GOLD = [160, 138, 82];
-const INK = [43, 24, 16];
-const MUTED = [125, 106, 92];
-const RULE = [230, 220, 200];
+// A4 at 96dpi. The capture is forced to this width rather than whatever
+// the device happens to be, because a bill photographed on a 375px phone
+// and the same bill photographed on a tablet would otherwise be two
+// different documents. The invoice is an A4 document; it is captured as
+// one, everywhere.
+const PRINT_WIDTH_PX = 794;
 
-function available() {
-  return typeof window !== "undefined" && window.jspdf && typeof window.jspdf.jsPDF === "function";
-}
+// Twice the pixels, so the type is sharp when the page is printed rather
+// than only when it is read on a screen.
+const CAPTURE_SCALE = 2;
 
-// Cinzel for the hotel's name and the headings, matching the menus and the
-// printed stationery. jsPDF subsets it, so embedding costs about 9KB
-// rather than the 125KB the whole face would.
-function withFonts(pdf) {
-  pdf.addFileToVFS("Cinzel-Regular.ttf", CINZEL_REGULAR_B64);
-  pdf.addFont("Cinzel-Regular.ttf", "Cinzel", "normal");
-  return pdf;
-}
+const PAGE_MARGIN_MM = 10;
 
-function setFont(pdf, family, style, size, colour) {
-  pdf.setFont(family, style);
-  pdf.setFontSize(size);
-  if (colour) pdf.setTextColor(colour[0], colour[1], colour[2]);
-}
-
-function rule(pdf, y, colour = RULE, width = 0.4) {
-  pdf.setDrawColor(colour[0], colour[1], colour[2]);
-  pdf.setLineWidth(width);
-  pdf.line(MARGIN, y, RIGHT, y);
-}
-
-// A label on the left and its value on the right, the shape the guest
-// block uses on the printed page.
-function pair(pdf, y, label, value) {
-  setFont(pdf, "helvetica", "normal", 9, MUTED);
-  pdf.text(String(label), MARGIN, y);
-  setFont(pdf, "helvetica", "bold", 9.5, INK);
-  pdf.text(String(value == null || value === "" ? "-" : value), MARGIN + 42, y);
-}
-
-function money(pdf, y, label, value, opts = {}) {
-  setFont(pdf, "helvetica", opts.bold ? "bold" : "normal", opts.bold ? 10.5 : 9.5, opts.bold ? MAROON : INK);
-  pdf.text(String(label), RIGHT - 62, y);
-  pdf.text(String(value), RIGHT, y, { align: "right" });
+export function isPdfAvailable() {
+  return typeof window !== "undefined"
+    && window.jspdf && typeof window.jspdf.jsPDF === "function"
+    && typeof html2canvas === "function";
 }
 
 export function invoiceFileName(r) {
-  // The document number, with the slash a financial year carries turned
-  // into a dash — a filename cannot hold a path separator either.
-  const no = String(r.id || "invoice").replace(/[/\\]+/g, "-");
+  // A financial year carries a slash and a filename cannot.
+  const no = String((r && r.id) || "invoice").replace(/[/\\]+/g, "-");
   return `LeopardInn-${no}.pdf`;
 }
 
-// Builds the document and hands back the jsPDF instance.
-export function buildInvoicePdf(r) {
-  if (!available()) throw new Error("PDF library not loaded");
-  const { jsPDF } = window.jspdf;
-  const pdf = withFonts(new jsPDF({ unit: "mm", format: "a4", compress: true }));
-  const branchInfo = BRANCH_INFO[r.branch] || {};
-  const currency = r.currency || "LKR";
+// Photographs the invoice at print width and hands back the canvas.
+//
+// `windowWidth` makes html2canvas lay the clone out in an off-screen frame
+// of that width. The visible page is never touched, which matters more
+// than it sounds: the first attempt forced the real page to 794px, waited
+// for a reflow, captured, and put it back in a `finally`. It hung — a
+// 794px reflow inside a narrow window blocked the renderer synchronously,
+// so the `finally` never ran and the app was left stretched to twice the
+// screen. Rendering into the clone has none of that: nothing to restore,
+// nothing to leave broken if it fails, and the guest's phone-sized screen
+// still produces an A4-sized document.
+async function captureInvoice() {
+  const node = document.getElementById("invoice-preview");
+  if (!node) throw new Error("The invoice is not on screen");
 
-  // ---- Letterhead ----
-  let y = 24;
-  setFont(pdf, "Cinzel", "normal", 19, MAROON);
-  pdf.text(branchInfo.hotelName || r.branch || "Leopard Inn", PAGE_W / 2, y, { align: "center" });
-
-  y += 6;
-  setFont(pdf, "helvetica", "normal", 8.5, MUTED);
-  if (branchInfo.address) {
-    pdf.text(String(branchInfo.address), PAGE_W / 2, y, { align: "center" });
-    y += 4.5;
-  }
-  const contact = [
-    branchInfo.phone ? `Tel ${branchInfo.phone}` : "",
-    branchInfo.email ? `Email: ${branchInfo.email}` : "",
-  ].filter(Boolean).join("   •   ");
-  if (contact) {
-    pdf.text(contact, PAGE_W / 2, y, { align: "center" });
-    y += 4.5;
-  }
-
-  y += 2;
-  rule(pdf, y, GOLD, 0.6);
-  y += 9;
-
-  // ---- A void invoice says so before anything else ----
-  // The figures stay readable — the record has to remain readable — but
-  // the document must not reprint as though it were still owed.
-  if (r.status === "Void") {
-    pdf.setFillColor(179, 65, 58);
-    pdf.rect(MARGIN, y - 5.5, RIGHT - MARGIN, 9, "F");
-    setFont(pdf, "helvetica", "bold", 11, [255, 255, 255]);
-    pdf.text("VOID", MARGIN + 3, y + 0.6);
-    const detail = [r.voidReason, r.voidedBy ? "voided by " + r.voidedBy : ""].filter(Boolean).join(" · ");
-    if (detail) {
-      setFont(pdf, "helvetica", "normal", 7.5, [255, 255, 255]);
-      pdf.text(pdf.splitTextToSize(detail, RIGHT - MARGIN - 26)[0], MARGIN + 18, y + 0.6);
-    }
-    y += 10;
-  }
-
-  // ---- Number and date ----
-  setFont(pdf, "helvetica", "bold", 11, MAROON);
-  pdf.text(`INVOICE  ${r.id || ""}`, MARGIN, y);
-  setFont(pdf, "helvetica", "normal", 9, MUTED);
-  pdf.text(formatDate(r.date), RIGHT, y, { align: "right" });
-  y += 8;
-
-  // ---- Guest ----
-  pair(pdf, y, "Guest Name", r.guest); y += 5.6;
-  pair(pdf, y, "No of Guest", Number(r.guestCount) > 0 ? r.guestCount : "-"); y += 5.6;
-  pair(pdf, y, "Contact No", r.guestPhone); y += 5.6;
-  pair(pdf, y, "Reservation No", r.regCardNo || "N/A"); y += 5.6;
-  pair(pdf, y, "Voucher No", r.voucherNo || "N/A"); y += 5.6;
-  pair(pdf, y, "Check in Date", formatDate(r.checkinDate)); y += 5.6;
-  pair(pdf, y, "Check out Date", formatDate(r.checkoutDate)); y += 9;
-
-  // ---- Charges ----
-  setFont(pdf, "Cinzel", "normal", 11, MAROON);
-  pdf.text("List of Information", MARGIN, y);
-  y += 5;
-
-  const cols = [MARGIN, MARGIN + 12, MARGIN + 104, MARGIN + 126, RIGHT];
-  pdf.setFillColor(248, 243, 234);
-  pdf.rect(MARGIN, y - 4, RIGHT - MARGIN, 7, "F");
-  setFont(pdf, "helvetica", "bold", 8.5, MAROON);
-  pdf.text("#", cols[0] + 1.5, y);
-  pdf.text("Description", cols[1], y);
-  pdf.text("Qty", cols[2], y);
-  pdf.text("Rate", cols[3] + 16, y, { align: "right" });
-  pdf.text("Value", cols[4], y, { align: "right" });
-  y += 6;
-
-  const cash = (n) => Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  setFont(pdf, "helvetica", "normal", 9, INK);
-  (r.items || []).forEach(it => {
-    // A long description wraps rather than running under the Qty column.
-    const lines = pdf.splitTextToSize(String(it.desc || ""), 88);
-    // A page break mid-invoice keeps the column headings with the rows
-    // that follow, otherwise page two is five unlabelled numbers.
-    if (y > PAGE_H - 70) {
-      pdf.addPage();
-      y = 24;
-      setFont(pdf, "helvetica", "bold", 8.5, MAROON);
-      pdf.text("Description", cols[1], y);
-      pdf.text("Value", cols[4], y, { align: "right" });
-      y += 6;
-      setFont(pdf, "helvetica", "normal", 9, INK);
-    }
-    pdf.text(String(it.no ?? ""), cols[0] + 1.5, y);
-    pdf.text(lines, cols[1], y);
-    pdf.text(String(it.qty ?? ""), cols[2], y);
-    pdf.text(it.rate ? cash(it.rate) : "", cols[3] + 16, y, { align: "right" });
-    pdf.text(it.value ? cash(it.value) : "-", cols[4], y, { align: "right" });
-    y += Math.max(5.4, lines.length * 4.6);
+  // The swipe hint belongs to the screen, not to the document. Hidden on
+  // the clone rather than the page, so nothing flickers under reception.
+  return html2canvas(node, {
+    scale: CAPTURE_SCALE,
+    backgroundColor: "#ffffff",
+    useCORS: true,
+    windowWidth: PRINT_WIDTH_PX,
+    windowHeight: 1400,
+    onclone: (doc) => {
+      const hint = doc.querySelector("#invoice-preview .scroll-hint");
+      if (hint) hint.style.visibility = "hidden";
+    },
   });
+}
 
-  y += 2;
-  rule(pdf, y);
-  y += 7;
+// Places the capture on A4, continuing onto further pages if the bill is
+// long. A guest with thirty charge lines gets page two rather than a
+// squashed page one.
+export async function buildInvoicePdf() {
+  if (!isPdfAvailable()) throw new Error("PDF tools are not loaded");
+  const canvas = await captureInvoice();
 
-  // ---- Totals ----
-  const totalsTop = y;
-  money(pdf, y, `Bill Total (${currency})`, fmt(r.billTotal, currency)); y += 5.6;
-  money(pdf, y, "Service Charge", fmt(r.serviceCharge, currency)); y += 5.6;
-  money(pdf, y, "Gross Amount", fmt(r.grossAmount, currency)); y += 5.6;
-  if (r.discount) {
-    money(pdf, y, r.discountPercent ? `Discount (${r.discountPercent}%)` : "Discount", "-" + fmt(r.discount, currency));
-    y += 5.6;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const drawW = pageW - PAGE_MARGIN_MM * 2;
+  const drawH = canvas.height * drawW / canvas.width;
+  const usableH = pageH - PAGE_MARGIN_MM * 2;
+
+  // PNG, not JPEG. The invoice is text on white, where JPEG's ringing
+  // shows around every character — on a document somebody may have to
+  // read a figure off.
+  const image = canvas.toDataURL("image/png");
+
+  let remaining = drawH;
+  let offset = 0;
+  while (remaining > 0.5) {
+    if (offset > 0) pdf.addPage();
+    // The image is placed shifted upward and the page clips it, which is
+    // the standard way to paginate a single tall capture.
+    pdf.addImage(image, "PNG", PAGE_MARGIN_MM, PAGE_MARGIN_MM - offset, drawW, drawH, undefined, "FAST");
+    remaining -= usableH;
+    offset += usableH;
   }
-  money(pdf, y, "Net Amount", fmt(r.total, currency)); y += 5.6;
-  // A rate of zero means the hotel is not registered for VAT — printing
-  // "VAT 0.00" would imply it is.
-  if (Number(r.vatRate) > 0) {
-    money(pdf, y, `VAT (${r.vatRate}%)`, fmt(r.vatAmount || 0, currency));
-    y += 5.6;
-  }
-  money(pdf, y, "Advance Paid", r.advance ? fmt(r.advance, currency) : "-"); y += 7;
-  rule(pdf, y - 4, GOLD, 0.5);
-  money(pdf, y, "TOTAL", fmt(r.grandTotal, currency), { bold: true });
-
-  // ---- Remark, beside the totals ----
-  const remark = invoiceRemark(r.branch);
-  if (remark) {
-    setFont(pdf, "helvetica", "bold", 8, MUTED);
-    pdf.text("Remark:", MARGIN, totalsTop);
-    setFont(pdf, "helvetica", "normal", 8, MUTED);
-    pdf.text(pdf.splitTextToSize(remark, 78), MARGIN, totalsTop + 4.5);
-  }
-
-  // ---- Signatures ----
-  y = Math.max(y + 22, PAGE_H - 42);
-  pdf.setDrawColor(RULE[0], RULE[1], RULE[2]);
-  pdf.setLineWidth(0.3);
-  pdf.line(MARGIN, y, MARGIN + 58, y);
-  pdf.line(RIGHT - 58, y, RIGHT, y);
-  setFont(pdf, "helvetica", "normal", 8, MUTED);
-  pdf.text("Guest Signature", MARGIN, y + 4.5);
-  pdf.text("For " + (branchInfo.hotelName || "Leopard Inn"), RIGHT, y + 4.5, { align: "right" });
-  if (r.staffName) pdf.text(String(r.staffName), RIGHT, y + 9, { align: "right" });
 
   return pdf;
 }
 
-// The bytes, for anything that has to carry the file somewhere.
-export function invoicePdfBase64(r) {
-  // `datauristring` prefixes the payload; the caller wants the payload.
-  return buildInvoicePdf(r).output("datauristring").split(",")[1];
+// The bytes, for the e-mail. Async now — the capture is.
+export async function invoicePdfBase64() {
+  const pdf = await buildInvoicePdf();
+  return pdf.output("datauristring").split(",")[1];
 }
 
-export function downloadInvoicePdf(r) {
-  buildInvoicePdf(r).save(invoiceFileName(r));
+export async function downloadInvoicePdf(record) {
+  const pdf = await buildInvoicePdf();
+  pdf.save(invoiceFileName(record));
 }
 
-export function isPdfAvailable() {
-  return available();
+// Shared by the button and the e-mail so the failure reads the same way
+// in both places. Returns null rather than throwing: a bill that exists
+// but could not be turned into a PDF is a small problem; a checkout that
+// will not finish is a guest standing at the desk.
+export async function tryInvoicePdfBase64() {
+  if (!isPdfAvailable()) return null;
+  try {
+    return await invoicePdfBase64();
+  } catch (err) {
+    console.error("Invoice PDF failed:", err);
+    showToast("Couldn't build the invoice PDF — the bill is saved, use Print");
+    return null;
+  }
 }

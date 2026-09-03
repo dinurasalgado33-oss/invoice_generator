@@ -5,6 +5,14 @@ const nodemailer = require("nodemailer");
 
 // The guest's bill, with the invoice PDF attached.
 //
+// Attached, deliberately, and NOT served at a public link. A link was
+// built and withdrawn: an unguessable URL is genuinely unguessable, but
+// it is also permanent, forwardable, and carries the guest's name, phone
+// and charges to anyone who ends up holding it. An attachment reaches
+// exactly the address reception typed and nowhere else. If a link is ever
+// wanted, it needs an expiry and a decision about what happens to bills
+// already sent — neither of which a token in a URL gives you.
+//
 // The PDF arrives on the row, built on the device that raised the invoice.
 // Nothing is rendered here on purpose: an invoice must be the document the
 // guest was handed at the desk, and a second renderer on the server would
@@ -19,11 +27,6 @@ const BRANCH_LABELS = {
   "Wilpattu": "Leopard Inn Wilpattu",
   "Arugam Bay": "Leopard Inn Arugam Bay",
 };
-
-// Where the invoice can be opened without downloading anything. The
-// hotel's own domain, not a cloudfunctions.net address — a guest should
-// not have to trust a hostname they have never seen to read their bill.
-const SITE = "https://leopard-inn.web.app";
 
 const BRANCH_PHONES = {
   "Wilpattu": "+94 740 559 024",
@@ -53,31 +56,20 @@ function buildHtml(row) {
   const phone = BRANCH_PHONES[row.branch] || "";
   const first = String(row.guestName || "").trim().split(/\s+/)[0] || "there";
 
-  // An interim bill is a running total mid-stay. Saying "thank you for
-  // staying with us" against one would read as a goodbye to somebody who
-  // has not left.
+  // An interim bill is a running total mid-stay. Thanking somebody for
+  // their stay while they are still in the villa reads as being shown the
+  // door.
   const closing = row.interim
-    ? "This is a running total for your stay so far — nothing is due yet."
+    ? "Nothing is due yet — this is just where your bill stands so far."
     : "Thank you for staying with us. We hope to welcome you back.";
 
   return `<!doctype html>
-<html><body style="margin:0;padding:24px;background:#faf7f2;font-family:Georgia,'Times New Roman',serif;color:#2b2b2b">
-  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:28px">
-    <h1 style="margin:0 0 4px;font-size:22px;color:#4a0e1c">${escapeHtml(label)}</h1>
-    <p style="margin:0 0 20px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#a08a52">${row.interim ? "Your bill so far" : "Your invoice"}</p>
-    <p style="margin:0 0 12px">Dear ${escapeHtml(first)},</p>
-    <p style="margin:0 0 12px">${row.interim ? "Here is your bill as it stands" : "Here is your invoice"}, ${escapeHtml(row.invoiceNo || "")}.</p>
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:18px 0">
-      <tr>
-        <td style="padding:10px 0;border-top:1px solid #e8dfc9;border-bottom:1px solid #e8dfc9;font-size:15px">Total</td>
-        <td style="padding:10px 0;border-top:1px solid #e8dfc9;border-bottom:1px solid #e8dfc9;font-size:15px;text-align:right;color:#4a0e1c"><strong>${escapeHtml(money(row.grandTotal, row.currency))}</strong></td>
-      </tr>
-    </table>
-    ${row.id ? `<p style="margin:0 0 6px"><a href="${SITE}/i/${escapeHtml(row.id)}" style="color:#4a0e1c">View your invoice</a></p>` : ""}
-    <p style="margin:0 0 12px;font-size:14px;color:#555">It is attached to this e-mail as well, if you would rather keep the file.</p>
-    <p style="margin:16px 0 0">${escapeHtml(closing)}</p>
-    ${phone ? `<p style="margin:16px 0 0;font-size:14px;color:#555">Any question about this bill, just call reception on ${escapeHtml(phone)}.</p>` : ""}
-  </div>
+<html><body style="margin:0;padding:24px;font-family:Georgia,'Times New Roman',serif;color:#2b2b2b;line-height:1.5">
+  <p>Dear ${escapeHtml(first)},</p>
+  <p>${row.interim ? "Your bill so far" : "Your invoice"} ${escapeHtml(row.invoiceNo || "")} is attached, for ${escapeHtml(money(row.grandTotal, row.currency))}.</p>
+  <p>${escapeHtml(closing)}</p>
+  ${phone ? `<p>Any question about this bill, just call reception on ${escapeHtml(phone)}.</p>` : ""}
+  <p>${escapeHtml(label)}</p>
 </body></html>`;
 }
 

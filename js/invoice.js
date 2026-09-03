@@ -4,7 +4,7 @@ import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO, safeStor
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import { add, COLLECTIONS } from "./data/store.js";
-import { downloadInvoicePdf, isPdfAvailable, invoicePdfBase64 } from "./invoice-pdf.js";
+import { downloadInvoicePdf, isPdfAvailable, tryInvoicePdfBase64 } from "./invoice-pdf.js";
 import { queueInvoiceEmail } from "./data/invoice-email.js";
 import { logError } from "./data/error-log.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
@@ -629,29 +629,9 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
   };
   add(COLLECTIONS.INVOICES, INVOICES, record);
 
-  // The guest's copy, with the PDF built here on the device and carried on
-  // the row. Built from the record that was just stored, so the file the
-  // guest receives is the file this screen is about to render.
-  //
-  // Never allowed to fail the invoice. A bill that exists but was not
-  // e-mailed is a small problem somebody can fix from Guest History; a
-  // checkout that refuses to complete because an attachment would not build
-  // is a guest standing at the desk.
-  try {
-    const pdf = isPdfAvailable() ? invoicePdfBase64(record) : "";
-    queueInvoiceEmail({
-      invoice: record,
-      pdfBase64: pdf,
-      // Already on the record, stamped from the checkout context — the
-      // address is looked up from the welcome e-mail for the same booking.
-      bookingId: record.bookingId,
-    });
-  } catch (err) {
-    logError(`Could not queue the invoice e-mail: ${err && err.message}`, { source: "invoice-email" });
-  }
-
   renderInvoicePreview(record);
   setInvoicePreviewReturn("screen-form", "Back");
+  const bookingIdForEmail = record.bookingId;
   checkoutContext = null;
 
   // The record is passed so a listener can tell *which* invoice was just
@@ -661,6 +641,35 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
 
   showToast("Invoice generated");
   showScreen("screen-preview");
+
+  // The guest's copy, queued *after* the preview is on screen — because
+  // the PDF is a photograph of that preview, and you cannot photograph a
+  // screen that has not been drawn yet. This is the ordering the file
+  // depends on; moving the queue back above renderInvoicePreview would
+  // silently start attaching blank pages.
+  //
+  // Deliberately not awaited. The bill is raised, the screen has moved on,
+  // and reception is already talking to the next guest — the attachment
+  // finishing is not something anybody should be made to wait for.
+  //
+  // Never allowed to fail the invoice either. A bill that exists but was
+  // not e-mailed is a small problem somebody can fix from Guest History; a
+  // checkout that refuses to complete because an attachment would not
+  // build is a guest standing at the desk.
+  (async () => {
+    try {
+      const pdf = await tryInvoicePdfBase64();
+      queueInvoiceEmail({
+        invoice: record,
+        pdfBase64: pdf || "",
+        // The address is looked up from the welcome e-mail for the same
+        // booking, so one guest has one address.
+        bookingId: bookingIdForEmail,
+      });
+    } catch (err) {
+      logError(`Could not queue the invoice e-mail: ${err && err.message}`, { source: "invoice-email" });
+    }
+  })();
 });
 
 // "Done", not "New Invoice": finishing a bill almost never means starting
@@ -680,19 +689,30 @@ document.getElementById("print-btn").addEventListener("click", () => window.prin
 // The same builder the e-mailed copy uses, so "the invoice we sent you"
 // and "the invoice I downloaded" are the same document rather than two
 // renderings that agree today.
-document.getElementById("pdf-btn").addEventListener("click", () => {
+document.getElementById("pdf-btn").addEventListener("click", async (e) => {
   if (!previewedInvoice) return;
   if (!isPdfAvailable()) {
-    // jsPDF is a CDN script and both properties have patchy connectivity,
-    // so this genuinely fails sometimes. Print still works offline.
+    // jsPDF and html2canvas are both CDN scripts, and both properties have
+    // patchy connectivity, so this genuinely fails sometimes. Print still
+    // works offline.
     showToast("PDF needs a connection — use Print instead");
     return;
   }
+  // The capture takes a moment and briefly reflows the page to print
+  // width. Without this the button looks dead and gets pressed again,
+  // producing a second capture on top of the first.
+  const btn = e.currentTarget;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Building…";
   try {
-    downloadInvoicePdf(previewedInvoice);
+    await downloadInvoicePdf(previewedInvoice);
   } catch (err) {
     logError(`Could not build the invoice PDF: ${err && err.message}`, { source: "invoice-pdf" });
     showToast("Couldn't build the PDF — use Print instead");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
   }
 });
 
