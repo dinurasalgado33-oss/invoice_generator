@@ -4,51 +4,229 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Menu — Leopard Inn</title>
+<meta name="description" content="Menus for Leopard Inn Wilpattu and Leopard Inn Arugam Bay." />
+<meta name="theme-color" content="#F8F0DA" />
+
 <!--
   One address for every menu, at both properties.
   https://leopard-inn.web.app/menu.html
 
-  This page is a list, not a menu. Each entry opens the PDF the staff
-  portal builds — the same file a manager gets from Open PDF, with the
-  property's own artwork. There is no second rendering of the menu
-  anywhere, which is the point: what a guest reads and what the manager
-  published are one document.
+  A guest lands here from a QR code on a table, taps their menu, and gets
+  the PDF the staff portal built — same artwork, same prices, one file.
+  This page's whole job is to disappear in one tap.
 
-  Undesigned on purpose. It exists to get out of the way in one tap.
+  The look is taken from the menus themselves rather than invented beside
+  them: the same cream ground (#F8F0DA), the same gold rule, the same
+  fronds bleeding in from the top corners and dunes along the bottom, and
+  each property in its own colour — teal for the sea at Arugam Bay,
+  forest green for Wilpattu. Those values are lifted from PALETTES in
+  js/menu-pdf.js, so the page and the documents it links to agree.
 
-  It reads menus/index.json from Storage, written by the portal when a
-  menu is published. That means a menu added later appears here on its
-  own — the page carries no list of its own to fall out of date.
-
-  Nobody signs in. Storage rules make menus/ publicly readable and
-  nothing else, the same way firestore.rules opens menuItems and nothing
-  else, and for the same reason: a QR code on a table has nobody signed
-  in behind it.
+  Deliberately one visual world, not theme-aware. The menus are cream
+  paper; a dark version of this page would be a different object.
 -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    /* Straight from PALETTES in js/menu-pdf.js. */
+    --ground: #F8F0DA;
+    --gold: #C2A03C;
+    --ink: #2A2A24;
+    --muted: #8A8676;
+
+    /* Arugam Bay — the sea. */
+    --ab-heading: #27505E;
+    --ab-accent: #4D8496;
+
+    /* Wilpattu — the forest. */
+    --wp-heading: #2D4A2A;
+    --wp-accent: #5C7C4E;
+
+    --measure: 34rem;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    /* The art bleeds off every edge; nothing should scroll sideways. */
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ---- the frame, echoing the menus' cover ---------------------------
+     Fixed rather than scrolled, so on a long list the fronds stay where
+     they were placed instead of drifting up out of the composition.
+     Pointer-events off: this is paper, not furniture. */
+  .art {
+    position: fixed;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
+  .art img { display: block; width: 100%; height: auto; }
+
+  .art-left  { top: -1.5rem; left: -3rem;  width: min(46vw, 17rem); transform-origin: top left; }
+  .art-right { top: -2.5rem; right: -3rem; width: min(38vw, 14rem); transform-origin: top right; }
+  .art-dunes { bottom: -1px; left: 0; right: 0; width: 100%; opacity: .85; }
+
+  /* A slow sway, as if a breeze crossed the veranda. Long and shallow —
+     anything faster reads as a loading animation rather than weather. */
+  @keyframes sway-left  { from { transform: rotate(-1.1deg); } to { transform: rotate(1.4deg); } }
+  @keyframes sway-right { from { transform: rotate(1.2deg); }  to { transform: rotate(-1.3deg); } }
+  .art-left  { animation: sway-left  11s ease-in-out infinite alternate; }
+  .art-right { animation: sway-right 13s ease-in-out infinite alternate; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .art-left, .art-right { animation: none; }
+  }
+
+  /* ---- the page ---------------------------------------------------- */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: clamp(3.5rem, 14vw, 7rem) 1.5rem clamp(7rem, 22vw, 10rem);
+  }
+
+  .crest { display: block; width: 4.5rem; height: auto; margin: 0 auto 1.5rem; }
+
+  h1 {
+    margin: 0;
+    text-align: center;
+    font-family: Cinzel, Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(1.6rem, 7vw, 2.3rem);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .tagline {
+    margin: .6rem 0 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--muted);
+  }
+
+  /* The gold hairline the menus use under their headings. */
+  .rule {
+    width: 4.5rem;
+    height: 1px;
+    margin: 2rem auto 0;
+    background: var(--gold);
+    border: 0;
+  }
+
+  .status {
+    margin: 3rem 0;
+    text-align: center;
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  /* ---- one property ------------------------------------------------ */
+  .property { margin-top: clamp(2.75rem, 9vw, 4rem); }
+
+  .property h2 {
+    margin: 0 0 1.25rem;
+    text-align: center;
+    font-family: Cinzel, Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(.95rem, 3.6vw, 1.1rem);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--heading, var(--ink));
+  }
+
+  .property[data-branch="Arugam Bay"] { --heading: var(--ab-heading); --accent: var(--ab-accent); }
+  .property[data-branch="Wilpattu"]   { --heading: var(--wp-heading); --accent: var(--wp-accent); }
+
+  .menus { list-style: none; margin: 0; padding: 0; }
+
+  .menus li + li { border-top: 1px solid rgba(194, 160, 60, .3); }
+
+  /* The whole row is the target, not the words. A guest is standing up,
+     one-handed, holding a phone in low light. */
+  .menus a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.75rem;
+    padding: 1rem .25rem;
+    color: var(--heading, var(--ink));
+    text-decoration: none;
+    font-size: 1.15rem;
+    transition: color .18s ease, padding-left .18s ease;
+  }
+  .menus a:hover,
+  .menus a:focus-visible { color: var(--accent); padding-left: .6rem; }
+  .menus a:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 2px; }
+  .menus a:active { opacity: .65; }
+
+  .arrow { flex: none; color: var(--gold); font-size: 1.1rem; line-height: 1; }
+
+  footer {
+    margin-top: clamp(3rem, 10vw, 4.5rem);
+    text-align: center;
+    font-size: .9rem;
+    color: var(--muted);
+    /* Clear of the dune. The wave is fixed to the bottom of the viewport,
+       so without this the last line of text sits inside it and is read
+       through the paint — the menus themselves keep the same clearance,
+       which is what FOOT = A4.h - 42 is doing in menu-pdf.js. */
+    padding-bottom: 4.5rem;
+  }
+</style>
 </head>
 <body>
 
-<h1>Leopard Inn</h1>
-<p id="status">Loading…</p>
-<div id="menus"></div>
+<div class="art art-left"><img src="assets/menu/wp-frond-1.png" alt="" /></div>
+<div class="art art-right"><img src="assets/menu/ab-frond-1.png" alt="" /></div>
+<div class="art art-dunes"><img src="assets/menu/ab-wave-b.png" alt="" /></div>
+
+<main>
+  <img class="crest" src="assets/menu/crest.png" alt="" />
+  <h1>Leopard Inn</h1>
+  <p class="tagline">Our menus</p>
+  <hr class="rule" />
+
+  <p class="status" id="status">Loading…</p>
+  <div id="menus"></div>
+
+  <footer id="footer" hidden>All prices are in Sri Lankan Rupees.</footer>
+</main>
 
 <script type="module">
 import { firebaseConfig } from "./js/data/firebase-config.js";
 
 // The same SDK version the portal boots with — a different URL is a
-// different copy of the SDK with its own service registry.
+// different copy of the SDK, with its own service registry.
 const SDK = "https://www.gstatic.com/firebasejs/11.0.2";
 
 // The list comes from Firestore, not from Storage.
 //
-// Storage was the obvious place — the list sat beside the PDFs it
-// describes. It does not work: a browser cannot `fetch` a Storage object
-// from another origin unless CORS is configured on the bucket, and the
-// failure is a bare "Failed to fetch" that says nothing about why. A
-// Firestore read has no such trouble.
-//
-// The PDFs are unaffected, because they are opened by ordinary link
-// navigation and CORS does not apply to that.
+// Storage was the obvious place, beside the PDFs it describes. It does
+// not work: a browser cannot `fetch` a Storage object from another origin
+// unless CORS is configured on the bucket, and the failure is a bare
+// "Failed to fetch" that says nothing about why. A Firestore read has no
+// such trouble, and the PDFs are unaffected because they are opened by
+// ordinary link navigation, which CORS does not apply to.
 async function readIndex() {
   const [{ initializeApp }, fs] = await Promise.all([
     import(`${SDK}/firebase-app.js`),
@@ -65,28 +243,42 @@ function escapeHtml(v) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+// Grouped by property, because a guest at one hotel should not have to
+// read past the other hotel's menus to find theirs.
 function render(menus) {
-  // Grouped by property, because a guest at one hotel should not have to
-  // read past the other hotel's menus to find theirs.
-  const byBranch = {};
-  menus.forEach(m => { (byBranch[m.branchLabel || m.branch] ||= []).push(m); });
+  const byBranch = new Map();
+  menus.forEach(m => {
+    const key = m.branch || m.branchLabel;
+    if (!byBranch.has(key)) byBranch.set(key, { label: m.branchLabel || m.branch, items: [] });
+    byBranch.get(key).items.push(m);
+  });
 
-  return Object.entries(byBranch).map(([label, items]) => `
-    <h2>${escapeHtml(label)}</h2>
-    <ul>
-      ${items.map(m => `<li><a href="${escapeHtml(m.url)}">${escapeHtml(m.title)}</a></li>`).join("")}
-    </ul>`).join("");
+  return [...byBranch.entries()].map(([branch, group]) => `
+    <section class="property" data-branch="${escapeHtml(branch)}">
+      <h2>${escapeHtml(group.label)}</h2>
+      <ul class="menus">
+        ${group.items.map(m => `
+          <li>
+            <a href="${escapeHtml(m.url)}">
+              <span>${escapeHtml(m.title)}</span>
+              <span class="arrow" aria-hidden="true">&rarr;</span>
+            </a>
+          </li>`).join("")}
+      </ul>
+    </section>`).join("");
 }
 
 readIndex()
   .then(data => {
     const menus = (data.menus || []).filter(m => m && m.url && m.title);
+    const status = document.getElementById("status");
     if (!menus.length) {
-      document.getElementById("status").textContent = "No menus have been published yet.";
+      status.textContent = "No menus have been published yet.";
       return;
     }
-    document.getElementById("status").hidden = true;
+    status.hidden = true;
     document.getElementById("menus").innerHTML = render(menus);
+    document.getElementById("footer").hidden = false;
   })
   .catch(err => {
     // A guest cannot fix this and should not be shown a stack trace. Give

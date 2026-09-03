@@ -6,7 +6,7 @@
 // anything real to a guest.
 export const BRANCH_INFO = {
   "Wilpattu": {
-    hotelName: "Leopard Inn Wilpattu Hotel",
+    hotelName: "Leopard Inn Wilpattu Villa",
     address: "Old Eluwankulama, Eluwankulama, Sri Lanka",
     phone: "+94 740 559 024",
     email: "leopardinnwilpattu@gmail.com",
@@ -16,7 +16,7 @@ export const BRANCH_INFO = {
     bankBranch: "Dehiattakandiya",
   },
   "Arugam Bay": {
-    hotelName: "Leopard Inn Arugam Bay Hotel",
+    hotelName: "Leopard Inn Arugam Bay Villa",
     address: "Arugam Bay, Sri Lanka",
     phone: "+94 740 559 024",
     email: "leopardinnwilpattu@gmail.com",
