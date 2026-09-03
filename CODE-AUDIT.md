@@ -11,10 +11,15 @@ Two questions were asked: **is anything disrupting data routing**, and
 
 ## The short version
 
-**One serious data-routing defect** — §1.1. Placing a food order deducts
-stock permanently and everywhere, while the order itself lives only in
-that one browser tab. Refresh the phone and the stock stays gone with
-nothing left to complete, bill or cancel. This is the finding to act on.
+**A pending food order is lost on reload, and the guest is never billed**
+— §1.1. Verified: an LKR 880 order placed through the Orders screen was
+gone after a page refresh, with no record anywhere. The kitchen may
+already be cooking it. This is live today.
+
+**The same event will also strand a stock deduction, once ingredients are
+configured** — §1.2. Latent, not active: no dish currently has
+ingredients, so the stock half does not fire yet. It arms itself the
+first time a manager uses the Add Ingredient editor.
 
 **The runtime is not slow.** Every derivation that runs on every database
 change is sub-millisecond. Do not spend time optimising them.
@@ -27,58 +32,80 @@ font loaded on every visit for a feature most sessions never touch.
 
 ## 1. Data routing
 
-### 1.1 A pending food order deducts stock permanently, then can vanish — **HIGH**
+### 1.1 A pending food order is lost on reload, unbilled — **HIGH, live today**
 
-The clearest defect in the codebase.
+**Verified on the live app**, not inferred.
 
-**What happens.** `js/orders.js:263` places an order:
+An order for one Papaya Juice, LKR 880, was placed through the Orders
+screen the way reception places one. It appeared in the pending queue.
+The page was then reloaded — the ordinary thing a phone does when its
+battery is low, the browser reclaims the tab, or somebody pulls down too
+far.
 
-```js
-deductIngredients(appState.selectedBranch, dish, item.qty)   // ← persists
-FOOD_ORDERS.push({ ... })                                    // ← does not
+```
+pending orders before reload : 1   (LKR 880, Walk-in, Papaya Juice)
+pending orders after reload  : 0
+completed order records      : unchanged
 ```
 
-- `deductIngredients` → `logStockMovement` → `add(COLLECTIONS.STOCK_USAGE, …)`.
-  That is a **real, persisted, synced** write. Every device sees the stock
-  drop within seconds, and it survives everything.
-- `FOOD_ORDERS` is declared in `js/data/orders.js` as `export const
-  FOOD_ORDERS = []` and is **never hydrated**. `sync.js` subscribes
-  `COLLECTIONS.FOOD_ORDERS` to `FOOD_ORDER_RECORDS` — a *different array*,
-  holding completed orders. The pending queue is memory in one tab.
+The order was not completed, not cancelled, not recorded. It was simply
+gone. If the kitchen had already started cooking, the food is made, the
+guest is served, and nothing in the system ever knew.
 
-**The consequence.** Between placing an order and pressing Complete or
-Delete, the two halves are unequal: one is permanent and global, the
-other is local and fragile. If the device reloads, signs out, runs out of
-battery, or the browser reclaims the tab:
+**Why.** `js/data/orders.js:8` declares `export const FOOD_ORDERS = []`
+and nothing ever hydrates it. `sync.js` subscribes
+`COLLECTIONS.FOOD_ORDERS` to `FOOD_ORDER_RECORDS` — a *different array*,
+holding **completed** orders. The pending queue is memory in one tab, and
+the tab is the only copy.
 
-- the ingredients stay consumed, on every device;
-- the order is gone, so nobody can Complete it (no bill) or Delete it
-  (`restoreIngredients` never runs);
-- nothing anywhere says why the shelf is short.
+This is deliberate, and the reasoning is written down: `js/data/orders.js`
+says *"currently pending" only ever means orders placed just now*, and
+`PERSISTENCE-AUDIT.md` lists `FOOD_ORDERS` under "deliberately not
+persisted". The reasoning holds for a *queue*. It does not hold for
+**money owed by a guest**, which is what an unbilled order is.
 
-Stock discrepancies with no explanation read as theft. That is the real
-cost here, not the rupees.
+It also means the kitchen tablet never sees an order the phone took —
+worth deciding on separately, and probably wanted.
 
-**Why it is not simply a bug.** The session-scoped queue is deliberate and
-documented — `js/data/orders.js:2` explains that *"currently pending" only
-ever means orders placed just now*, and `PERSISTENCE-AUDIT.md` lists
-`FOOD_ORDERS` under "deliberately not persisted". That reasoning is sound
-on its own. What was not considered is that the **stock movement attached
-to it is not session-scoped**, so the pair cannot both be right.
+### 1.2 The same event will strand a stock deduction — **HIGH when armed, latent today**
+
+The finding I originally reported, corrected after testing.
+
+`js/orders.js:263` places an order in two steps that are not equal:
+
+```js
+deductIngredients(branch, dish, item.qty)   // → logStockMovement → add(STOCK_USAGE): persisted, synced, permanent
+FOOD_ORDERS.push({ ... })                   // → memory in one tab, per §1.1
+```
+
+So the moment §1.1 happens, the stock movement survives and the order
+that would have returned it does not. `restoreIngredients` can never run,
+because there is nothing left to cancel. The shelf is short, permanently,
+on every device, with nothing to say why — and unexplained stock
+shortfalls read as theft.
+
+**But it does not fire today.** Measured: **0 of 161 dishes have any
+ingredients configured**, so `deductIngredients` iterates an empty list
+and logs nothing. Confirmed in the same test — placing the order left the
+stock-usage log unchanged.
+
+That is a reprieve, not a fix. The Menu screen has a working **Add
+Ingredient** editor (`js/menu.js:208`, saved through
+`update(COLLECTIONS.MENU, dish, { … ingredients })`), so the first
+manager who links a dish to its ingredients arms this — and they will
+have no reason to expect that doing so introduces a way to lose stock.
 
 **Directions, not prescriptions:**
 
-- Persist the pending queue like everything else. It stops being a special
-  case, and the kitchen tablet sees orders the phone took — which is
-  probably wanted anyway.
-- Or defer the stock deduction to Complete, so the persisted half only
-  happens when the order becomes permanent. Loses the reservation, which
-  is what the shortage warning depends on.
-- Or, cheapest: on startup, look for `stockUsage` rows of `kind: "order"`
-  whose order never completed, and surface them for review rather than
-  letting them sit silently.
+- Persisting the pending queue fixes §1.1 and §1.2 together, and gets the
+  kitchen tablet seeing orders as a side effect. It is the one change that
+  addresses all three.
+- Deferring the deduction to Complete fixes §1.2 alone, and loses the
+  reservation that the shortage warning depends on.
+- If neither is done soon, §1.2 at least deserves a note beside the
+  Add Ingredient editor, so the person arming it knows.
 
-### 1.2 Everything else routes correctly — **verified**
+### 1.3 Everything else routes correctly — **verified**
 
 I went looking for writes that bypass the store and found none. The
 `FOOD_ORDERS.push` and `.splice` calls in `orders.js` look like bypasses
@@ -95,7 +122,7 @@ Also checked and clean:
 | Silent `catch {}` swallowing a failure | none |
 | Collection names hard-coded at call sites | none — `guard()` throws on an unknown one |
 
-### 1.3 The config watcher is chatty — **MEDIUM, and mine**
+### 1.4 The config watcher is chatty — **MEDIUM, and mine**
 
 I added this today, so I am flagging my own work.
 
@@ -118,7 +145,7 @@ re-read deliberately so live updates and sign-in hydration could not
 drift apart, and I would make that trade again — but it should be a
 known trade, not a surprise.
 
-### 1.4 Two import cycles — **LOW, worth knowing**
+### 1.5 Two import cycles — **LOW, worth knowing**
 
 ```
 js/reservations.js  →  js/reservation.js   →  js/reservations.js
@@ -243,8 +270,10 @@ stay there, and I should have used a dynamic import.
 
 ## 3. If only four things get done
 
-1. **Fix the food-order stock split** (§1.1). It is the only finding here
-   that silently corrupts data.
+1. **Stop losing pending food orders** (§1.1, §1.2). One change — persisting
+   the queue — closes an unbilled-guest hole that is live today and a
+   stock-corruption hole that arms itself the first time somebody
+   configures a dish's ingredients.
 2. **Add `defer` to `html2canvas` and `chart.js`** (§2.4). One line,
    106 KB off the blocking path.
 3. **Dynamic-import the Cinzel font** (§2.5). One line, 66 KB off every
@@ -265,8 +294,8 @@ on a phone at the desk. One is the one that matters.
   different figure and the same ranking.
 - **Behaviour at scale.** All timings are against 4 invoices, 161 dishes,
   84 stock items. Reports at four hundred invoices is unmeasured.
-- **The food-order failure end to end.** §1.1 is established from the
-  source and from `logStockMovement` demonstrably persisting; I did not
-  place an order and reload the device to watch the stock stay gone.
-  That is the one confirmation I would want before anyone spends a day on
-  the fix — and it takes about two minutes.
+- **§1.2 firing for real.** The two halves are each verified — orders are
+  lost on reload (observed), and `logStockMovement` persists (observed
+  earlier today) — but they have not been seen failing *together*, because
+  no dish has ingredients to deduct. Configuring one on a test dish would
+  close that gap; I did not, to avoid arming it on live data.
