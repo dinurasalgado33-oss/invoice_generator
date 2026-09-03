@@ -255,3 +255,166 @@ Stated so the gaps are not mistaken for clean results.
    already written in five other modules; this is copying, not designing.
 3. **Add password reset** (§4.3). Everything else on this list costs
    somebody seconds. This one costs somebody a morning.
+
+
+---
+
+# Second pass — the paths the first pass skipped
+
+Added 2026-09-02, after walking reservation-to-check-in. Everything below
+is **Observed** on the live app.
+
+The first pass stopped at the paths I had already touched. That was the
+wrong place to stop: the first unwalked path produced the most serious
+findings in either audit.
+
+## 8. One root cause, four broken hides — **HIGH**
+
+`.field { display: flex }` in `base.css` **overrides the `hidden`
+attribute.** A class selector beats the browser's own `[hidden]` rule, so
+`element.hidden = true` sets the attribute and changes nothing on screen.
+
+Four elements are affected. Each was tested by setting `hidden = true` and
+checking `offsetParent`:
+
+| Element | Class | Meant to hide when | Actually hides |
+|---|---|---|---|
+| `grc-reservation-picker` | `.field` | no reservation matches this villa | ❌ |
+| `prev-vat-row` | `.totals-row` | VAT rate is 0 | ❌ |
+| `exchange-rate-field` | `.field` | currency is LKR | ❌ |
+| `history-more-btn` | `.secondary-btn` | nothing more to load | ❌ |
+
+Six other uses of `hidden` were checked and work correctly — the void
+banner, the lock overlay, the proforma notes, the reports filters. Those
+elements' classes happen to set `display: none` themselves.
+
+### 8.1 The check-in screen offers a reservation that belongs to another villa — **HIGH**
+
+The worst consequence, and it is on the primary check-in path.
+
+`grc.js:190` filters correctly: only `Confirmed` reservations whose villas
+include the one being checked into. But:
+
+```js
+picker.hidden = matchingReservations.length === 0;
+if (matchingReservations.length) {
+  el("grc-reservation-select").innerHTML = …   // only rewritten when there ARE matches
+}
+```
+
+When there are no matches the picker is "hidden" — which does nothing —
+**and the dropdown is never cleared**, so the options from the last villa
+stay in the DOM and on screen.
+
+Observed, in order:
+
+1. Created `RES-2026/27-251` for Pool Villa 1 and checked the guest in
+   against it. Reservation correctly closed to `Checked In`.
+2. Opened a check-in for **Pool Villa 2**. That villa has no reservation,
+   so the picker should be hidden.
+3. The picker was **visible**, still offering `RES-2026/27-251` — a
+   reservation that is already used and belongs to a different villa.
+4. Selecting it filled the form with no warning **and overwrote the villa
+   field with "Pool Villa 1"** — the villa the guest is already in, while
+   reception is standing at Pool Villa 2.
+
+I stopped before submitting rather than create a duplicate booking on
+live, so whether a second check-in completes is untested. Everything up to
+that point is observed.
+
+### 8.2 Every zero-VAT invoice prints a bare "VAT" line — **HIGH**
+
+`invoice.js:440` carries this comment:
+
+> *A rate of zero means the hotel is not registered for VAT — printing
+> "VAT 0.00" would imply it is.*
+
+The guard is `vatRow.hidden = !showVat`, and it does not work. Observed on
+`INV-2026/27-201`, `vatRate: 0`:
+
+```
+Bill Total              LKR 9,500.00
+Service charge for food LKR 0.00
+Gross Amount            LKR 9,500.00
+Net Amount              LKR 9,500.00
+VAT                                     ← visible, no figure at all
+Advance                 -
+Grand Total             LKR 9,500.00
+```
+
+Worse than the "VAT 0.00" the comment feared: an empty line item on a
+document the guest signs and keeps. The label and amount are only *filled
+in* when VAT applies, so the row shows whatever markup shipped.
+
+**The PDF is not affected.** `invoice-pdf.js` tests `Number(r.vatRate) > 0`
+in JavaScript rather than relying on `hidden`, so the attached and
+downloaded copies are correct. Only the on-screen and printed HTML is
+wrong — which is the copy handed across the desk.
+
+### 8.3 The exchange-rate field never hides — **MEDIUM**
+
+`syncExchangeRateField()` hides it for LKR. It does not hide. Every
+invoice, including the ordinary rupee ones, shows an exchange-rate box
+staff must learn to ignore. The value is cleared correctly, so nothing is
+mis-billed; it is clutter on the busiest form in the app.
+
+## 9. The invoice number is labelled "Reservation No" — **HIGH**
+
+Separate from §8, and on the same document.
+
+```html
+<p><span>Reservation No</span> <strong id="prev-number">INV-2026/27-201</strong></p>
+```
+
+The invoice number prints under the label **Reservation No**. The guest
+block further down then has its own **Reservation No** row, showing
+`N/A`.
+
+So the printed invoice carries two fields with the same label, one holding
+the invoice number and one holding the actual reservation number. A guest
+querying a charge, or an agent reconciling a voucher, is being given the
+wrong name for the number they will quote back.
+
+## 10. Reservation to check-in works — **verified, no issues**
+
+The path itself is sound, and worth recording as tested:
+
+| Step | Result |
+|---|---|
+| Create reservation | ✅ `RES-2026/27-251`, status `Confirmed` |
+| Villa rate auto-fills from config | ✅ LKR 9,500 |
+| Offered on the matching villa's check-in | ✅ |
+| Guest details carry across | ✅ name, phone, dates, pax, villa |
+| Reservation number stamped on the card | ✅ |
+| Reservation closes on check-in | ✅ → `Checked In` |
+| Booking links back to the reservation | ✅ `reservationId` |
+| Villa becomes occupied | ✅ |
+
+Everything the flow is supposed to do, it does. The defect is in what
+happens on the *next* check-in, per §8.1.
+
+## 11. Revised priority
+
+Replacing §7 of the first pass:
+
+1. **Fix the `hidden` override** (§8). One CSS rule — `[hidden] { display:
+   none !important }` — closes all four at once, including a wrong line on
+   every zero-VAT invoice and a reservation picker that offers the wrong
+   villa's booking. Cheapest fix in either audit, largest blast radius.
+2. **Relabel the invoice number** (§9). One word on a document guests keep.
+3. **Stop losing pending food orders** (`CODE-AUDIT.md` §1.1).
+4. **Make the stepper navigable** (§3.1) — still the biggest daily
+   time saving.
+
+## 12. Paths still unwalked
+
+Honest list, unchanged except where noted:
+
+- **Reports and Finance** — the screens a manager uses to see what the
+  hotel earned. Still untested with data, and still the largest gap.
+- **Guest History reprint**, **Charge Activity**, **Guest Charges**,
+  **interim bill**, **PIN lock**.
+- **A second check-in against a used reservation** (§8.1 step 4) — stopped
+  deliberately.
+- **Printing**, **real devices**, **real inboxes**, **scale** — unchanged
+  from the first pass.
