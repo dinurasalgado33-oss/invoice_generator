@@ -23,6 +23,7 @@ const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,
 const nativeIndex = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "selectedIndex");
 
 let openDropdown = null;
+let anonCount = 0;
 
 const CHEVRON = `<svg class="dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
 const TICK = `<svg class="dd-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>`;
@@ -54,7 +55,14 @@ export function enhanceSelect(select) {
   // constraint validation, so `required` would stop working and the form
   // would submit a blank booking type without complaint.
   select.classList.add("dd-native");
-  if (select.id) button.id = select.id + "-dd";
+
+  // Some selects are built by a screen and never given an id — the
+  // reservation's villa rows, for one. They still need a stable unique
+  // handle, because the option rows below take their ids from it and
+  // aria-activedescendant has to point at exactly one element. Without
+  // this, every id-less dropdown on the page would emit "dd-opt-0".
+  const key = select.id || `dd-${++anonCount}`;
+  button.id = key + "-dd";
   const label = select.labels && select.labels[0];
   if (label) button.setAttribute("aria-labelledby", label.id || (label.id = (select.id || "dd") + "-label"));
 
@@ -135,7 +143,7 @@ export function enhanceSelect(select) {
     const row = rows[active];
     if (row) {
       row.scrollIntoView({ block: "nearest" });
-      if (row.id || (row.id = `${select.id || "dd"}-opt-${active}`)) list.setAttribute("aria-activedescendant", row.id);
+      if (row.id || (row.id = `${key}-opt-${active}`)) list.setAttribute("aria-activedescendant", row.id);
     }
   }
 
