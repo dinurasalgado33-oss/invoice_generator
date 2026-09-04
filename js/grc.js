@@ -250,6 +250,12 @@ el("grc-reservation-select").addEventListener("change", (e) => {
   const r = linkedReservation;
   el("grc-guest-name").value = r.guestName || "";
   setPhone("grc-country-code", "grc-phone", r.contact);
+  // Only when the reservation carries one. An empty reservation e-mail must
+  // not wipe an address reception has already typed on the card.
+  if (r.email) {
+    el("grc-email").value = r.email;
+    el("grc-no-email").checked = false;
+  }
   el("grc-arrival-date").value = r.checkinDate || "";
   el("grc-arrival-time").value = r.checkinTime || standardTimesFor(appState.selectedBranch).checkin;
   el("grc-departure-date").value = r.checkoutDate || "";

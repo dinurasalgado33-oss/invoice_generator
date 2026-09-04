@@ -85,6 +85,7 @@ function fillReservationForm(r) {
   document.getElementById("resv-adults").value = r.adults ?? "";
   document.getElementById("resv-children").value = r.children ?? "";
   setPhone("resv-country-code", "resv-contact", r.contact);
+  document.getElementById("resv-email").value = r.email || "";
   resvCheckinDateInput.value = r.checkinDate || "";
   document.getElementById("resv-checkin-time").value = r.checkinTime || "14:00";
   resvCheckoutDateInput.value = r.checkoutDate || "";
@@ -448,6 +449,9 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     children,
     guestTotal: adults + children,
     contact: readPhone("resv-country-code", "resv-contact"),
+    // Optional, and the only way the welcome e-mail can be addressed
+    // without reception retyping it at the desk with a guest waiting.
+    email: document.getElementById("resv-email").value.trim(),
     checkinDate,
     checkinTime: document.getElementById("resv-checkin-time").value,
     checkoutDate,
