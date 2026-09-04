@@ -194,3 +194,11 @@
   .grc-signature-block, .grc-tick-tables, .grc-bottom { break-inside: avoid; }
   .grc-columns, .grc-bottom { grid-template-columns: 1fr 1fr; }
 }
+
+/* The registration card ran edge to edge.
+   Every other form on the app sits inside `.list-wrap`, which carries the
+   16px side padding; this form is a direct child of its section and so had
+   none — text fields touching both edges of the phone. It predates this
+   redesign but it is exactly the "unnecessarily placed" complaint, so it is
+   fixed here rather than noted for later. */
+#screen-grc-form > form { padding: 0 16px 24px; }

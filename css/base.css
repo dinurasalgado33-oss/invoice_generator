@@ -739,79 +739,6 @@ input[type="search"]::-webkit-search-cancel-button { display: none; }
 }
 button.is-busy { cursor: progress; }
 
-/* Lock screen — a shared reception tablet left open on the desk is the
-   realistic threat, not a remote attacker. Covers everything rather than
-   being a `.screen`, so the session and the screen underneath survive an
-   unlock and staff come back to exactly where they were. */
-.lock-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;              /* above the sheets and the confirm dialog */
-  background: var(--maroon-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.lock-overlay[hidden] { display: none; }
-.lock-panel {
-  width: 100%;
-  max-width: 320px;
-  text-align: center;
-  color: var(--white);
-}
-.lock-icon {
-  width: 44px;
-  height: 44px;
-  color: var(--gold);
-  margin-bottom: 12px;
-}
-.lock-panel h2 {
-  margin: 0 0 4px;
-  color: var(--gold);
-  letter-spacing: .04em;
-}
-.lock-who {
-  margin: 0 0 20px;
-  opacity: .75;
-  font-size: 14px;
-}
-.lock-form input {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, .25);
-  background: rgba(255, 255, 255, .08);
-  color: var(--white);
-  font-size: 22px;
-  /* Digits in a PIN field read better tracked out and centred, and it
-     makes a mistyped entry easier to spot before submitting. */
-  text-align: center;
-  letter-spacing: .5em;
-  text-indent: .5em;         /* re-centres against the trailing letter-space */
-}
-.lock-form input::placeholder {
-  letter-spacing: normal;
-  text-indent: 0;
-  opacity: .5;
-}
-.lock-form input:focus {
-  outline: none;
-  border-color: var(--gold);
-}
-/* Kept in the layout and hidden by visibility rather than display, so the
-   space is genuinely reserved. `min-height` alone could not reserve
-   anything: .field-error is `display: none` until it gets `.show`, so a
-   wrong PIN pushed the Unlock button 10px down the screen at the exact
-   moment someone was tapping it again. Scoped to .lock-form — everywhere
-   else an error appearing is a normal reflow, not a moving target. */
-.lock-form .field-error {
-  display: block;
-  visibility: hidden;
-  min-height: 18px;
-}
-.lock-form .field-error.show { visibility: visible; }
-.lock-form .primary-btn { margin-top: 12px; }
 .link-btn {
   margin-top: 16px;
   background: none;
@@ -1043,3 +970,280 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
   height: 20px;
   flex-shrink: 0;
 }
+
+/* ============================================================
+   Form controls — see js/dropdown.js, js/number-field.js
+   ============================================================ */
+
+/* Our own dropdown. The native <select> stays in the DOM and stays the
+   source of truth; it is only made invisible. Not display:none and not
+   [hidden], because a hidden field is skipped by constraint validation and
+   `required` would quietly stop working. */
+.dd { position: relative; }
+.dd-native {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  margin: 0;
+}
+.dd-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 12px 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.dd-button:focus-visible,
+.dd-open .dd-button {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
+}
+.dd-button:disabled { opacity: 0.55; cursor: not-allowed; }
+.dd-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-button.dd-placeholder .dd-value { color: var(--text-muted); }
+.dd-chevron {
+  width: 17px; height: 17px; flex: none;
+  color: var(--text-muted);
+  transition: transform .2s ease;
+}
+.dd-open .dd-chevron { transform: rotate(180deg); color: var(--maroon); }
+
+/* The list is fixed and lives on <body>, so no scrolling panel or
+   overflow:hidden card can clip it. */
+.dd-list {
+  position: fixed;
+  z-index: 4000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  box-shadow: 0 18px 44px rgba(52, 8, 20, 0.18), 0 2px 8px rgba(52, 8, 20, 0.08);
+  animation: ddIn .13s ease-out;
+}
+@keyframes ddIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .dd-list { animation: none; }
+  .dd-chevron { transition: none; }
+}
+.dd-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 0.97rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.dd-option.dd-active { background: var(--gold-light); }
+.dd-option[aria-selected="true"] { color: var(--maroon); font-weight: 600; }
+.dd-option[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.dd-tick { width: 15px; height: 15px; flex: none; color: var(--maroon); }
+.dd-empty { padding: 14px 12px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
+
+/* A count, not a text box. "2 adults" was a full-width field you had to
+   select and retype; it is a pair of buttons and two digits now. */
+.num-field {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: hidden;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.num-field:focus-within { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18); }
+.num-field button {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--maroon);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.num-field button:disabled { opacity: 0.3; cursor: not-allowed; }
+.num-field button:active:not(:disabled) { background: var(--gold-light); }
+.num-field input {
+  width: 44px;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: none;
+}
+.num-field input:focus { box-shadow: none; border-color: transparent; }
+.num-field input::-webkit-outer-spin-button,
+.num-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.num-field input[type="number"] { -moz-appearance: textfield; }
+
+/* Phone: a country code that is almost always +94, beside a field sized
+   for the digits that follow it. */
+.phone-field { display: flex; gap: 8px; align-items: stretch; }
+.phone-field .dd { flex: none; width: 92px; }
+.phone-field .dd-button { padding-left: 12px; padding-right: 8px; }
+.phone-field input { flex: 1 1 auto; min-width: 0; }
+
+/* A row of fields that belong together and stay together.
+   .form-grid collapses to one column under 480px, which is right for two
+   independent fields and wrong for a pair that reads as one thing — Title
+   beside Name, a date beside its time, adults beside children. Those were
+   each taking a full row on a phone, which is most of why these forms were
+   1.6 screens tall. Law of Proximity: things that belong together sit
+   together, and stay that way at the width reception actually uses. */
+.field-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.field-row > .field { flex: 1 1 0; min-width: 0; }
+.field-row > .field.field-narrow { flex: 0 0 96px; }
+.field-row > .field.field-auto { flex: 0 0 auto; }
+
+/* Dates and times are the chunkiest controls the browser has, and this app
+   asks for four of them on one screen. Tightened, and paired so a date and
+   its time occupy one row rather than two. */
+input[type="date"], input[type="time"] {
+  padding: 11px 10px;
+  font-size: 0.95rem;
+}
+input[type="time"] { font-variant-numeric: tabular-nums; }
+
+/* A group heading, tied to the fields under it rather than floating above
+   them. Miller's Law: these forms are read as three groups of four, not as
+   twelve fields in a column. */
+.field-group { margin-bottom: 22px; }
+.field-group:last-of-type { margin-bottom: 12px; }
+/* Not scoped to .field-group — several groups are a bare heading over a
+   row of fields with no wrapper, and they must look the same. */
+.group-title {
+  display: block;
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--maroon);
+}
+.group-title + .field-row,
+.group-title + .field,
+.group-title + .pax-row { margin-top: 0; }
+
+/* Optional fields, folded away until asked for.
+   Hick's Law: the registration card asked for nine things on its first step
+   when two of them are actually required. Address, country and nationality
+   are real fields that a real card sometimes needs — they are just not what
+   reception is doing while a guest stands at the desk, so they wait behind
+   one line of text instead of nine fields' worth of scrolling. */
+.disclosure {
+  margin: 2px 0 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: hidden;
+}
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--maroon);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  margin-left: auto;
+  border-right: 2.2px solid var(--text-muted);
+  border-bottom: 2.2px solid var(--text-muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .2s ease;
+}
+.disclosure[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.disclosure[open] > summary { border-bottom: 1.5px solid var(--border); }
+.disclosure > summary:focus-visible { outline: 2px solid var(--maroon); outline-offset: -2px; }
+.disclosure-body { padding: 14px 14px 0; }
+.disclosure-body > .field:last-child,
+.disclosure-body > .field-row:last-child > .field { margin-bottom: 14px; }
+.disclosure .count {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .disclosure > summary::after { transition: none; }
+}
+
+/* An inline checkbox is one decision, not a field. It was sitting in the
+   same vertical rhythm as the inputs, which made "this guest has no e-mail"
+   look like another thing to fill in. */
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.inline-check input[type="checkbox"] {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--maroon);
+  cursor: pointer;
+}
+.hint {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* Four counts on one row. They are two digits each and they belong
+   together — "2 adults, 1 child" is one fact, not four fields. */
+.pax-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.pax-row > .field { margin-bottom: 14px; }

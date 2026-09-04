@@ -1,4 +1,5 @@
 import { appState } from "./state.js";
+import { readPhone, setPhone } from "./phone-field.js";
 import { ensureHtml2Canvas } from "./cdn.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT, setBranchLabel } from "./utils.js";
@@ -83,7 +84,7 @@ function fillReservationForm(r) {
   resvGuestNameInput.value = r.guestName || "";
   document.getElementById("resv-adults").value = r.adults ?? "";
   document.getElementById("resv-children").value = r.children ?? "";
-  document.getElementById("resv-contact").value = r.contact || "";
+  setPhone("resv-country-code", "resv-contact", r.contact);
   resvCheckinDateInput.value = r.checkinDate || "";
   document.getElementById("resv-checkin-time").value = r.checkinTime || "14:00";
   resvCheckoutDateInput.value = r.checkoutDate || "";
@@ -445,7 +446,7 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     adults,
     children,
     guestTotal: adults + children,
-    contact: document.getElementById("resv-contact").value.trim(),
+    contact: readPhone("resv-country-code", "resv-contact"),
     checkinDate,
     checkinTime: document.getElementById("resv-checkin-time").value,
     checkoutDate,

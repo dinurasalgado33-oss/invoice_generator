@@ -9,6 +9,7 @@ import { openReservations, findReservationById, RESERVATION_STATUS } from "./dat
 import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { makeStepperNavigable } from "./stepper.js";
+import { readPhone, setPhone } from "./phone-field.js";
 import { bookingSourcesFor } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
@@ -248,7 +249,7 @@ el("grc-reservation-select").addEventListener("change", (e) => {
 
   const r = linkedReservation;
   el("grc-guest-name").value = r.guestName || "";
-  el("grc-phone").value = r.contact || "";
+  setPhone("grc-country-code", "grc-phone", r.contact);
   el("grc-arrival-date").value = r.checkinDate || "";
   el("grc-arrival-time").value = r.checkinTime || standardTimesFor(appState.selectedBranch).checkin;
   el("grc-departure-date").value = r.checkoutDate || "";
@@ -387,7 +388,7 @@ el("grc-form").addEventListener("submit", (e) => {
     nationality: val("grc-nationality"),
     passportNo: val("grc-passport"),
     nicNo: val("grc-nic"),
-    phone: val("grc-phone"),
+    phone: readPhone("grc-country-code", "grc-phone"),
     email: val("grc-email"),
     noEmail: el("grc-no-email").checked,
     previousDestination: val("grc-prev-destination"),

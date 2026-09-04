@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=176" />
-<link rel="stylesheet" href="css/brand-home.css?v=176" />
-<link rel="stylesheet" href="css/rooms.css?v=176" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=176" />
-<link rel="stylesheet" href="css/invoice.css?v=176" />
-<link rel="stylesheet" href="css/dashboard.css?v=176" />
-<link rel="stylesheet" href="css/reports.css?v=176" />
-<link rel="stylesheet" href="css/reservation.css?v=176" />
-  <link rel="stylesheet" href="css/grc.css?v=176" />
-  <link rel="stylesheet" href="css/proforma.css?v=176" />
-  <link rel="stylesheet" href="css/history.css?v=176" />
+<link rel="stylesheet" href="css/base.css?v=181" />
+<link rel="stylesheet" href="css/brand-home.css?v=181" />
+<link rel="stylesheet" href="css/rooms.css?v=181" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=181" />
+<link rel="stylesheet" href="css/invoice.css?v=181" />
+<link rel="stylesheet" href="css/dashboard.css?v=181" />
+<link rel="stylesheet" href="css/reports.css?v=181" />
+<link rel="stylesheet" href="css/reservation.css?v=181" />
+  <link rel="stylesheet" href="css/grc.css?v=181" />
+  <link rel="stylesheet" href="css/proforma.css?v=181" />
+  <link rel="stylesheet" href="css/history.css?v=181" />
 </head>
 <body>
 
@@ -83,24 +83,6 @@
     </form>
   </section>
 
-  <!-- Lock screen. Not a `.screen`: it covers whatever was open, so the
-       session underneath survives and reception returns to exactly the
-       screen they left. Signing out and back in would lose that. -->
-  <div id="lock-overlay" class="lock-overlay" hidden>
-    <div class="lock-panel" role="dialog" aria-modal="true" aria-labelledby="lock-title">
-      <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-      <h2 id="lock-title">Locked</h2>
-      <p class="lock-who" id="lock-who"></p>
-      <form id="lock-form" class="lock-form">
-        <input type="password" id="lock-pin" inputmode="numeric" autocomplete="off"
-               maxlength="8" placeholder="PIN" aria-label="Unlock PIN" required />
-        <p class="field-error" id="lock-error">Wrong PIN</p>
-        <button type="submit" class="primary-btn big">Unlock</button>
-      </form>
-      <button type="button" class="link-btn" id="lock-signout-btn">Sign out instead</button>
-    </div>
-  </div>
-
   <!-- SCREEN 1: Branch selection -->
   <section id="screen-branch" class="screen">
     <div class="brand">
@@ -138,9 +120,6 @@
           </span>
         </div>
       </div>
-      <button type="button" class="dash-logout-btn" id="lock-now-btn" aria-label="Lock screen" title="Lock screen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-      </button>
       <button type="button" class="dash-logout-btn" id="logout-btn" aria-label="Log out">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
       </button>
@@ -2098,19 +2077,8 @@
           <input type="text" id="grc-guest-name" required autocomplete="name" autocapitalize="words" maxlength="120" enterkeyhint="next" />
           <p class="field-error" id="grc-guest-name-error">Guest name is required</p>
         </div>
-        <div class="field">
-          <label for="grc-address">Address</label>
-          <textarea id="grc-address" rows="2" autocapitalize="sentences" maxlength="250" enterkeyhint="next"></textarea>
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label for="grc-country">Country</label>
-            <input type="text" id="grc-country" autocapitalize="words" maxlength="60" enterkeyhint="next" />
-          </div>
-          <div class="field">
-            <label for="grc-nationality">Nationality</label>
-            <input type="text" id="grc-nationality" autocapitalize="words" maxlength="60" enterkeyhint="next" />
-          </div>
+
+        <div class="field-row">
           <div class="field">
             <label for="grc-passport">Passport No</label>
             <input type="text" id="grc-passport" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
@@ -2121,22 +2089,61 @@
           </div>
         </div>
         <p class="field-error" id="grc-id-error">Enter a Passport No or an NIC No — at least one is required</p>
-        <div class="form-grid">
-          <div class="field">
-            <label for="grc-phone">Phone</label>
-            <input type="tel" id="grc-phone" autocomplete="tel" inputmode="tel" maxlength="40" enterkeyhint="next" />
-          </div>
-          <div class="field">
-            <label for="grc-email">E-Mail</label>
-            <input type="email" id="grc-email" autocomplete="email" inputmode="email" maxlength="120" enterkeyhint="next" />
-            <p class="field-error" id="grc-email-error">Enter an e-mail, or tick that this guest hasn't got one</p>
-            <label class="inline-check">
-              <input type="checkbox" id="grc-no-email" />
-              This guest has no e-mail address
-            </label>
-            <p class="hint">The menu is sent here when the guest checks in.</p>
+
+        <div class="field">
+          <label for="grc-phone">Phone</label>
+          <div class="phone-field">
+            <select id="grc-country-code" aria-label="Country code">
+              <option value="+94" data-short="+94" selected>Sri Lanka +94</option>
+              <option value="+91" data-short="+91">India +91</option>
+              <option value="+44" data-short="+44">United Kingdom +44</option>
+              <option value="+49" data-short="+49">Germany +49</option>
+              <option value="+33" data-short="+33">France +33</option>
+              <option value="+31" data-short="+31">Netherlands +31</option>
+              <option value="+7" data-short="+7">Russia +7</option>
+              <option value="+1" data-short="+1">USA / Canada +1</option>
+              <option value="+61" data-short="+61">Australia +61</option>
+              <option value="+86" data-short="+86">China +86</option>
+              <option value="+81" data-short="+81">Japan +81</option>
+              <option value="+971" data-short="+971">UAE +971</option>
+            </select>
+            <input type="tel" id="grc-phone" autocomplete="tel" inputmode="tel" maxlength="40" enterkeyhint="next" placeholder="77 123 4567" />
           </div>
         </div>
+
+        <div class="field">
+          <label for="grc-email">E-Mail</label>
+          <input type="email" id="grc-email" autocomplete="email" inputmode="email" maxlength="120" enterkeyhint="next" />
+          <p class="field-error" id="grc-email-error">Enter an e-mail, or tick that this guest hasn't got one</p>
+          <label class="inline-check">
+            <input type="checkbox" id="grc-no-email" />
+            This guest has no e-mail address
+          </label>
+          <p class="hint">The menu is sent here when the guest checks in.</p>
+        </div>
+
+        <!-- Folded away because they are not what reception is doing while a
+             guest stands at the desk. The card sometimes needs them; the
+             check-in almost never does. -->
+        <details class="disclosure" id="grc-more-guest">
+          <summary>Address &amp; nationality <span class="count">optional</span></summary>
+          <div class="disclosure-body">
+            <div class="field">
+              <label for="grc-address">Address</label>
+              <textarea id="grc-address" rows="2" autocapitalize="sentences" maxlength="250" enterkeyhint="next"></textarea>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="grc-country">Country</label>
+                <input type="text" id="grc-country" autocapitalize="words" maxlength="60" enterkeyhint="next" />
+              </div>
+              <div class="field">
+                <label for="grc-nationality">Nationality</label>
+                <input type="text" id="grc-nationality" autocapitalize="words" maxlength="60" enterkeyhint="next" />
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- Step 2 — The stay itself -->
@@ -2144,38 +2151,29 @@
         <h3 class="section-title first">The stay</h3>
         <p class="step-subtext">Arrival and departure, plus what they're booked on.</p>
 
-        <div class="form-grid">
+        <div class="field-row">
           <div class="field">
-            <label for="grc-arrival-date">Date of Arrival</label>
+            <label for="grc-arrival-date">Arrival</label>
             <input type="date" id="grc-arrival-date" required />
           </div>
-          <div class="field">
+          <div class="field field-auto">
             <label for="grc-arrival-time">Time</label>
             <input type="time" id="grc-arrival-time" />
           </div>
+        </div>
+        <div class="field-row">
           <div class="field">
-            <label for="grc-departure-date">Date of Departure</label>
+            <label for="grc-departure-date">Departure</label>
             <input type="date" id="grc-departure-date" required />
-            <p class="field-error" id="grc-departure-error">Departure must be after arrival</p>
           </div>
-          <div class="field">
+          <div class="field field-auto">
             <label for="grc-departure-time">Time</label>
             <input type="time" id="grc-departure-time" />
           </div>
         </div>
+        <p class="field-error" id="grc-departure-error">Departure must be after arrival</p>
 
-        <div class="form-grid">
-          <div class="field">
-            <label for="grc-prev-destination">Previous Destination</label>
-            <input type="text" id="grc-prev-destination" autocapitalize="words" maxlength="80" enterkeyhint="next" />
-          </div>
-          <div class="field">
-            <label for="grc-next-destination">Next Destination</label>
-            <input type="text" id="grc-next-destination" autocapitalize="words" maxlength="80" enterkeyhint="next" />
-          </div>
-        </div>
-
-        <div class="form-grid">
+        <div class="field-row">
           <div class="field">
             <label for="grc-room-type">Room Type</label>
             <select id="grc-room-type"><!-- injected by JS --></select>
@@ -2186,26 +2184,45 @@
           </div>
         </div>
 
-        <h4 class="grc-subhead">No of Pax</h4>
-        <div class="grc-pax-grid">
-          <div class="field">
+        <label class="group-title">Guests</label>
+        <div class="pax-row">
+          <div class="field field-auto">
             <label for="grc-adults">Adults</label>
-            <input type="number" id="grc-adults" min="0" step="1" inputmode="numeric" value="1" />
+            <input type="number" id="grc-adults" min="0" max="99" step="1" inputmode="numeric" value="1" />
           </div>
-          <div class="field">
+          <div class="field field-auto">
             <label for="grc-children">Children</label>
-            <input type="number" id="grc-children" min="0" step="1" inputmode="numeric" value="0" />
+            <input type="number" id="grc-children" min="0" max="99" step="1" inputmode="numeric" value="0" />
           </div>
-          <div class="field">
+          <div class="field field-auto">
             <label for="grc-kids">Kids</label>
-            <input type="number" id="grc-kids" min="0" step="1" inputmode="numeric" value="0" />
+            <input type="number" id="grc-kids" min="0" max="99" step="1" inputmode="numeric" value="0" />
           </div>
-          <div class="field">
+          <div class="field field-auto">
             <label for="grc-guide-pax">Guide</label>
-            <input type="number" id="grc-guide-pax" min="0" step="1" inputmode="numeric" value="0" />
+            <input type="number" id="grc-guide-pax" min="0" max="99" step="1" inputmode="numeric" value="0" />
           </div>
         </div>
         <p class="field-error" id="grc-pax-error">At least one guest is required</p>
+
+        <!-- Where they came from and where they are going next is on the
+             card because the form has always had it, not because anybody
+             needs it at the desk. -->
+        <details class="disclosure" id="grc-more-stay">
+          <summary>Previous &amp; next destination <span class="count">optional</span></summary>
+          <div class="disclosure-body">
+            <div class="field-row">
+              <div class="field">
+                <label for="grc-prev-destination">Previous</label>
+                <input type="text" id="grc-prev-destination" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+              </div>
+              <div class="field">
+                <label for="grc-next-destination">Next</label>
+                <input type="text" id="grc-next-destination" autocapitalize="words" maxlength="80" enterkeyhint="next" />
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- Step 3 — Hotel use only -->
@@ -2426,70 +2443,90 @@
 
     <div class="list-wrap">
       <form id="reservation-form" novalidate>
-        <label class="field-label-standalone">Guest Details</label>
-        <div class="form-grid">
+        <div class="field-group">
+          <label class="group-title">Guest</label>
+          <div class="field-row">
+            <div class="field field-narrow">
+              <label for="resv-title">Title</label>
+              <select id="resv-title">
+                <option>Mr.</option>
+                <option>Mrs.</option>
+                <option>Miss</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="resv-guest-name">Guest Name</label>
+              <input type="text" id="resv-guest-name" required autocapitalize="words" enterkeyhint="next" />
+            </div>
+          </div>
+          <p class="field-error" id="resv-guest-name-error">Guest name is required</p>
           <div class="field">
-            <label for="resv-title">Title</label>
-            <select id="resv-title">
-              <option>Mr.</option>
-              <option>Mrs.</option>
-              <option>Miss</option>
+            <label for="resv-contact">Contact No</label>
+            <div class="phone-field">
+              <select id="resv-country-code" aria-label="Country code">
+                <option value="+94" data-short="+94" selected>Sri Lanka +94</option>
+                <option value="+91" data-short="+91">India +91</option>
+                <option value="+44" data-short="+44">United Kingdom +44</option>
+                <option value="+49" data-short="+49">Germany +49</option>
+                <option value="+33" data-short="+33">France +33</option>
+                <option value="+31" data-short="+31">Netherlands +31</option>
+                <option value="+7" data-short="+7">Russia +7</option>
+                <option value="+1" data-short="+1">USA / Canada +1</option>
+                <option value="+61" data-short="+61">Australia +61</option>
+                <option value="+86" data-short="+86">China +86</option>
+                <option value="+81" data-short="+81">Japan +81</option>
+                <option value="+971" data-short="+971">UAE +971</option>
+              </select>
+              <input type="tel" id="resv-contact" inputmode="tel" enterkeyhint="next" placeholder="77 123 4567" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field field-auto">
+              <label for="resv-adults">Adults</label>
+              <input type="number" id="resv-adults" min="0" max="99" step="1" value="2" inputmode="numeric" />
+            </div>
+            <div class="field field-auto">
+              <label for="resv-children">Children</label>
+              <input type="number" id="resv-children" min="0" max="99" step="1" value="0" inputmode="numeric" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="group-title">Stay</label>
+          <div class="field-row">
+            <div class="field">
+              <label for="resv-checkin-date">Check-in</label>
+              <input type="date" id="resv-checkin-date" required />
+            </div>
+            <div class="field field-auto">
+              <label for="resv-checkin-time">Time</label>
+              <input type="time" id="resv-checkin-time" value="14:00" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="resv-checkout-date">Check-out</label>
+              <input type="date" id="resv-checkout-date" required />
+            </div>
+            <div class="field field-auto">
+              <label for="resv-checkout-time">Time</label>
+              <input type="time" id="resv-checkout-time" value="11:00" />
+            </div>
+          </div>
+          <p class="field-error" id="resv-checkout-date-error">Check-out must be after check-in</p>
+          <div class="field">
+            <label for="resv-booking-type">Booking Type</label>
+            <select id="resv-booking-type">
+              <option value="Villa Only">Villa Only</option>
+              <option value="BB">BB (Bed &amp; Breakfast)</option>
+              <option value="HB">HB (Half Board)</option>
+              <option value="FB">FB (Full Board)</option>
             </select>
           </div>
-          <div class="field">
-            <label for="resv-guest-name">Guest Name</label>
-            <input type="text" id="resv-guest-name" required autocapitalize="words" enterkeyhint="next" />
-            <p class="field-error" id="resv-guest-name-error">Guest name is required</p>
-          </div>
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label for="resv-adults">Adults</label>
-            <input type="number" id="resv-adults" min="0" step="1" value="2" inputmode="numeric" enterkeyhint="next" />
-          </div>
-          <div class="field">
-            <label for="resv-children">Children</label>
-            <input type="number" id="resv-children" min="0" step="1" value="0" inputmode="numeric" enterkeyhint="next" />
-          </div>
-        </div>
-        <div class="field">
-          <label for="resv-contact">Contact No</label>
-          <input type="tel" id="resv-contact" inputmode="tel" enterkeyhint="next" />
         </div>
 
-        <label class="field-label-standalone">Stay Details</label>
-        <div class="form-grid">
-          <div class="field">
-            <label for="resv-checkin-date">Check-in Date</label>
-            <input type="date" id="resv-checkin-date" required />
-          </div>
-          <div class="field">
-            <label for="resv-checkin-time">Check-in Time</label>
-            <input type="time" id="resv-checkin-time" value="14:00" />
-          </div>
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label for="resv-checkout-date">Check-out Date</label>
-            <input type="date" id="resv-checkout-date" required />
-            <p class="field-error" id="resv-checkout-date-error">Check-out must be after check-in</p>
-          </div>
-          <div class="field">
-            <label for="resv-checkout-time">Check-out Time</label>
-            <input type="time" id="resv-checkout-time" value="11:00" />
-          </div>
-        </div>
-        <div class="field">
-          <label for="resv-booking-type">Booking Type</label>
-          <select id="resv-booking-type">
-            <option value="Villa Only">Villa Only</option>
-            <option value="BB">BB (Bed &amp; Breakfast)</option>
-            <option value="HB">HB (Half Board)</option>
-            <option value="FB">FB (Full Board)</option>
-          </select>
-        </div>
-
-        <label class="field-label-standalone">Pricing</label>
+        <label class="group-title">Pricing</label>
         <div class="ingredient-list" id="resv-villa-list"><!-- villa rows injected by JS --></div>
         <p class="field-error" id="resv-conflict-error"></p>
         <button type="button" class="secondary-btn" id="resv-add-villa-btn">
@@ -2621,6 +2658,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=176"></script>
+<script type="module" src="js/main.js?v=181"></script>
 </body>
 </html>

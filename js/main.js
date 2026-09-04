@@ -10,6 +10,8 @@
 // First, so it is already listening before any other module evaluates.
 import { logError } from "./data/error-log.js";
 import { attachSearchClears } from "./search-clear.js";
+import { enhanceAllSelects, watchForSelects } from "./dropdown.js";
+import { enhanceNumbers } from "./number-field.js";
 import { initInventoryDerived } from "./data/inventory.js";
 import "./navigation.js";
 import "./invoice.js";
@@ -32,7 +34,6 @@ import "./staff.js";
 import "./manage-lists.js";
 import "./board-menu.js";
 import { restoreSession } from "./auth.js";
-import { initLock, lock, hasPin, startPinSetup } from "./lock.js";
 
 // Two elements sharing an id is silent, and it is not harmless.
 // `getElementById` returns whichever comes first in the document, so the
@@ -62,16 +63,6 @@ import { initLock, lock, hasPin, startPinSetup } from "./lock.js";
 // this is the single line that moves to "after the first snapshot".
 initInventoryDerived();
 
-// Wires the lock's listeners. It stays dormant until a PIN is set and
-// somebody is signed in, so this is safe to call before either is true.
-initLock();
-
-// The header's lock button. Offers to set a PIN first if there isn't one,
-// rather than doing nothing and looking broken.
-document.getElementById("lock-now-btn").addEventListener("click", () => {
-  if (hasPin()) lock();
-  else startPinSetup();
-});
 
 // The four search fields that had no way to clear them. Menu and Inventory
 // already have their own, wired by hand before this helper existed; they
@@ -81,6 +72,20 @@ attachSearchClears([
   "reports-search",
   "history-search",
   "reservations-search",
+]);
+
+// Every <select> in the document gets our own dropdown instead of the
+// operating system's. The native element stays underneath and stays the
+// source of truth, so nothing else in the app had to change — see
+// js/dropdown.js. Run after every screen module has built its markup.
+enhanceAllSelects();
+watchForSelects();
+
+// Counts that move by one, as a pair of buttons rather than a text box you
+// have to select and retype one-handed on a phone.
+enhanceNumbers([
+  "resv-adults", "resv-children",
+  "grc-adults", "grc-children", "grc-kids", "grc-guide-pax",
 ]);
 
 restoreSession();
