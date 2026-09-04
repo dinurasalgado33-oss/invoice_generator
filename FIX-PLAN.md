@@ -2,8 +2,29 @@
 
 ## Status — 2026-09-04
 
-Deployed to **dev** (`leopard-inn-dev`, `?v=174`) and verified there.
-**Not yet on live** (`leopard-inn`, still `?v=169`).
+**Live** on `leopard-inn` at `?v=174`, and on dev at the same version.
+Rules deployed to both projects.
+
+Verified on production after deploying, not assumed:
+
+| | |
+|---|---|
+| `?v=` served | 174 |
+| `projectId` / `isLiveProject()` | `leopard-inn` / `true` |
+| test-database banner | **absent** — F16 leaves production alone |
+| CDN scripts at startup | 0; `Chart`, `html2canvas`, `jspdf`, `qrcode` all undefined |
+| `modulepreload` hints | 8 |
+| stepper buttons | 8 (4 invoice + 4 registration card) |
+| invoice top line | "Invoice No" |
+| `js/cdn.js`, `js/stepper.js` | HTTP 200 |
+| console errors | none |
+| `firestore.rules` | "already up to date, skipping upload" — live ruleset matches this repo |
+
+F3's own lifecycle was proved on **dev**, against the server, rather than
+by creating and deleting orders in the real hotel's database. The rules
+are byte-identical across the two projects and `foodOrders` already works
+on production under the same rule, so the remaining risk is the difference
+between two identical rulesets.
 
 | | Fix | State |
 |---|---|---|
