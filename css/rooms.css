@@ -332,9 +332,14 @@
   border-radius: 10px;
   background: var(--white);
 }
-.food-order-qty-stepper .stepper-input-btn { width: 34px; height: 34px; font-size: 1.05rem; }
-.food-order-qty-stepper .stepper-input-btn:first-child { border-radius: 8.5px 0 0 8.5px; }
-.food-order-qty-stepper .stepper-input-btn:last-child { border-radius: 0 8.5px 8.5px 0; }
+/* 44, not 34. This is the single most-tapped control in the app — a dish
+   quantity, pressed for every line of every food order — and it was the
+   smallest. The first pass at F-C measured 15 undersized controls and
+   missed these entirely, because the dish list only renders once a villa
+   has been chosen and the sweep never got that far. */
+.food-order-qty-stepper .stepper-input-btn { width: 44px; height: 44px; font-size: 1.15rem; }
+.food-order-qty-stepper .stepper-input-btn:first-child { border-radius: 10px 0 0 10px; }
+.food-order-qty-stepper .stepper-input-btn:last-child { border-radius: 0 10px 10px 0; }
 
 .activity-custom-row { display: flex; gap: 8px; margin: 4px 0 14px; }
 .activity-custom-row input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 0.85rem; }

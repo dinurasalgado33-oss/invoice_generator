@@ -357,14 +357,22 @@ input[type="search"]::-webkit-search-cancel-button { display: none; }
   border-color: var(--gold);
   box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
 }
+/* Matched to .num-field, so the two number controls in the app look like
+   one control rather than two.
+   Not merged into .num-field outright: that component wraps an <input>, and
+   the food-order quantity is a <span> between two buttons, not an input at
+   all. Converting reception's most-used control from a span to an input to
+   win a shared class would risk more than the inconsistency costs — see
+   WALKTHROUGH-2026-09-04 F-D. What is shared here is the appearance, which
+   is the part anybody actually notices. */
 .stepper-input-btn {
-  width: 46px;
+  width: 44px;
   flex-shrink: 0;
   border: none;
-  background: var(--bg);
+  background: none;
   color: var(--maroon);
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   line-height: 1;
   cursor: pointer;
   transition: background .15s ease, transform .1s ease;
@@ -372,6 +380,10 @@ input[type="search"]::-webkit-search-cancel-button { display: none; }
 .stepper-input-btn:active { transform: scale(0.9); background: var(--gold-light); }
 @media (hover: hover) and (pointer: fine) {
   .stepper-input-btn:hover { background: var(--border); }
+}
+.stepper-input input,
+.food-order-qty-value {
+  font-variant-numeric: tabular-nums;
 }
 .stepper-input input {
   border: none;
