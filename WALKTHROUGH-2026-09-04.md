@@ -256,3 +256,86 @@ All under `ZZ WALK GUEST`, nothing on production.
 
 Financial records are undeletable by design, which is correct. They are
 inert and clearly named.
+
+---
+
+# Fix phase — 4 September 2026
+
+All five findings built and verified on dev at `?v=199`. **Not yet on
+production**, which is still `?v=190`.
+
+| | Finding | State |
+|---|---|---|
+| **F-A** | Confirmation printed no reservation number | ✅ prints it |
+| **F-B** | Agent invoice tallest screen | ✅ 1.57 → 1.39 screenfuls |
+| **F-C** | 15 controls under 44px | ✅ 0 — plus 2 the first sweep missed |
+| **F-D** | Two number-control designs | ✅ appearance converged, classes still two — see below |
+| **F-E** | E-mail typed fresh at check-in | ✅ taken at reservation, carried to the card |
+| *(bug)* | Dropdowns in the tab order | ✅ fixed during the walk, ships with this batch |
+
+## What each was verified against
+
+- **F-A** — reprinted from Guest History, not a freshly created document, so
+  it survives the whole lifecycle. `RES-2026/27-251` printed, no overflow,
+  no sideways scroll. **The first attempt overflowed** the right edge at
+  375px and cut the number in half — the whole point of the change. It
+  wraps below the title on narrow screens now.
+- **F-B** — three `.section-title` headings swapped for `.group-title`,
+  saving 144px. None left on the screen.
+- **F-C** — 15 → 0 across all 35 screens, with a shrink-it-back check to
+  prove the measurement could fail.
+- **F-D** — appearance matched on the real Orders screen; +/- still adds and
+  removes.
+- **F-E** — made `RES-2026/27-252` with an address, checked in from it, and
+  watched the card go blank → that address with "no e-mail" unticked. Both
+  branches of the guard proven separately.
+
+## Two things I got wrong, corrected
+
+**F-C's "15 → 0" was measured against a screen that had not finished
+existing.** The food-order quantity buttons are 34×34 — the smallest
+controls in the app and the most pressed, one per dish line — and the sweep
+never saw them, because the dish list only renders once a villa is chosen.
+Found while doing F-D. They are 44×44 now, verified with the list rendered.
+
+**F-D was not the change the finding described.** It assumed one control
+with two styles. It is two different controls: `.num-field` wraps an
+`<input>`; the food-order quantity is a `<span>` between two buttons.
+Merging them means converting reception's most-tapped control from a span
+to an input, which risks more than the inconsistency costs. The appearance
+is converged, which is the part anybody notices; the classes remain two,
+deliberately, with a note in the CSS saying why.
+
+## Density, honestly
+
+Two of these findings pull against each other: bigger touch targets make
+screens taller.
+
+| Screen | Before the walk | After all five |
+|---|---|---|
+| Agent invoice | 1.57 | **1.39** |
+| Reservation | 1.24 | **1.34** |
+| Invoice | 1.32 | 1.35 |
+| Registration card | 1.17 | 1.17 |
+
+The agent invoice went 1.57 → 1.30 on the heading change alone, then back
+to 1.39 once every control cleared 44px. I predicted "near 1.0" in the
+finding; that was optimistic, and the rest is the live totals summary
+(209px) and the charges table, neither of which is a heading problem.
+
+The reservation form is up 0.10 for the e-mail field. **My first version
+cost 0.26** — a two-line hint under the field took it to 1.50, nearly back
+to where the agent invoice started. The hint is folded into the label now.
+
+## Still open
+
+- **§F-B's remainder.** Getting the agent invoice under 1.2 means
+  reconsidering the 209px live totals summary. Not attempted; it is a
+  design decision, not a cleanup.
+- Everything in §7, unchanged: printing, real devices, real inboxes, scale,
+  the other property, staff permissions.
+
+## Test residue added by the fix phase
+
+`ZZ EMAIL CARRY` / `RES-2026/27-252` on dev, Confirmed, never checked in.
+Nothing on production.
