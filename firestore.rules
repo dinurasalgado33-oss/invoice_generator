@@ -121,7 +121,16 @@ service cloud.firestore {
 
     match /proformaInvoices/{id} {
       allow read: if mayTouchExisting();
-      allow create, update: if mayWriteIncoming() && mayTouchExisting();
+      // Split, because create and update are not the same question.
+      // mayTouchExisting() asks about `resource`, the document already
+      // stored — and on a create there isn't one, so it is always false.
+      // Collapsing the two onto one line therefore refused every create
+      // this collection has ever seen: the travel agent invoice rendered,
+      // took a number, and was never saved. Nothing errored on screen.
+      // Every other collection here splits them; this was the only one
+      // that did not.
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
       allow delete: if false;
     }
 
