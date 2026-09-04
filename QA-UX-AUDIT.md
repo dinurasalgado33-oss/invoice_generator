@@ -214,19 +214,40 @@ Covered in §3.1, repeated here because it is as much a UI honesty problem
 as a speed one. A control that looks pressable and does nothing teaches
 people to distrust the rest of the interface.
 
-### 5.3 Two wizards, two different back labels — **Observed**
+### 5.3 Two wizards, two different back labels — **Observed, FIXED 2026-09-04**
 
 The registration card's first button is **Back**; the invoice form's is
 **Previous**. Same control, same position, same job, two words. Small,
 but this is the screen pair staff move between most.
 
-### 5.4 The invoice PDF has a large blank middle — **Observed**
+**Fixed.** Both now say **Previous** and **Next**, with matching arrow
+icons. "Previous" rather than "Back" on purpose: the registration card
+screen already has a `← Back` in its header meaning something different —
+leave the card, rather than go up a step. Two buttons both saying "Back",
+doing different things, on one screen.
+
+This finding was never given an F-number and so was not in the fix plan's
+status table. It was found by re-reading the audit section by section
+after every F-item was closed, which is the check worth repeating: a
+finding that never became a task is invisible to a list of tasks.
+
+### 5.4 The invoice PDF has a large blank middle — **Observed, still open — your call**
 
 Signatures are pinned near the bottom of the page, so a one-line bill
 leaves roughly a third of the page empty between the totals and the
 signature lines. It reads as formal rather than broken, and a signature
 block belongs at the foot of an invoice — but it is worth a deliberate
 look, since most bills here will be short.
+
+**Still open, deliberately.** The audit's own wording — "reads as formal
+rather than broken", "a signature block belongs at the foot of an invoice"
+— makes this a judgement about how the hotel wants its bills to look, not
+a defect. It is also the one document a guest signs, so it should not be
+changed on an assumption.
+
+Note that the PDF has since been rewritten to capture the on-screen
+preview 1:1, so the printed layout now follows the preview exactly;
+whatever is decided here should be decided about the preview.
 
 ---
 

@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=175" />
-<link rel="stylesheet" href="css/brand-home.css?v=175" />
-<link rel="stylesheet" href="css/rooms.css?v=175" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=175" />
-<link rel="stylesheet" href="css/invoice.css?v=175" />
-<link rel="stylesheet" href="css/dashboard.css?v=175" />
-<link rel="stylesheet" href="css/reports.css?v=175" />
-<link rel="stylesheet" href="css/reservation.css?v=175" />
-  <link rel="stylesheet" href="css/grc.css?v=175" />
-  <link rel="stylesheet" href="css/proforma.css?v=175" />
-  <link rel="stylesheet" href="css/history.css?v=175" />
+<link rel="stylesheet" href="css/base.css?v=176" />
+<link rel="stylesheet" href="css/brand-home.css?v=176" />
+<link rel="stylesheet" href="css/rooms.css?v=176" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=176" />
+<link rel="stylesheet" href="css/invoice.css?v=176" />
+<link rel="stylesheet" href="css/dashboard.css?v=176" />
+<link rel="stylesheet" href="css/reports.css?v=176" />
+<link rel="stylesheet" href="css/reservation.css?v=176" />
+  <link rel="stylesheet" href="css/grc.css?v=176" />
+  <link rel="stylesheet" href="css/proforma.css?v=176" />
+  <link rel="stylesheet" href="css/history.css?v=176" />
 </head>
 <body>
 
@@ -2287,8 +2287,20 @@
       </div>
 
       <div class="form-nav" id="grc-form-nav">
-        <button type="button" class="secondary-btn nav-btn" id="grc-step-prev">Back</button>
-        <button type="button" class="primary-btn nav-btn" id="grc-step-next">Next</button>
+        <!-- "Previous", not "Back", and matching the invoice wizard exactly.
+             Two reasons: staff move between these two screens more than any
+             other pair, and this screen already has a "← Back" in its header
+             that means something different — leave the card, not go up a
+             step. Two buttons both saying Back, doing different things, on
+             one screen. -->
+        <button type="button" class="secondary-btn nav-btn" id="grc-step-prev">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          Previous
+        </button>
+        <button type="button" class="primary-btn nav-btn" id="grc-step-next">
+          Next
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </button>
         <button type="submit" class="primary-btn nav-btn" id="grc-submit-btn" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
           Check In &amp; Print Card
@@ -2609,6 +2621,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=175"></script>
+<script type="module" src="js/main.js?v=176"></script>
 </body>
 </html>
