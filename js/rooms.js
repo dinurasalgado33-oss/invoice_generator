@@ -1,4 +1,5 @@
 import { appState } from "./state.js";
+import { setPhone } from "./phone-field.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash, toDateISO, clampMoney } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
@@ -266,7 +267,7 @@ async function startInterimInvoice() {
   resetForm();
   setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null, source: room.source ?? null, interim: true });
   document.getElementById("guest-name").value = room.guest || "";
-  document.getElementById("guest-phone").value = room.phone || "";
+  setPhone("guest-country-code", "guest-phone", room.phone);
   document.getElementById("checkin-date").value = room.checkin || "";
   document.getElementById("checkout-date").value = room.checkout || "";
 
@@ -762,7 +763,7 @@ function prefillInvoiceForCheckout(room) {
   resetForm();
   setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null, source: room.source ?? null });
   document.getElementById("guest-name").value = room.guest || "";
-  document.getElementById("guest-phone").value = room.phone || "";
+  setPhone("guest-country-code", "guest-phone", room.phone);
   document.getElementById("checkin-date").value = room.checkin || "";
   document.getElementById("checkout-date").value = room.checkout || "";
 

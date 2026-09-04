@@ -1247,3 +1247,13 @@ input[type="time"] { font-variant-numeric: tabular-nums; }
   gap: 10px 14px;
 }
 .pax-row > .field { margin-bottom: 14px; }
+
+/* Read-only fields state a fact; they are not waiting for anything. Giving
+   them the same white box and gold focus ring as a real input invites staff
+   to tap them and wonder why nothing happens. */
+input[readonly] {
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  cursor: default;
+}
+input[readonly]:focus { box-shadow: none; border-color: var(--border); background: var(--bg-alt); }

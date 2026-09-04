@@ -7,6 +7,7 @@ import { add, COLLECTIONS } from "./data/store.js";
 import { downloadInvoicePdf, tryInvoicePdfBase64 } from "./invoice-pdf.js";
 import { ensureHtml2Canvas, ensurePdfTools } from "./cdn.js";
 import { makeStepperNavigable } from "./stepper.js";
+import { readPhone, setPhone } from "./phone-field.js";
 import { queueInvoiceEmail } from "./data/invoice-email.js";
 import { logError } from "./data/error-log.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
@@ -270,14 +271,10 @@ document.getElementById("discount-amount").addEventListener("blur", () => {
   if (Number(field.value) !== discountInput) field.value = discountInput || "";
 });
 
-// Guest count +/- stepper
-const guestCountInput = document.getElementById("guest-count");
-document.getElementById("guest-count-minus").addEventListener("click", () => {
-  guestCountInput.value = Math.max(0, (parseInt(guestCountInput.value, 10) || 0) - 1);
-});
-document.getElementById("guest-count-plus").addEventListener("click", () => {
-  guestCountInput.value = Math.min(MAX_COUNT, (parseInt(guestCountInput.value, 10) || 0) + 1);
-});
+// Guest count. This screen had hand-rolled +/- buttons before the rest of
+// the app did; they are the shared control now (js/number-field.js) so the
+// invoice and the registration card behave identically rather than
+// approximately.
 
 // Multi-step form wizard
 const TOTAL_STEPS = 4;
@@ -652,7 +649,7 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     // ---- everything below exists so the page can be re-rendered ----
     items,
     guestCount: val("guest-count"),
-    guestPhone: val("guest-phone"),
+    guestPhone: readPhone("guest-country-code", "guest-phone"),
     regCardNo: val("reg-card-no"),
     voucherNo: val("voucher-no"),
     checkinDate: document.getElementById("checkin-date").value,

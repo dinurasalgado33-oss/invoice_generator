@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=181" />
-<link rel="stylesheet" href="css/brand-home.css?v=181" />
-<link rel="stylesheet" href="css/rooms.css?v=181" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=181" />
-<link rel="stylesheet" href="css/invoice.css?v=181" />
-<link rel="stylesheet" href="css/dashboard.css?v=181" />
-<link rel="stylesheet" href="css/reports.css?v=181" />
-<link rel="stylesheet" href="css/reservation.css?v=181" />
-  <link rel="stylesheet" href="css/grc.css?v=181" />
-  <link rel="stylesheet" href="css/proforma.css?v=181" />
-  <link rel="stylesheet" href="css/history.css?v=181" />
+<link rel="stylesheet" href="css/base.css?v=183" />
+<link rel="stylesheet" href="css/brand-home.css?v=183" />
+<link rel="stylesheet" href="css/rooms.css?v=183" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=183" />
+<link rel="stylesheet" href="css/invoice.css?v=183" />
+<link rel="stylesheet" href="css/dashboard.css?v=183" />
+<link rel="stylesheet" href="css/reports.css?v=183" />
+<link rel="stylesheet" href="css/reservation.css?v=183" />
+  <link rel="stylesheet" href="css/grc.css?v=183" />
+  <link rel="stylesheet" href="css/proforma.css?v=183" />
+  <link rel="stylesheet" href="css/history.css?v=183" />
 </head>
 <body>
 
@@ -548,7 +548,7 @@
         <label for="cfg-address">Address</label>
         <input type="text" id="cfg-address" autocapitalize="words" enterkeyhint="next" />
       </div>
-      <div class="form-grid">
+      <div class="field-row">
         <div class="field">
           <label for="cfg-phone">Phone</label>
           <input type="tel" id="cfg-phone" inputmode="tel" enterkeyhint="next" />
@@ -569,7 +569,7 @@
         <label for="cfg-bank-account-no">Account Number</label>
         <input type="text" id="cfg-bank-account-no" autocomplete="off" autocapitalize="off" enterkeyhint="next" />
       </div>
-      <div class="form-grid">
+      <div class="field-row">
         <div class="field">
           <label for="cfg-bank-name">Bank</label>
           <input type="text" id="cfg-bank-name" autocapitalize="words" enterkeyhint="next" />
@@ -1271,14 +1271,16 @@
       <p class="sr-only" id="step-announce" aria-live="polite">Step 1 of 4: Reservation &amp; Guest</p>
 
       <div class="form-step active" data-step="1">
-        <div class="form-grid">
-          <div class="field">
-            <label for="inv-number">Reservation #</label>
-            <div class="input-icon">
-              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18" /></svg>
-              <input type="text" id="inv-number" readonly />
-            </div>
+        <!-- The number is assigned on Generate and cannot be typed, so it is
+             a read-only line rather than a field waiting for input. -->
+        <div class="field">
+          <label for="inv-number">Invoice No</label>
+          <div class="input-icon">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18" /></svg>
+            <input type="text" id="inv-number" readonly />
           </div>
+        </div>
+        <div class="field-row">
           <div class="field">
             <label for="inv-date">Date</label>
             <input type="date" id="inv-date" />
@@ -1287,6 +1289,8 @@
             <label for="currency">Currency</label>
             <select id="currency"><!-- injected by JS --></select>
           </div>
+        </div>
+        <div class="form-grid">
           <!-- Only for a bill in a foreign currency. Without it the reports
                counted USD 500 as LKR 500 — a 300x understatement nothing
                on the guest's copy would reveal. -->
@@ -1299,38 +1303,41 @@
         </div>
 
         <h3 class="section-title">Who's staying?</h3>
-        <div class="form-grid">
-          <div class="field">
-            <label for="guest-name">Guest Name</label>
-            <div class="input-icon">
-              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" /></svg>
-              <input type="text" id="guest-name" placeholder="Mrs. Bwanthi" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
-            </div>
-            <p class="field-error" id="guest-name-error">Please enter the guest's name</p>
+        <div class="field">
+          <label for="guest-name">Guest Name</label>
+          <div class="input-icon">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" /></svg>
+            <input type="text" id="guest-name" placeholder="Mrs. Bwanthi" required autocomplete="name" autocapitalize="words" enterkeyhint="next" />
           </div>
-          <div class="field">
+          <p class="field-error" id="guest-name-error">Please enter the guest's name</p>
+        </div>
+        <div class="field">
+          <label for="guest-phone">Phone Number</label>
+          <div class="phone-field">
+            <select id="guest-country-code" aria-label="Country code">
+              <option value="+94" data-short="+94" selected>Sri Lanka +94</option>
+              <option value="+91" data-short="+91">India +91</option>
+              <option value="+44" data-short="+44">United Kingdom +44</option>
+              <option value="+49" data-short="+49">Germany +49</option>
+              <option value="+33" data-short="+33">France +33</option>
+              <option value="+31" data-short="+31">Netherlands +31</option>
+              <option value="+7" data-short="+7">Russia +7</option>
+              <option value="+1" data-short="+1">USA / Canada +1</option>
+              <option value="+61" data-short="+61">Australia +61</option>
+              <option value="+86" data-short="+86">China +86</option>
+              <option value="+81" data-short="+81">Japan +81</option>
+              <option value="+971" data-short="+971">UAE +971</option>
+            </select>
+            <input type="tel" id="guest-phone" placeholder="77 221 8511" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field field-auto">
             <label for="guest-count">Guests</label>
-            <div class="stepper-input">
-              <button type="button" class="stepper-input-btn" id="guest-count-minus" aria-label="Decrease guests">&minus;</button>
-              <input type="number" id="guest-count" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="0" enterkeyhint="next" />
-              <button type="button" class="stepper-input-btn" id="guest-count-plus" aria-label="Increase guests">+</button>
-            </div>
+            <input type="number" id="guest-count" min="0" max="99" step="1" inputmode="numeric" pattern="[0-9]*" value="0" />
           </div>
-          <div class="field">
-            <label for="guest-phone">Phone Number</label>
-            <div class="input-icon">
-              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
-              <input type="tel" id="guest-phone" placeholder="077 221 8511" autocomplete="tel" inputmode="tel" enterkeyhint="next" />
-            </div>
-          </div>
-          <div class="field">
-            <label for="reg-card-no">Reservation No</label>
-            <input type="text" id="reg-card-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
-          </div>
-          <div class="field">
-            <label for="voucher-no">Voucher Code</label>
-            <input type="text" id="voucher-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
-          </div>
+        </div>
+        <div class="field-row">
           <div class="field">
             <label for="checkin-date">Check-in</label>
             <input type="date" id="checkin-date" />
@@ -1338,9 +1345,28 @@
           <div class="field">
             <label for="checkout-date">Check-out</label>
             <input type="date" id="checkout-date" />
-            <p class="field-error" id="checkout-date-error">Check-out must be after check-in</p>
           </div>
         </div>
+        <p class="field-error" id="checkout-date-error">Check-out must be after check-in</p>
+
+        <!-- Reference numbers off a booking sheet. Real, and typed on maybe
+             one bill in ten — so they wait behind a line of text rather than
+             sitting between the guest's name and their dates. -->
+        <details class="disclosure" id="invoice-more-refs">
+          <summary>Reservation &amp; voucher numbers <span class="count">optional</span></summary>
+          <div class="disclosure-body">
+            <div class="field-row">
+              <div class="field">
+                <label for="reg-card-no">Reservation No</label>
+                <input type="text" id="reg-card-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+              </div>
+              <div class="field">
+                <label for="voucher-no">Voucher Code</label>
+                <input type="text" id="voucher-no" placeholder="N/A" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" />
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div class="form-step" data-step="2">
@@ -1684,7 +1710,7 @@
         <input type="text" id="pf-travel-agent" autocapitalize="words" maxlength="120" enterkeyhint="next" />
         <p class="field-error" id="pf-travel-agent-error">Travel agent is required</p>
       </div>
-      <div class="form-grid">
+      <div class="field-row">
         <div class="field">
           <label for="pf-voucher-no">Voucher No</label>
           <input type="text" id="pf-voucher-no" autocapitalize="characters" maxlength="40" enterkeyhint="next" />
@@ -1717,7 +1743,7 @@
       <p class="field-error" id="pf-items-error">Add at least one charge</p>
 
       <h3 class="section-title">Totals</h3>
-      <div class="form-grid">
+      <div class="field-row">
         <div class="field">
           <label for="pf-discount">Discount</label>
           <input type="number" id="pf-discount" min="0" max="100" step="0.01" inputmode="decimal" value="0" aria-label="Discount percentage" />
@@ -2658,6 +2684,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=181"></script>
+<script type="module" src="js/main.js?v=183"></script>
 </body>
 </html>

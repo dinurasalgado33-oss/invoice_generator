@@ -85,6 +85,7 @@ watchForSelects();
 // have to select and retype one-handed on a phone.
 enhanceNumbers([
   "resv-adults", "resv-children",
+  "guest-count",
   "grc-adults", "grc-children", "grc-kids", "grc-guide-pax",
 ]);
 
