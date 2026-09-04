@@ -1,4 +1,5 @@
 import { appState } from "./state.js";
+import { ensureHtml2Canvas } from "./cdn.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT, setBranchLabel } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
@@ -504,11 +505,12 @@ document.getElementById("resv-new-btn").addEventListener("click", async () => {
 
 document.getElementById("resv-print-btn").addEventListener("click", () => window.print());
 
-document.getElementById("resv-image-btn").addEventListener("click", () => {
+document.getElementById("resv-image-btn").addEventListener("click", async () => {
   const target = document.getElementById("reservation-preview");
-  // See the matching note in invoice.js — a missing CDN script throws
-  // synchronously, so .catch() alone leaves the button silently dead.
-  if (typeof html2canvas !== "function") {
+  // See the matching note in invoice.js — the script is fetched on first
+  // use now, and a missing one throws synchronously, so .catch() alone
+  // leaves the button silently dead.
+  if (!await ensureHtml2Canvas()) {
     showToast("Image export needs a connection — use Print instead");
     return;
   }

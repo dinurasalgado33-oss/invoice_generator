@@ -1,3 +1,4 @@
+import { ensureJsPdf } from "./cdn.js";
 import { MENU_ITEMS, BOARD_MENU } from "./data/menu.js";
 // The font is imported lazily inside buildMenuPdf(), not here.
 //
@@ -106,8 +107,11 @@ export const MENU_DOCS = {
   },
 };
 
+// jsPDF is fetched the first time a menu is actually built — see
+// js/cdn.js. It used to be a script tag on every page load, 356 KB for a
+// document most sessions never produce.
 function engineReady() {
-  return typeof window !== "undefined" && window.jspdf && typeof window.jspdf.jsPDF === "function";
+  return ensureJsPdf();
 }
 
 const artCache = new Map();
@@ -360,7 +364,7 @@ async function build(pdf, doc) {
 // Built fresh on every call, so the PDF is always the menu as it stands
 // right now rather than whatever it looked like when the app loaded.
 export async function buildMenuPdf(key) {
-  if (!engineReady()) throw new Error("The PDF engine didn't load — check the connection and reload.");
+  if (!await engineReady()) throw new Error("The PDF engine didn't load — check the connection and reload.");
   const doc = MENU_DOCS[key];
   if (!doc) throw new Error(`Unknown menu: ${key}`);
 

@@ -1,3 +1,4 @@
+import { ensurePdfTools } from "./cdn.js";
 import { showToast } from "./utils.js";
 
 // The invoice as a PDF — the *same* invoice, not a second drawing of it.
@@ -32,10 +33,11 @@ const CAPTURE_SCALE = 2;
 
 const PAGE_MARGIN_MM = 10;
 
+// Asks for jsPDF and html2canvas, fetching them if this is the first time
+// anything needed them — see js/cdn.js. Async now, where it used to be a
+// bare typeof check against two script tags that no longer exist.
 export function isPdfAvailable() {
-  return typeof window !== "undefined"
-    && window.jspdf && typeof window.jspdf.jsPDF === "function"
-    && typeof html2canvas === "function";
+  return ensurePdfTools();
 }
 
 export function invoiceFileName(r) {
@@ -78,7 +80,7 @@ async function captureInvoice() {
 // long. A guest with thirty charge lines gets page two rather than a
 // squashed page one.
 export async function buildInvoicePdf() {
-  if (!isPdfAvailable()) throw new Error("PDF tools are not loaded");
+  if (!await isPdfAvailable()) throw new Error("PDF tools are not loaded");
   const canvas = await captureInvoice();
 
   const { jsPDF } = window.jspdf;
@@ -124,7 +126,7 @@ export async function downloadInvoicePdf(record) {
 // but could not be turned into a PDF is a small problem; a checkout that
 // will not finish is a guest standing at the desk.
 export async function tryInvoicePdfBase64() {
-  if (!isPdfAvailable()) return null;
+  if (!await isPdfAvailable()) return null;
   try {
     return await invoicePdfBase64();
   } catch (err) {

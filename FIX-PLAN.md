@@ -2,18 +2,18 @@
 
 ## Status — 2026-09-04
 
-Deployed to **dev** (`leopard-inn-dev`, `?v=172`) and verified there.
+Deployed to **dev** (`leopard-inn-dev`, `?v=173`) and verified there.
 **Not yet on live** (`leopard-inn`, still `?v=169`).
 
 | | Fix | State |
 |---|---|---|
 | **F1** | `[hidden]` beaten by class selectors | ✅ done, verified — and the check was made to fail first |
 | **F2** | Invoice top line said "Reservation No" | ✅ done, verified |
-| **F3** | Pending orders lost on reload, unbilled | ✅ written, **lifecycle test needs a signed-in session** |
+| **F3** | Pending orders lost on reload, unbilled | ✅ done, **whole lifecycle verified against the server** |
 | **F4** | Stranded stock deduction | ✅ closed by F3 |
 | **F5** | Stepper looked pressable and was not | ✅ done, verified on both wizards |
 | **F6** | ~~Lists render blank~~ | ❌ **withdrawn — the audit was wrong**, see below |
-| **F7** | Two render-blocking CDN scripts | ✅ `defer` done; **measurement says go further**, see F7 |
+| **F7** | CDN scripts loaded on every visit | ✅ done properly — all four now on demand, DCL **29.4s → 8.2s** |
 | **F8** | 163 KB font on every visit | ✅ done, verified — 0 requests before a PDF is built |
 | **F9–F15** | preload hints, P3 items | ⬜ not started |
 | **F16** | Staging site wrote to the **production** database | ✅ found while testing F3, fixed, verified |
@@ -621,3 +621,80 @@ firebase deploy --only firestore:rules --project leopard-inn
 
 Without it, F3's code runs against production and every order write is
 refused — the queue would look exactly as broken as before the fix.
+
+
+---
+
+## F7 — done, and it went further than `defer`
+
+`defer` was the first attempt and it only solved half the problem: it
+stopped the CDN scripts blocking *render* and did nothing about them
+competing for *bandwidth*. All four are fetched on demand now
+(`js/cdn.js`), and one of them turned out never to have been needed at all.
+
+| Script | Decoded | Needed by | Now |
+|---|---|---|---|
+| `jspdf.umd.min.js` | 356 KB | Download PDF, e-mailed invoice, menu PDFs | on first PDF |
+| `chart.umd.min.js` | 201 KB | the Finance screen only | on opening Finance |
+| `html2canvas.min.js` | 194 KB | Save Image, PDF capture | on first use |
+| `qrcode.js` | 55 KB | **nothing — zero references in the project** | **deleted** |
+
+**806 KB decoded, on every visit, for a screen none of it appears on.**
+The qrcode one is the clearest: 55 KB downloaded every time since whenever
+it was added, for a global no file has ever called.
+
+Measured on the same 0.15 Mbps link as before:
+
+| | Before | After |
+|---|---|---|
+| `domInteractive` | 568 ms | 721 ms |
+| `DOMContentLoaded` | **29,368 ms** | **8,173 ms** |
+| CDN scripts at startup | 4 | **0** |
+
+The 17-second hole in the middle of startup is gone, because the thing
+filling it was 107 KB of library the page had no use for yet.
+
+Verified that on-demand actually works, rather than assuming: `Chart`,
+`html2canvas` and `window.jspdf` are all `undefined` on load and defined
+after the matching `ensure…()` call, and a second call returns from cache
+in 0 ms without a new request.
+
+Every guard that used to read `typeof Chart === "function"` against a
+script tag now awaits its loader — `dashboard.js`, `invoice.js`,
+`invoice-pdf.js`, `menu-pdf.js`, `proforma.js` and `reservation.js`.
+Missing one would have left that feature silently dead, since the tag it
+was checking for no longer exists.
+
+**F9's preload hints are still worth doing**, but they are now the only
+remaining startup item rather than the biggest one.
+
+---
+
+## F3 — verified end to end, against the server
+
+Run on dev as manager, Wilpattu, through the real screens:
+
+| Step | Result |
+|---|---|
+| Place 1× Papaya Juice on Balcony Villa | `pending`, LKR 880, written with a doc id |
+| **Reload** | **still pending** — this is what used to return 0 |
+| Read `foodOrdersPending` with `getDocsFromServer` | 1 doc — on the **server**, not just the local cache |
+| Complete it | exactly **1** `foodOrders` sale record, tied to room 7 and its booking id |
+| Guest charge | `Papaya Juice qty=1 LKR880 room=7 cat=food` |
+| Queue after | 0 on the server, "No pending orders right now." on screen |
+
+`getDocsFromServer` rather than a plain read on purpose: this browser's
+Firestore cache would have answered a normal query happily whether or not
+anything had ever left the device, which is exactly the mistake that made
+an earlier "config propagates in under a second" result meaningless.
+
+### F6's withdrawal, confirmed in the running app
+
+Both empty states render, and the check was given a control so a pass
+means something:
+
+| | Renders |
+|---|---|
+| no pending orders | "No pending orders right now." |
+| search matching nothing | "No dishes match “zzzz-no-such-dish”." |
+| **search matching something** | **no empty state** — so the check above can fail |

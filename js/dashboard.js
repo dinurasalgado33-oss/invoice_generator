@@ -2,6 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, toDateISO, showToast } from "./utils.js";
 import { CHART_COLORS } from "./data/dashboard.js";
+import { ensureCharts } from "./cdn.js";
 import { INVOICES, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS, BOOKINGS, countsAsRevenue, invoiceLKR } from "./data/reports.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { CHARGE_CATEGORY_LABELS } from "./data/charges.js";
@@ -86,7 +87,11 @@ function categoryLKR(inv, key) {
   return withService * scale * rate;
 }
 
-function renderDashboard(branch) {
+// Async only because Chart.js is now fetched on demand. Everything above
+// the chart guard — the KPIs and the legend — is drawn synchronously before
+// any awaiting happens, so a slow or failed download still leaves a useful
+// screen rather than a blank one.
+async function renderDashboard(branch) {
   const now = new Date();
   const thisMonthKey = monthKey(toDateISO(now));
 
@@ -162,7 +167,7 @@ function renderDashboard(branch) {
 
   // KPIs and the legend are on screen by this point, so bailing here still
   // leaves a useful dashboard rather than a broken one.
-  if (!chartsAvailable()) {
+  if (!await chartsAvailable()) {
     showChartFallback();
     return;
   }
@@ -234,8 +239,11 @@ function renderDashboard(branch) {
 // `new Chart` throws inside the setTimeout below — an uncaught error that
 // surfaces nowhere and abandons the rest of the render, leaving stale
 // numbers on screen with no clue why.
+// Chart.js is fetched the first time Finance is opened rather than on
+// every visit — see js/cdn.js. Reception's phone, which never opens this
+// screen, no longer downloads 201 KB to not use it.
 function chartsAvailable() {
-  return typeof Chart === "function";
+  return ensureCharts();
 }
 
 function showChartFallback() {
@@ -256,8 +264,14 @@ document.getElementById("open-dashboard-btn").addEventListener("click", () => {
   setTimeout(() => {
     // Wrapped because this runs detached from the click — anything thrown
     // here has no caller to report it, so a failure would be invisible.
+    // .catch() as well as try/catch: renderDashboard awaits the Chart.js
+    // download now, so a failure after the first await is a rejected
+    // promise that try/catch alone would never see.
     try {
-      renderDashboard(appState.selectedBranch);
+      renderDashboard(appState.selectedBranch).catch(err => {
+        console.error("Dashboard render failed:", err);
+        showToast("Couldn't load the dashboard");
+      });
     } catch (err) {
       console.error("Dashboard render failed:", err);
       showToast("Couldn't load the dashboard");

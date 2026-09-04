@@ -13,6 +13,7 @@ import { refreshReservationsList } from "./reservations.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
+import { ensureHtml2Canvas } from "./cdn.js";
 
 // Proforma Invoice — the pre-arrival bill sent to the travel agent or
 // guide who made the booking. Raised against an existing reservation, so
@@ -576,11 +577,11 @@ el("pf-done-btn").addEventListener("click", async () => {
   openReservationsScreen();
 });
 
-el("pf-image-btn").addEventListener("click", () => {
+el("pf-image-btn").addEventListener("click", async () => {
   const target = el("proforma-preview");
-  // Same CDN guard as the other documents — a missing script throws
-  // synchronously, which .catch() never sees.
-  if (typeof html2canvas !== "function") {
+  // Same CDN guard as the other documents, and now the same on-demand
+  // fetch: a missing script throws synchronously, which .catch() never sees.
+  if (!await ensureHtml2Canvas()) {
     showToast("Image export needs a connection — use Print instead");
     return;
   }

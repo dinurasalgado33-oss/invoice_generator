@@ -4,7 +4,8 @@ import { escapeHtml, formatDate, fmt, setLogoSrc, showToast, toDateISO, safeStor
 import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import { add, COLLECTIONS } from "./data/store.js";
-import { downloadInvoicePdf, isPdfAvailable, tryInvoicePdfBase64 } from "./invoice-pdf.js";
+import { downloadInvoicePdf, tryInvoicePdfBase64 } from "./invoice-pdf.js";
+import { ensureHtml2Canvas, ensurePdfTools } from "./cdn.js";
 import { makeStepperNavigable } from "./stepper.js";
 import { queueInvoiceEmail } from "./data/invoice-email.js";
 import { logError } from "./data/error-log.js";
@@ -733,10 +734,11 @@ document.getElementById("print-btn").addEventListener("click", () => window.prin
 // renderings that agree today.
 document.getElementById("pdf-btn").addEventListener("click", async (e) => {
   if (!previewedInvoice) return;
-  if (!isPdfAvailable()) {
-    // jsPDF and html2canvas are both CDN scripts, and both properties have
-    // patchy connectivity, so this genuinely fails sometimes. Print still
-    // works offline.
+  if (!await ensurePdfTools()) {
+    // jsPDF and html2canvas are both CDN scripts, fetched the first time a
+    // PDF is actually built rather than on every visit. Both properties
+    // have patchy connectivity, so this genuinely fails sometimes. Print
+    // still works offline.
     showToast("PDF needs a connection — use Print instead");
     return;
   }
@@ -758,16 +760,17 @@ document.getElementById("pdf-btn").addEventListener("click", async (e) => {
   }
 });
 
-document.getElementById("image-btn").addEventListener("click", () => {
+document.getElementById("image-btn").addEventListener("click", async () => {
   const target = document.getElementById("invoice-preview");
   const hint = target.querySelector(".scroll-hint");
 
-  // html2canvas is a CDN script. Both properties are in remote areas with
-  // patchy connectivity, so it genuinely fails to load sometimes — and
-  // calling it then throws a ReferenceError that .catch() never sees,
-  // leaving the button silently dead. Check before calling, and tell staff
-  // what to do instead.
-  if (typeof html2canvas !== "function") {
+  // html2canvas is a CDN script, fetched the first time this button is
+  // pressed rather than on every visit — see js/cdn.js. Both properties are
+  // in remote areas with patchy connectivity, so it genuinely fails to
+  // arrive sometimes, and calling it then throws a ReferenceError that
+  // .catch() never sees, leaving the button silently dead. Ask for it,
+  // then check, and tell staff what to do instead.
+  if (!await ensureHtml2Canvas()) {
     showToast("Image export needs a connection — use Print instead");
     return;
   }
