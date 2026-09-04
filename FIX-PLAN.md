@@ -2,7 +2,7 @@
 
 ## Status — 2026-09-04
 
-Deployed to **dev** (`leopard-inn-dev`, `?v=171`) and verified there.
+Deployed to **dev** (`leopard-inn-dev`, `?v=172`) and verified there.
 **Not yet on live** (`leopard-inn`, still `?v=169`).
 
 | | Fix | State |
@@ -16,6 +16,7 @@ Deployed to **dev** (`leopard-inn-dev`, `?v=171`) and verified there.
 | **F7** | Two render-blocking CDN scripts | ✅ `defer` done; **measurement says go further**, see F7 |
 | **F8** | 163 KB font on every visit | ✅ done, verified — 0 requests before a PDF is built |
 | **F9–F15** | preload hints, P3 items | ⬜ not started |
+| **F16** | Staging site wrote to the **production** database | ✅ found while testing F3, fixed, verified |
 
 **One bug was found while fixing, not by the audit:** `js/invoice.js`
 selected `.form-step` and `.stepper-item` document-wide, and the
@@ -555,3 +556,68 @@ Left on live by this audit, all clearly marked, none counting as revenue.
 
 Nothing here is deletable by design (`allow delete: if false`), which is
 correct. They are inert.
+
+---
+
+## F16. The staging site was writing to the production database — **P0, fixed**
+
+Not from the audit. Found while testing F3, because the new collection's
+rules were deployed to the dev project and the app — reading live — was
+refused.
+
+`js/data/firebase-config.js` chose the project by hostname: **localhost →
+DEV, every other address → LIVE.** `leopard-inn-dev.web.app` is every other
+address.
+
+| | Before |
+|---|---|
+| Hosting | `leopard-inn-dev` |
+| Firestore + Auth | **`leopard-inn` — production** |
+| What it could read | real invoices, real guest passport numbers |
+| What it could write | anything reception can write |
+
+The file's own comment said *"a mistake while building therefore cannot
+land in a real guest's records."* True of localhost. The existence of a
+`-dev` **hosting site** was never accounted for, so the one URL that looks
+safest was the least safe thing in the project.
+
+Nothing was damaged: the only write attempted during testing was to
+`foodOrdersPending`, which production has no rule for, so it was refused.
+Production stayed clean because a *different* fix was incomplete.
+
+### Fixed
+
+- `isTestHost()` replaces the bare `isLocal()` check: localhost, the dev
+  project's two hosting domains, and Firebase preview channels
+  (`<site>--<channel>-<hash>.web.app`) all resolve to DEV.
+- **Unknown hosts still resolve to LIVE.** This is deliberate and is the
+  conservative direction: the file cannot know every domain the portal
+  might one day be served from, and sending real reception staff to a
+  throwaway database would be worse than the bug being fixed. The rule
+  names what is known to be test, not what is guessed to be live.
+- A **strip across the top of the page** whenever the test database is in
+  use. The `usingTestDatabase` flag was already being set and nothing had
+  ever rendered it, which is precisely why this went unnoticed — a badge in
+  a corner is something you stop seeing by the second day.
+
+**Verified** against the shipped source, all eleven hosts:
+
+```
+leopard-inn.web.app               -> LIVE     leopard-inn-dev.web.app            -> TEST
+leopard-inn.firebaseapp.com       -> LIVE     leopard-inn-dev.firebaseapp.com    -> TEST
+leopardinnvillas.com              -> LIVE     localhost / 127.0.0.1 / 192.168.*  -> TEST
+portal.leopardinnvillas.com       -> LIVE     leopard-inn--pr-12-a1b2c3.web.app  -> TEST
+                                              (file://)                          -> TEST
+```
+
+### Still outstanding
+
+`firestore.rules` gained the `foodOrdersPending` block for F3. It is
+deployed to **dev only**. Promoting F3 to live needs:
+
+```bash
+firebase deploy --only firestore:rules --project leopard-inn
+```
+
+Without it, F3's code runs against production and every order write is
+refused — the queue would look exactly as broken as before the fix.

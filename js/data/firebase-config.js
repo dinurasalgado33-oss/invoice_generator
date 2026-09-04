@@ -33,9 +33,6 @@ const LIVE = {
   appId: "1:473662422025:web:a3307478a594d8b141ccd8",
 };
 
-// Anything that isn't localhost or a local network address is treated as
-// the real thing. Erring this way round means an unrecognised host gets
-// the *test* project rather than silently writing to live data.
 function isLocal(host) {
   // Opening index.html straight off disk reports an empty hostname. That is
   // as local as it gets, and without this it fell through to the "no live
@@ -49,9 +46,33 @@ function isLocal(host) {
     || /^10\./.test(host);
 }
 
+// Every address that is deliberately not the live hotel.
+//
+// Unknown hosts still resolve to LIVE, which is the conservative choice:
+// this file cannot know every domain the real portal might one day be
+// served from, and sending real reception staff to a throwaway database
+// would be worse than the problem being fixed. So the rule names what is
+// known to be test, rather than guessing at what is known to be live.
+function isTestHost(host) {
+  if (isLocal(host)) return true;
+
+  // The test project's own hosting sites. This is the case that was
+  // missing, and the whole reason this function now exists.
+  if (host === DEV.projectId + ".web.app") return true;
+  if (host === DEV.projectId + ".firebaseapp.com") return true;
+
+  // Firebase preview channels are <site>--<channel>-<hash>.web.app. A
+  // preview is by definition not the live site, whichever project it was
+  // built from — so `firebase hosting:channel:deploy` on the live project
+  // is safe to open without it writing to a real guest's records.
+  if (host.includes("--") && host.endsWith(".web.app")) return true;
+
+  return false;
+}
+
 export function firebaseConfig() {
   const host = typeof location !== "undefined" ? location.hostname : "localhost";
-  if (isLocal(host)) return DEV;
+  if (isTestHost(host)) return markTest(DEV);
   if (LIVE) return LIVE;
 
   // Served from a real address with no live project configured. Falling
@@ -63,10 +84,21 @@ export function firebaseConfig() {
     "[Leopard Inn] Running on " + host + " but no live Firebase project is configured — " +
     "using the TEST database. Fill in LIVE in js/data/firebase-config.js before going live."
   );
+  return markTest(DEV);
+}
+
+// Says so on the screen, not only in the console.
+//
+// This flag was already being set here and nothing ever rendered it, so
+// running against the test database looked exactly like running against
+// the real one. css/base.css turns it into a strip across the top of the
+// page, because the failure being fixed *is* not knowing which database
+// you are looking at.
+function markTest(config) {
   if (typeof document !== "undefined") {
     document.documentElement.dataset.usingTestDatabase = "true";
   }
-  return DEV;
+  return config;
 }
 
 export function isLiveProject() {
