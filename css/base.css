@@ -414,6 +414,7 @@ input[type="search"]::-webkit-search-cancel-button { display: none; }
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
   gap: 8px;
   background: var(--white);
   border: 2px dashed var(--maroon-soft);
@@ -1313,3 +1314,8 @@ input[readonly]:focus { box-shadow: none; border-color: var(--border); backgroun
   font-weight: 600;
   color: var(--text-muted);
 }
+
+/* Both of these are mine, added this week, and both landed under the 44px
+   minimum the rest of the app keeps to. WALKTHROUGH-2026-09-04 F-C. */
+#login-reset-btn { min-height: 44px; }
+#cfg-invoice-goto-charges { min-height: 44px; }

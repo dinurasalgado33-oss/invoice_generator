@@ -257,6 +257,11 @@
 }
 .report-tab {
   flex-shrink: 0;
+  /* min-height rather than more padding: the label stays where it is and
+     only the box it sits in grows to a thumb-sized target. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   background: var(--white);
   border: 1.5px solid var(--border);
   color: var(--text-muted);
