@@ -2,8 +2,13 @@
 
 ## Status — 2026-09-04
 
-**Live** on `leopard-inn` at `?v=175`, and on dev at the same version.
-**All sixteen findings are closed.**
+**Live** on `leopard-inn` at `?v=176`, and on dev at the same version.
+
+**All sixteen F-items are closed**, plus audit §5.3, which never had an
+F-number and so was invisible to this table until the audit was re-read
+section by section. Audit §5.4 (the invoice PDF's blank middle) is left
+open deliberately — it is a judgement about how the hotel wants its bills
+to look, on the one document a guest signs, not a defect.
 Rules deployed to both projects.
 
 Verified on production after deploying, not assumed:
