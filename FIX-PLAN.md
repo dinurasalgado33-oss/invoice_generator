@@ -2,7 +2,7 @@
 
 ## Status — 2026-09-04
 
-Deployed to **dev** (`leopard-inn-dev`, `?v=173`) and verified there.
+Deployed to **dev** (`leopard-inn-dev`, `?v=174`) and verified there.
 **Not yet on live** (`leopard-inn`, still `?v=169`).
 
 | | Fix | State |
@@ -15,7 +15,8 @@ Deployed to **dev** (`leopard-inn-dev`, `?v=173`) and verified there.
 | **F6** | ~~Lists render blank~~ | ❌ **withdrawn — the audit was wrong**, see below |
 | **F7** | CDN scripts loaded on every visit | ✅ done properly — all four now on demand, DCL **29.4s → 8.2s** |
 | **F8** | 163 KB font on every visit | ✅ done, verified — 0 requests before a PDF is built |
-| **F9–F15** | preload hints, P3 items | ⬜ not started |
+| **F9** | 59 modules, deep waterfall, no preload hints | ✅ done — 8 boot waves → 6 |
+| **F10–F15** | P3 items | ⬜ not started |
 | **F16** | Staging site wrote to the **production** database | ✅ found while testing F3, fixed, verified |
 
 **One bug was found while fixing, not by the audit:** `js/invoice.js`
@@ -698,3 +699,42 @@ means something:
 | no pending orders | "No pending orders right now." |
 | search matching nothing | "No dishes match “zzzz-no-such-dish”." |
 | **search matching something** | **no empty state** — so the check above can fail |
+
+
+---
+
+## F9 — done
+
+ES modules are only discovered by parsing whoever imports them, so the
+Firebase boot path (`main → sync → firestore-adapter → …`) was found four
+levels deep and cost four sequential round trips. On the 0.15 Mbps link
+the last five modules alone spanned 2.2 seconds with the connection
+mostly idle.
+
+Eight `<link rel="modulepreload">` hints in `index.html`, for exactly the
+modules that were arriving late and are always needed:
+`firebase-config`, `firebase`, `session`, `sync`, `firestore-adapter`,
+`seed-config`, `occupancy`, `suggestions`.
+
+| | Before | After |
+|---|---|---|
+| boot waves | 8 | **6** |
+| first wave | 1 module | **9 modules** |
+| last module arrives | 5,517 ms | **4,908 ms** |
+| modules fetched twice | — | **0** |
+
+The last row is the one that mattered to check. A `modulepreload` href has
+to match the URL the import actually resolves to, and an import inside a
+module carries no `?v=` — so a hint written as `js/data/sync.js?v=174`
+would not error, it would silently download the whole boot chain twice.
+Hence no version marker on those eight lines, and a duplicate-fetch count
+in the verification rather than a glance at the timings.
+
+**Startup, end to end, on the same slow link:**
+
+| | Start of session | Now |
+|---|---|---|
+| `domInteractive` | 568 ms | 464 ms |
+| `DOMContentLoaded` | **29,368 ms** | **4,923 ms** |
+| CDN scripts at startup | 4 (806 KB decoded) | **0** |
+| boot waves | 9 | **6** |

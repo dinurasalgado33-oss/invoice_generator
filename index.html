@@ -6,17 +6,39 @@
 <meta name="theme-color" content="#4a0e1c" />
 <title>Leopard Inn — Staff Portal</title>
 <link rel="icon" href="assets/logo-wilpattu.png" />
-<link rel="stylesheet" href="css/base.css?v=173" />
-<link rel="stylesheet" href="css/brand-home.css?v=173" />
-<link rel="stylesheet" href="css/rooms.css?v=173" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=173" />
-<link rel="stylesheet" href="css/invoice.css?v=173" />
-<link rel="stylesheet" href="css/dashboard.css?v=173" />
-<link rel="stylesheet" href="css/reports.css?v=173" />
-<link rel="stylesheet" href="css/reservation.css?v=173" />
-  <link rel="stylesheet" href="css/grc.css?v=173" />
-  <link rel="stylesheet" href="css/proforma.css?v=173" />
-  <link rel="stylesheet" href="css/history.css?v=173" />
+
+<!-- The boot chain, fetched in parallel instead of one round trip at a time.
+     ES modules are only discovered by parsing the module that imports them,
+     so the Firebase path — main → sync → firestore-adapter → the rest — was
+     found four levels deep and cost four sequential round trips. Measured on
+     a 0.15 Mbps link, the last five modules alone spanned 2.2 seconds while
+     the connection sat mostly idle.
+
+     No ?v= here on purpose: these have to match the URLs the imports
+     actually resolve to, and an import inside a module carries no query
+     string. A mismatch would not error, it would just quietly download
+     everything twice. Cache-Control is no-cache for js anyway, so the
+     version marker on main.js is what busts the graph. -->
+<link rel="modulepreload" href="js/data/firebase-config.js" />
+<link rel="modulepreload" href="js/data/firebase.js" />
+<link rel="modulepreload" href="js/data/session.js" />
+<link rel="modulepreload" href="js/data/sync.js" />
+<link rel="modulepreload" href="js/data/firestore-adapter.js" />
+<link rel="modulepreload" href="js/data/seed-config.js" />
+<link rel="modulepreload" href="js/data/occupancy.js" />
+<link rel="modulepreload" href="js/data/suggestions.js" />
+
+<link rel="stylesheet" href="css/base.css?v=174" />
+<link rel="stylesheet" href="css/brand-home.css?v=174" />
+<link rel="stylesheet" href="css/rooms.css?v=174" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=174" />
+<link rel="stylesheet" href="css/invoice.css?v=174" />
+<link rel="stylesheet" href="css/dashboard.css?v=174" />
+<link rel="stylesheet" href="css/reports.css?v=174" />
+<link rel="stylesheet" href="css/reservation.css?v=174" />
+  <link rel="stylesheet" href="css/grc.css?v=174" />
+  <link rel="stylesheet" href="css/proforma.css?v=174" />
+  <link rel="stylesheet" href="css/history.css?v=174" />
 </head>
 <body>
 
@@ -2578,6 +2600,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=173"></script>
+<script type="module" src="js/main.js?v=174"></script>
 </body>
 </html>
