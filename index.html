@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=194" />
-<link rel="stylesheet" href="css/brand-home.css?v=194" />
-<link rel="stylesheet" href="css/rooms.css?v=194" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=194" />
-<link rel="stylesheet" href="css/invoice.css?v=194" />
-<link rel="stylesheet" href="css/dashboard.css?v=194" />
-<link rel="stylesheet" href="css/reports.css?v=194" />
-<link rel="stylesheet" href="css/reservation.css?v=194" />
-  <link rel="stylesheet" href="css/grc.css?v=194" />
-  <link rel="stylesheet" href="css/proforma.css?v=194" />
-  <link rel="stylesheet" href="css/history.css?v=194" />
+<link rel="stylesheet" href="css/base.css?v=195" />
+<link rel="stylesheet" href="css/brand-home.css?v=195" />
+<link rel="stylesheet" href="css/rooms.css?v=195" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=195" />
+<link rel="stylesheet" href="css/invoice.css?v=195" />
+<link rel="stylesheet" href="css/dashboard.css?v=195" />
+<link rel="stylesheet" href="css/reports.css?v=195" />
+<link rel="stylesheet" href="css/reservation.css?v=195" />
+  <link rel="stylesheet" href="css/grc.css?v=195" />
+  <link rel="stylesheet" href="css/proforma.css?v=195" />
+  <link rel="stylesheet" href="css/history.css?v=195" />
 </head>
 <body>
 
@@ -1809,7 +1809,7 @@
            us. Editing the stay itself belongs on the reservation. -->
       <div class="proforma-from-reservation" id="proforma-source-summary"></div>
 
-      <h3 class="section-title">Agent details</h3>
+      <label class="group-title">Agent</label>
       <div class="field">
         <label for="pf-travel-agent">Travel Agent</label>
         <input type="text" id="pf-travel-agent" autocapitalize="words" maxlength="120" enterkeyhint="next" />
@@ -1826,7 +1826,7 @@
         </div>
       </div>
 
-      <h3 class="section-title">Charges</h3>
+      <label class="group-title">Charges</label>
       <p class="step-subtext">Villas and rates come from the reservation. Change the nights if the agent is billed for a different span.</p>
       <div id="pf-items-wrap">
         <table id="pf-items-table">
@@ -1847,7 +1847,7 @@
       <p class="field-error" id="pf-no-villas-note" hidden>This reservation has no villas on it, so there is nothing to invoice.</p>
       <p class="field-error" id="pf-items-error">Add at least one charge</p>
 
-      <h3 class="section-title">Totals</h3>
+      <label class="group-title">Totals</label>
       <div class="field-row">
         <div class="field">
           <label for="pf-discount">Discount</label>
@@ -2795,6 +2795,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=194"></script>
+<script type="module" src="js/main.js?v=195"></script>
 </body>
 </html>
