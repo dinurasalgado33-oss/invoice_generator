@@ -196,3 +196,30 @@
   color: var(--text-muted);
   line-height: 1.5;
 }
+
+/* The reservation number, printed beside the title the way the invoice
+   prints its own. This document carried no identifier at all until now —
+   see WALKTHROUGH-2026-09-04 F-A. */
+/* Wraps, because the paper is laid out for A4 and read on a phone. At 375px
+   a nowrap number beside the title runs off the right edge and the guest's
+   reference is the part that gets cut. Below the title is fine; cut off is
+   not. */
+.reservation-title-row {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.reservation-doc-no {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #444;
+  text-align: right;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+@media (max-width: 560px) {
+  .reservation-title-row { justify-content: center; }
+  .reservation-doc-no { text-align: center; width: 100%; }
+}
+.reservation-doc-no span { color: #777; }
+.reservation-doc-no strong { font-weight: 700; color: #1a1a1a; }

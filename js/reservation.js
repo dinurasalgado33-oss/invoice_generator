@@ -284,6 +284,7 @@ function renderReservationPreview(r, { hidePrices = false } = {}) {
   document.getElementById("resv-prev-contact-line").textContent =
     [branchInfo.phone ? `Tel ${branchInfo.phone}` : "", branchInfo.email ? `Email: ${branchInfo.email}` : ""].filter(Boolean).join("  •  ");
   setLogoSrc("resv-prev-logo", appState.selectedBranchLogo);
+  document.getElementById("resv-prev-no").textContent = r.no || "—";
 
   document.getElementById("resv-prev-guest-name").textContent =
     r.guestName ? `${r.title || ""} ${r.guestName}`.trim() : "-";

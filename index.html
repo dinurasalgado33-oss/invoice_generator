@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=191" />
-<link rel="stylesheet" href="css/brand-home.css?v=191" />
-<link rel="stylesheet" href="css/rooms.css?v=191" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=191" />
-<link rel="stylesheet" href="css/invoice.css?v=191" />
-<link rel="stylesheet" href="css/dashboard.css?v=191" />
-<link rel="stylesheet" href="css/reports.css?v=191" />
-<link rel="stylesheet" href="css/reservation.css?v=191" />
-  <link rel="stylesheet" href="css/grc.css?v=191" />
-  <link rel="stylesheet" href="css/proforma.css?v=191" />
-  <link rel="stylesheet" href="css/history.css?v=191" />
+<link rel="stylesheet" href="css/base.css?v=193" />
+<link rel="stylesheet" href="css/brand-home.css?v=193" />
+<link rel="stylesheet" href="css/rooms.css?v=193" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=193" />
+<link rel="stylesheet" href="css/invoice.css?v=193" />
+<link rel="stylesheet" href="css/dashboard.css?v=193" />
+<link rel="stylesheet" href="css/reports.css?v=193" />
+<link rel="stylesheet" href="css/reservation.css?v=193" />
+  <link rel="stylesheet" href="css/grc.css?v=193" />
+  <link rel="stylesheet" href="css/proforma.css?v=193" />
+  <link rel="stylesheet" href="css/history.css?v=193" />
 </head>
 <body>
 
@@ -2690,6 +2690,12 @@
 
       <div class="reservation-title-row">
         <h1>Reservation Confirmation</h1>
+        <!-- The number the guest quotes back. Every other document this app
+             produces prints its own identifier — the card prints GRC-…, the
+             invoice prints INV-… — and this one printed none, while
+             reception's own search offers "Guest name or reservation no" as
+             a way to find it. -->
+        <p class="reservation-doc-no"><span>Reservation No</span> <strong id="resv-prev-no"></strong></p>
       </div>
 
       <div class="reservation-body">
@@ -2789,6 +2795,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=191"></script>
+<script type="module" src="js/main.js?v=193"></script>
 </body>
 </html>
