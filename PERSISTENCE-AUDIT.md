@@ -72,9 +72,14 @@ percentage are exactly as financial as an invoice. They are financial
 
 ### ⚪ Deliberately not persisted — confirmed correct
 
+> One row below was **not** correct, and is struck through. "Deliberate" was
+> taken from the code's own comment; the comment explained the choice but
+> never tested it against what the record actually is. A design note saying
+> why something is safe is not evidence that it is.
+
 | State | Why |
 |---|---|
-| `FOOD_ORDERS` | Live kitchen queue. "Currently pending" only ever means now; documented as session-scoped by design |
+| ~~`FOOD_ORDERS`~~ | **Moved out of this table 2026-09-04 — the entry was wrong.** "Currently pending" only ever means now is true of a *queue*, but this queue is also money a guest owes and a permanent stock deduction already written. A reload lost orders the kitchen was cooking, unbilled, with the shelf short and nothing to explain it. Persisted now as `foodOrdersPending` — see FIX-PLAN F3/F4 |
 | ~~Suggestion history (guides, agents, countries)~~ | No longer in this table. It *was* shared as of `3a6f197` — see §6 |
 | Lock PIN, idle timeout | Per-device by definition |
 | Number blocks | Per-device by design — that is the whole point of block allocation |

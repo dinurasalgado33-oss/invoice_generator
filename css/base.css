@@ -17,6 +17,19 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* The browser's own [hidden] rule is `display: none`, and it is the
+   lowest-specificity rule there is — any class selector that sets
+   `display` beats it. That silently broke four `el.hidden = true` calls
+   across the app (the reservation picker on the registration card, the
+   invoice's VAT row, the exchange-rate field, Guest History's "load
+   more"): the attribute was set, nothing changed on screen, and there was
+   no error anywhere to say so. FIX-PLAN.md F1.
+   `!important` here is deliberate and is the standard fix for this exact
+   problem — it puts `hidden` back above ordinary class rules without
+   touching any of them. Toggle visibility with `el.hidden`, never with
+   `style.display`, and it will now actually hide. */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {

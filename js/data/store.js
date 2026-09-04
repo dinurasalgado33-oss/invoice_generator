@@ -20,6 +20,8 @@ export const COLLECTIONS = {
   INVOICES: "invoices",
   BOOKINGS: "bookings",
   FOOD_ORDERS: "foodOrders",
+  // The kitchen queue, separate from FOOD_ORDERS above, which is the sale.
+  PENDING_ORDERS: "foodOrdersPending",
   ACTIVITY_CHARGES: "activityCharges",
   GUEST_CHARGES: "guestCharges",
   RESERVATIONS: "reservations",

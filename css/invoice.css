@@ -39,6 +39,37 @@
   background: var(--maroon);
 }
 
+/* The circle and its label are wrapped in a real <button> by stepper.js, so
+   a step you have already finished can be tapped to go back to it. The
+   wrapper takes over the column layout the .stepper-item used to do itself;
+   the connecting line stays on the <li>, outside the button, so the target
+   is the step rather than the line between steps. */
+.stepper-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 2px 0 4px;
+  margin: 0;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+.stepper-hit:focus-visible {
+  outline: 2px solid var(--maroon);
+  outline-offset: 2px;
+}
+/* Only a step you can actually go back to reacts to a press — the active one
+   is already where you are, and an upcoming one is refused by the wizard's
+   own validation, so neither should feel pressable. */
+.stepper-item[data-state="done"] .stepper-hit:active .stepper-circle {
+  transform: scale(0.92);
+}
+
 .stepper-circle {
   position: relative;
   z-index: 1;

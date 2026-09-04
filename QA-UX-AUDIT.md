@@ -116,26 +116,31 @@ Keep this if the steps get collapsed.
 
 ## 4. QA findings
 
-### 4.1 Four lists render blank instead of saying they are empty — **Read, confirmed in source**
+### 4.1 ~~Four lists render blank instead of saying they are empty~~ — **WITHDRAWN, this finding was wrong**
 
-`orders.js` builds its pending list as `pending.map(...)` with no
-fallback, and its dish search as `matches.map(...)` with the same. So:
+**Retracted 2026-09-04, while fixing it.** The empty states are there, and
+were there when this audit was written.
 
-- **No pending food orders** → a blank area, not "nothing waiting".
-- **A dish search with no match** → a blank area, not "no dish matches
-  that number".
+`js/orders.js:309` renders "No pending orders right now." when nothing is
+pending, and `js/orders.js:131` renders "No dishes match “…”." when a
+search finds nothing. Both have existed since commit `c2365f1`
+(2026-08-15) — three weeks before the commit this audit was run against.
 
-The second is the worse one, because it happens during service and the
-natural reading is "the app is broken" or "still loading", not "type
-something else".
+**How it happened**, recorded because the shape will recur: the check was a
+grep of `orders.js` for `list-empty`, the class the other five screens
+use. It returned nothing. `orders.js` spells the same thing
+`room-detail-empty`, so a different class name for a present feature was
+indistinguishable from an absent feature — and the render was never read.
 
-`history.js`, `inventory.js`, `menu.js`, `reservations.js` and
-`rooms.js` all have proper empty states — the pattern exists, these two
-lists just missed it. `proforma.js` and `dashboard.js` also show none,
-though both may never legitimately render empty; unverified.
+Worse, this section was tagged **"Read, confirmed in source"**. It was not.
+The tag was applied to a grep result. **Every finding in this document
+carrying that tag needs the same re-check before it is acted on** — read
+the render, do not trust the count. §4.1 is the only one withdrawn so far,
+but it is the only one that has been re-checked this way.
 
-**Severity: moderate.** Nothing breaks; staff lose confidence in the
-screen.
+The one true residue is cosmetic: `orders.js` uses
+`.room-detail-empty` where five other modules use `.list-empty`. Both
+render correctly. Not worth a change.
 
 ### 4.2 Four of six search fields cannot be cleared — **Observed**
 
@@ -251,8 +256,11 @@ Stated so the gaps are not mistaken for clean results.
 
 1. **Make the stepper navigable** (§3.1). It shortens the two most
    repeated flows in the app and removes a control that lies.
-2. **Give the four empty lists an empty state** (§4.1). The pattern is
-   already written in five other modules; this is copying, not designing.
+2. ~~**Give the four empty lists an empty state** (§4.1)~~ — withdrawn,
+   the empty states were already there. Do **F3/F4** instead: persist the
+   pending food-order queue. Today it lives only in memory, so a reception
+   phone that reloads mid-service loses orders that were never billed —
+   money out of the till, not seconds off a flow.
 3. **Add password reset** (§4.3). Everything else on this list costs
    somebody seconds. This one costs somebody a morning.
 

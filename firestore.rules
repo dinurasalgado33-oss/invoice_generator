@@ -168,6 +168,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // The kitchen queue, as opposed to foodOrders above, which is the sale.
+    //
+    // These two are deliberately different collections with deliberately
+    // different delete rules. A pending order is a work item: it is keyed
+    // in wrongly, it is cancelled before the kitchen starts, and reception
+    // has to be able to take it back off the list. The moment it is
+    // completed a foodOrders record is written, and *that* is the money —
+    // undeletable, like every other financial record here.
+    //
+    // Deleting is staff, not manager: the person who mistyped the order is
+    // the person standing at the counter, and a rule that made them find a
+    // manager would just push them to leave it pending forever.
+    match /foodOrdersPending/{id} {
+      allow read: if mayTouchExisting();
+      allow create: if mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow delete: if mayTouchExisting();
+    }
+
     match /activityCharges/{id} {
       allow read: if mayTouchExisting();
       allow create: if mayWriteIncoming();

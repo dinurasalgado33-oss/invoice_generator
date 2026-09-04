@@ -1,5 +1,13 @@
 import { MENU_ITEMS, BOARD_MENU } from "./data/menu.js";
-import { CINZEL_REGULAR_B64 } from "./data/font-cinzel.js";
+// The font is imported lazily inside buildMenuPdf(), not here.
+//
+// It is 163KB of base64 — 66KB over the wire, and about a fifth of all the
+// JavaScript this app ships. A static import put it on the startup path of
+// every single page load, including every reception phone that never
+// builds a PDF in its life, because main.js reaches this file through
+// menu-publish.js. Loading it at the point of use costs a few hundred
+// milliseconds the first time somebody actually presses Publish or Open
+// PDF, and nothing at all the rest of the time.
 
 // Builds the hotel's menus as real PDF files, from the live menu config.
 //
@@ -355,6 +363,8 @@ export async function buildMenuPdf(key) {
   if (!engineReady()) throw new Error("The PDF engine didn't load — check the connection and reload.");
   const doc = MENU_DOCS[key];
   if (!doc) throw new Error(`Unknown menu: ${key}`);
+
+  const { CINZEL_REGULAR_B64 } = await import("./data/font-cinzel.js");
 
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ unit: "mm", format: "a4", compress: true });

@@ -10,7 +10,7 @@ import { chargeRoom } from "./rooms.js";
 import { updateInventoryBadge } from "./inventory.js";
 import { confirmAction } from "./confirm.js";
 import { resetForm, addItemRow, clearItems, setCheckoutContext } from "./invoice.js";
-import { add, COLLECTIONS } from "./data/store.js";
+import { add, update, remove, COLLECTIONS } from "./data/store.js";
 
 let currentOrderSelection = {}; // dishId -> qty, for the Create/Edit view
 let orderSearchQuery = "";
@@ -251,8 +251,7 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
         const dish = MENU_ITEMS.find(d => d.id === item.dishId);
         deductIngredients(order.branch, dish, item.qty).forEach(name => shortages.add(name));
       });
-      order.items = items;
-      order.total = total;
+      update(COLLECTIONS.PENDING_ORDERS, order, { items, total });
       showToast(shortages.size
         ? `Order updated for ${order.roomName} — ran out of ${[...shortages].join(", ")}`
         : `Order updated for ${order.roomName}`);
@@ -262,7 +261,7 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
       const dish = MENU_ITEMS.find(d => d.id === item.dishId);
       deductIngredients(appState.selectedBranch, dish, item.qty).forEach(name => shortages.add(name));
     });
-    FOOD_ORDERS.push({
+    add(COLLECTIONS.PENDING_ORDERS, FOOD_ORDERS, {
       id: allocateOrderId(),
       branch: appState.selectedBranch,
       roomId,
@@ -286,6 +285,12 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
 });
 
 // ---- Pending orders list ----
+// Called by sync.js when another device places or completes an order, so
+// the phone and the tablet do not disagree about what the kitchen owes.
+export function refreshPendingOrders() {
+  if (document.getElementById("orders-pending-list")) renderPendingOrdersList();
+}
+
 function renderPendingOrdersList() {
   const pending = FOOD_ORDERS.filter(o => o.branch === appState.selectedBranch && o.status === "pending");
   const list = document.getElementById("orders-pending-list");
@@ -354,8 +359,7 @@ async function deleteOrder(orderId) {
   if (!ok) return;
 
   restoreOrderIngredients(order);
-  const idx = FOOD_ORDERS.findIndex(o => o.id === orderId);
-  FOOD_ORDERS.splice(idx, 1);
+  remove(COLLECTIONS.PENDING_ORDERS, FOOD_ORDERS, order);
 
   updateInventoryBadge();
   showToast(`Order deleted for ${order.roomName}`);
@@ -406,8 +410,10 @@ async function completeOrder(orderId) {
     });
   });
 
-  const idx = FOOD_ORDERS.findIndex(o => o.id === orderId);
-  FOOD_ORDERS.splice(idx, 1);
+  // Off the queue only now, after every line has been billed and written.
+  // The sale lives in FOOD_ORDER_RECORDS, which is undeletable; this queue
+  // entry is a work item and has done its job.
+  remove(COLLECTIONS.PENDING_ORDERS, FOOD_ORDERS, order);
 
   if (order.walkin) {
     startWalkinInvoice(order);

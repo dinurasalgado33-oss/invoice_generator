@@ -1,5 +1,33 @@
 # Leopard Inn — Fix Plan
 
+## Status — 2026-09-04
+
+Deployed to **dev** (`leopard-inn-dev`, `?v=171`) and verified there.
+**Not yet on live** (`leopard-inn`, still `?v=169`).
+
+| | Fix | State |
+|---|---|---|
+| **F1** | `[hidden]` beaten by class selectors | ✅ done, verified — and the check was made to fail first |
+| **F2** | Invoice top line said "Reservation No" | ✅ done, verified |
+| **F3** | Pending orders lost on reload, unbilled | ✅ written, **lifecycle test needs a signed-in session** |
+| **F4** | Stranded stock deduction | ✅ closed by F3 |
+| **F5** | Stepper looked pressable and was not | ✅ done, verified on both wizards |
+| **F6** | ~~Lists render blank~~ | ❌ **withdrawn — the audit was wrong**, see below |
+| **F7** | Two render-blocking CDN scripts | ✅ `defer` done; **measurement says go further**, see F7 |
+| **F8** | 163 KB font on every visit | ✅ done, verified — 0 requests before a PDF is built |
+| **F9–F15** | preload hints, P3 items | ⬜ not started |
+
+**One bug was found while fixing, not by the audit:** `js/invoice.js`
+selected `.form-step` and `.stepper-item` document-wide, and the
+registration card uses the same class names. Every invoice step change was
+silently repainting the check-in card's stepper and toggling its form
+steps. Invisible today, because the card repaints itself on open — but it
+would have nested a button inside a button the moment F5 landed. Both
+selectors are scoped to `#screen-form` / `#stepper` now.
+
+---
+
+
 > ## ⚠ Read this before you touch anything
 >
 > ### 1. Committing is not deploying
@@ -342,22 +370,31 @@ when nothing later needs attention.
 **Verify:** from step 1 of a prefilled checkout, reach Generate in one
 tap, and confirm validation still refuses an incomplete form.
 
-## F6. Two lists render blank instead of saying they are empty — **P2**
+## F6. ~~Two lists render blank instead of saying they are empty~~ — **withdrawn, the audit was wrong**
 
-`js/orders.js:293` — `list.innerHTML = pending.map(…)` with no fallback.
-`js/orders.js:109` — `list.innerHTML = matches.map(…)` with no fallback.
+**There is no bug here. Do not fix this.** Both empty states exist and have
+existed since commit `c2365f1` (2026-08-15), well before the audit commit
+`ea8d297` that reported them missing.
 
-- No pending orders → a blank area, not "nothing waiting".
-- A dish search with no match → a blank area, not "no dish matches that".
+`js/orders.js` renders `.room-detail-empty` in both places:
 
-The second is worse: it happens during service, and blank reads as broken
-or still loading.
+- no pending orders → "No pending orders right now." `js/orders.js:309`
+- a dish search with no match → "No dishes match “…”." `js/orders.js:131`
 
-The pattern already exists in `history.js`, `inventory.js`, `menu.js`,
-`reservations.js` and `rooms.js` — this is copying, not designing.
+**How the audit got it wrong**, because the shape will recur: it grepped
+`orders.js` for `list-empty` — the class the *other* five screens use —
+got zero hits, and concluded the empty state was missing. It never read the
+render. A different class name for the same thing looked identical to the
+thing being absent.
 
-**Verify:** open Orders with nothing pending, and search a dish number
-that does not exist. Both must say so.
+The lesson is the one already in `CLAUDE.md` about tracing a whole
+lifecycle: a count of matches is not a reading of the code. A finding that
+says "X is missing" has to be backed by having looked at the place X would
+be, not by a grep for one spelling of X.
+
+The only real observation left is cosmetic and not worth a change on its
+own: `orders.js` spells its empty state `.room-detail-empty` while five
+other screens spell it `.list-empty`. Both render. Left alone.
 
 ## F7. Two render-blocking CDN scripts — **P2, one line**
 
@@ -378,6 +415,35 @@ Adding `defer` carries no behavioural risk.
 
 **Verify:** `performance.getEntriesByType('navigation')[0].domInteractive`
 falls, and Save Image plus the Finance charts still work.
+
+**Done, and measured on a deliberately slow link** (0.15 Mbps, 250 ms RTT —
+close to what reception actually has). `domInteractive` is **568 ms**, and
+all four CDN scripts now report `defer`.
+
+**But `defer` only solves half of it, and the other half is worse.** On
+that link the load looked like this:
+
+| | |
+|---|---|
+| modules requested in **9 sequential waves** | t=567ms → t=28568ms |
+| chart.umd.min.js, 70 KB | **28.7 s** to arrive |
+| html2canvas.min.js, 37 KB | **28.6 s** |
+| gap between wave 5 and wave 6 | **17 seconds**, with no module in flight |
+
+That 17-second hole is the two CDN scripts eating the whole pipe while 50
+application modules wait behind them. `defer` stopped them blocking
+*render*; it did nothing about them competing for *bandwidth*, and 107 KB
+is 5.7 s of a 0.15 Mbps link before contention.
+
+**The real fix is the F8 treatment, not `defer`:** load both on demand.
+`chart.umd.min.js` is needed only on the Finance screen and
+`html2canvas.min.js` only when Save Image or a PDF is pressed — neither
+is on the screen reception opens. Both call sites already guard with
+`typeof … !== "function"`, so the guard becomes "not loaded yet, load it"
+instead of "give up".
+
+Worth doing **before** F9: preload hints reorder a queue, but these two
+should not be in the queue at all.
 
 ## F8. A 163 KB font loads on every visit — **P2, one line**
 

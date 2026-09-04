@@ -5,6 +5,7 @@ import { BRANCH_INFO } from "./data/branches.js";
 import { INVOICES } from "./data/reports.js";
 import { add, COLLECTIONS } from "./data/store.js";
 import { downloadInvoicePdf, isPdfAvailable, tryInvoicePdfBase64 } from "./invoice-pdf.js";
+import { makeStepperNavigable } from "./stepper.js";
 import { queueInvoiceEmail } from "./data/invoice-email.js";
 import { logError } from "./data/error-log.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
@@ -282,8 +283,14 @@ const TOTAL_STEPS = 4;
 const STEP_TITLES = { 1: "Reservation & Guest", 2: "Charges", 3: "Totals", 4: "Final Details" };
 let currentStep = 1;
 
-const formSteps = [...document.querySelectorAll(".form-step")];
-const stepperItems = [...document.querySelectorAll(".stepper-item")];
+// Scoped to this screen. Both selectors used to be document-wide, and the
+// registration card uses the same two class names — so every invoice step
+// change was also silently repainting the check-in card's stepper and
+// toggling its form steps. Invisible, because the card's own setStep()
+// repaints it on open, but it is the same "one fact written in two places"
+// shape as every other bug in this file's history.
+const formSteps = [...document.querySelectorAll("#screen-form .form-step")];
+const stepperItems = [...document.querySelectorAll("#stepper .stepper-item")];
 const stepPrevBtn = document.getElementById("step-prev-btn");
 const stepNextBtn = document.getElementById("step-next-btn");
 const generateBtn = document.getElementById("generate-btn");
@@ -325,9 +332,9 @@ function validateStep(step) {
   return true;
 }
 
-function goToStep(step) {
-  if (step > currentStep && !validateStep(currentStep)) return;
-
+// Moves to a step, having decided it is allowed. Everything that decides
+// lives in goToStep below; this only draws.
+function showStep(step) {
   currentStep = Math.min(Math.max(step, 1), TOTAL_STEPS);
 
   formSteps.forEach(s => s.classList.toggle("active", Number(s.dataset.step) === currentStep));
@@ -348,8 +355,43 @@ function goToStep(step) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// Going to a step, having checked it is allowed.
+//
+// Backwards is always allowed. Forwards, every step being *skipped* has to
+// be valid, not merely the one being left — that distinction did not
+// matter while Next was the only way to move, because Next only ever
+// crosses one step. Now that the stepper circles are live and somebody can
+// jump from 1 to 4, it does.
+function goToStep(step) {
+  const target = Math.min(Math.max(step, 1), TOTAL_STEPS);
+
+  if (target > currentStep) {
+    for (let s = currentStep; s < target; s++) {
+      if (validateStep(s)) continue;
+      // Land on the step that is not finished so the person can see what
+      // is wrong, then re-run its validation — the first run marked the
+      // field and tried to focus it while it was still off screen.
+      if (s !== currentStep) {
+        showStep(s);
+        validateStep(s);
+      }
+      return;
+    }
+  }
+  showStep(target);
+}
+
 stepNextBtn.addEventListener("click", () => goToStep(currentStep + 1));
 stepPrevBtn.addEventListener("click", () => goToStep(currentStep - 1));
+
+// The stepper circles move the form.
+//
+// They always looked pressable and never were, which is its own problem —
+// a control that looks interactive and does nothing teaches people to
+// distrust the rest of the screen. It is also the most repeated waste in
+// the app: a checkout arrives with everything already filled in, and the
+// person at the desk still taps Next three times to change nothing.
+makeStepperNavigable(stepperItems, goToStep, () => currentStep);
 
 document.getElementById("guest-name").addEventListener("input", () => {
   document.getElementById("guest-name-error").classList.remove("show");

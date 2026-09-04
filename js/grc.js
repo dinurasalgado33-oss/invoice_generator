@@ -8,6 +8,7 @@ import { BRANCH_INFO } from "./data/branches.js";
 import { openReservations, findReservationById, RESERVATION_STATUS } from "./data/reservations.js";
 import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
+import { makeStepperNavigable } from "./stepper.js";
 import { bookingSourcesFor } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
@@ -190,13 +191,23 @@ export function openGrcForm({ branch, room, onComplete }) {
     (r.villas || []).some(v => v.roomId === room.id));
   const picker = el("grc-reservation-picker");
   picker.hidden = matchingReservations.length === 0;
-  if (matchingReservations.length) {
-    el("grc-reservation-select").innerHTML =
-      `<option value="">Walk-in — no reservation</option>` +
+
+  // Rebuilt every time, including when there is nothing to offer.
+  //
+  // This used to only run when there WERE matches, which left the
+  // previous villa's options sitting in the DOM. Paired with a `hidden`
+  // that did not hide (see [hidden] in base.css), the picker stayed on
+  // screen at the next villa still offering a reservation that belonged
+  // to a different one — and choosing it silently rewrote the villa field
+  // to the reservation's villa. Clearing unconditionally also matters for
+  // the keyboard and for screen readers, which can still reach options
+  // inside a hidden element in some browsers.
+  el("grc-reservation-select").innerHTML = matchingReservations.length
+    ? `<option value="">Walk-in — no reservation</option>` +
       matchingReservations.map(r =>
         `<option value="${r.id}">${r.no} · ${escapeHtml(r.guestName)} · ${formatDate(r.checkinDate)}</option>`
-      ).join("");
-  }
+      ).join("")
+    : "";
 
   el("grc-room-type").innerHTML = ROOM_TYPES.map(t => `<option value="${t}">${t}</option>`).join("");
   el("grc-meal-plan").innerHTML = MEAL_PLANS.map(m => `<option value="${m}">${m}</option>`).join("");
@@ -254,11 +265,40 @@ el("grc-reservation-select").addEventListener("change", (e) => {
   showToast(`Filled in from ${r.no}`);
 });
 
-el("grc-step-next").addEventListener("click", () => {
-  if (!validateStep(currentStep)) return;
-  setStep(currentStep + 1);
-});
-el("grc-step-prev").addEventListener("click", () => setStep(currentStep - 1));
+// Going to a step, having checked it is allowed.
+//
+// Backwards is always allowed. Forwards, every step being *skipped* has to
+// be valid, not just the one being left — a distinction that did not
+// matter while Next was the only way to move, because Next only ever
+// crosses one step. The stepper circles are live now, so it does.
+function goToStep(step) {
+  const target = Math.min(Math.max(step, 1), TOTAL_STEPS);
+  if (target > currentStep) {
+    for (let s = currentStep; s < target; s++) {
+      if (validateStep(s)) continue;
+      // Land on the unfinished step so the person can see what is wrong,
+      // then validate it again — the first run marked the field and tried
+      // to focus it while it was still off screen.
+      if (s !== currentStep) {
+        setStep(s);
+        validateStep(s);
+      }
+      return;
+    }
+  }
+  setStep(target);
+}
+
+el("grc-step-next").addEventListener("click", () => goToStep(currentStep + 1));
+el("grc-step-prev").addEventListener("click", () => goToStep(currentStep - 1));
+
+// The circles move the card too. Same reasoning as the invoice: a control
+// that looks pressable and is not teaches people to distrust the screen.
+makeStepperNavigable(
+  [...document.querySelectorAll("#grc-stepper .stepper-item")],
+  goToStep,
+  () => currentStep
+);
 
 ["grc-email", "grc-no-email"].forEach(id => {
   el(id).addEventListener("input", () => {

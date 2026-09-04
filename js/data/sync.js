@@ -21,6 +21,7 @@ import { hydrateConfig, watchConfig, stopWatchingConfig } from "./config-store.j
 import { logError } from "./error-log.js";
 
 import { INVOICES, BOOKINGS, FOOD_ORDER_RECORDS, ACTIVITY_RECORDS } from "./reports.js";
+import { FOOD_ORDERS } from "./orders.js";
 import { RESERVATIONS, PROFORMA_INVOICES } from "./reservations.js";
 import { GRC_RECORDS } from "./grc.js";
 import { GUEST_CHARGES } from "./guest-charges.js";
@@ -46,6 +47,16 @@ import { ERROR_LOG } from "./error-log.js";
 // what it cannot have. The seeding code below already reasoned this way
 // about menuItems; these two subscriptions simply never got the same
 // treatment.
+// Another device placing or completing an order has to redraw the list
+// that is on screen right now — the whole point of persisting the queue is
+// that the phone and the tablet agree. Imported lazily to keep this data
+// module free of a dependency on a screen module.
+function onPendingOrdersChanged() {
+  import("../orders.js")
+    .then(m => m.refreshPendingOrders && m.refreshPendingOrders())
+    .catch(err => logError("pending orders repaint failed", { source: "sync", stack: err && err.stack }));
+}
+
 const COLLECTION_MAP = [
   [COLLECTIONS.INVOICES, INVOICES],
   // Occupancy is derived from these, so a change from another device has
@@ -53,6 +64,10 @@ const COLLECTION_MAP = [
   // the phone just checked somebody into.
   [COLLECTIONS.BOOKINGS, BOOKINGS, { onChange: deriveOccupancy }],
   [COLLECTIONS.FOOD_ORDERS, FOOD_ORDER_RECORDS],
+  // The pending queue used to live in one browser tab's memory, so a
+  // reload lost orders the kitchen was already cooking and nobody was
+  // billed for. It also means the tablet now sees what the phone took.
+  [COLLECTIONS.PENDING_ORDERS, FOOD_ORDERS, { onChange: onPendingOrdersChanged }],
   [COLLECTIONS.ACTIVITY_CHARGES, ACTIVITY_RECORDS],
   [COLLECTIONS.GUEST_CHARGES, GUEST_CHARGES],
   [COLLECTIONS.RESERVATIONS, RESERVATIONS],
