@@ -134,13 +134,24 @@ function chargesFor(booking) {
 }
 
 function docButton({ kind, label, id, available }) {
-  // An unavailable document is shown greyed rather than hidden, so the row
-  // says what a stay does and doesn't have — "no reservation" is itself
-  // information when you're looking for one.
-  const title = available ? label : `${label} — none for this stay`;
+  // A document with no usable id cannot be reprinted, whatever the record
+  // count says. Availability used to be "does a record exist", which is a
+  // different question: a malformed row — one with no `id` field at all —
+  // counted as present and rendered an *enabled* button carrying
+  // data-id="undefined". Pressing it looked up nothing and did nothing,
+  // which reads as the app being broken rather than the data being wrong.
+  //
+  // Greying it out is the honest answer: the stay does have a document,
+  // and this copy of it cannot be opened.
+  const usableId = id !== undefined && id !== null && String(id).trim() !== "" && String(id) !== "undefined";
+  const openable = Boolean(available) && usableId;
+  const title = openable
+    ? label
+    : available ? `${label} — this record is damaged and can't be opened`
+                : `${label} — none for this stay`;
   return `
-    <button type="button" class="doc-btn ${kind} ${available ? "" : "unavailable"}"
-            ${available ? `data-doc="${kind}" data-id="${id}"` : "disabled"}
+    <button type="button" class="doc-btn ${kind} ${openable ? "" : "unavailable"}"
+            ${openable ? `data-doc="${kind}" data-id="${escapeHtml(String(id))}"` : "disabled"}
             title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
       ${docIcon(kind)}<span>${escapeHtml(label)}</span>
     </button>`;

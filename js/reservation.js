@@ -7,7 +7,6 @@ import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
 } from "./data/reservations.js";
-import { refreshReservationsList } from "./reservations.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 
@@ -473,7 +472,18 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
   } else {
     add(COLLECTIONS.RESERVATIONS, RESERVATIONS, record);
   }
-  refreshReservationsList();
+  // Repaint the list behind us. Imported here rather than at the top of the
+  // file because the list screen imports *this* one, and a static import
+  // both ways is a cycle — which works today only because both sides export
+  // hoisted function declarations and nothing calls them while the modules
+  // are still evaluating. Neither of those is a property anyone would think
+  // to preserve while editing.
+  //
+  // Not awaited: this runs mid-submit, and yielding here would let the
+  // rest of the flow — including the isSubmitting reset — happen out of
+  // order. The list is not the screen we are about to show, so it has
+  // until the next paint.
+  import("./reservations.js").then(m => m.refreshReservationsList());
 
   renderReservationPreview(record, { hidePrices: false });
   setPreviewReturn("screen-reservation-form", "Edit");

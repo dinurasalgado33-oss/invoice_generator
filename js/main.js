@@ -9,6 +9,7 @@
 // called explicitly, last.
 // First, so it is already listening before any other module evaluates.
 import { logError } from "./data/error-log.js";
+import { attachSearchClears } from "./search-clear.js";
 import { initInventoryDerived } from "./data/inventory.js";
 import "./navigation.js";
 import "./invoice.js";
@@ -71,5 +72,15 @@ document.getElementById("lock-now-btn").addEventListener("click", () => {
   if (hasPin()) lock();
   else startPinSetup();
 });
+
+// The four search fields that had no way to clear them. Menu and Inventory
+// already have their own, wired by hand before this helper existed; they
+// are left alone rather than migrated for the sake of it.
+attachSearchClears([
+  "order-search",
+  "reports-search",
+  "history-search",
+  "reservations-search",
+]);
 
 restoreSession();

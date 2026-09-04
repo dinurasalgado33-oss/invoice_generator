@@ -37,7 +37,12 @@ between two identical rulesets.
 | **F7** | CDN scripts loaded on every visit | ✅ done properly — all four now on demand, DCL **29.4s → 8.2s** |
 | **F8** | 163 KB font on every visit | ✅ done, verified — 0 requests before a PDF is built |
 | **F9** | 59 modules, deep waterfall, no preload hints | ✅ done — 8 boot waves → 6 |
-| **F10–F15** | P3 items | ⬜ not started |
+| **F10** | No password reset anywhere | ✅ done |
+| **F11** | Four search fields could not be cleared | ✅ done |
+| **F12** | No show-password toggle, no autofocus | ✅ done |
+| **F13** | Config watcher re-read 29 docs per write | ✅ done — coalesced |
+| **F14** | Two import cycles | ✅ done — both broken |
+| **F15** | `data-id="undefined"` on an enabled button | ✅ done — six shapes tested |
 | **F16** | Staging site wrote to the **production** database | ✅ found while testing F3, fixed, verified |
 
 **One bug was found while fixing, not by the audit:** `js/invoice.js`
@@ -759,3 +764,126 @@ in the verification rather than a glance at the timings.
 | `DOMContentLoaded` | **29,368 ms** | **4,923 ms** |
 | CDN scripts at startup | 4 (806 KB decoded) | **0** |
 | boot waves | 9 | **6** |
+
+
+---
+
+# P3 — all six done
+
+Deployed to dev at `?v=175` and verified there.
+
+## F10 — password reset
+
+`sendPasswordReset()` in `js/data/session.js`, reached from a "Forgot your
+password?" link under the login button. Firebase Auth sends the mail; this
+is only the way in to asking for it.
+
+**It says the same thing whether or not the address exists.** An
+`auth/user-not-found` is swallowed deliberately and the note reads "if that
+address has an account, a reset link is on its way" — a form that answers
+"no such user" is a form that lists your staff to anyone who can reach the
+login screen. A malformed address still gets a real error, because that is
+a typo worth pointing out while they are still looking at the field.
+
+## F11 — clear buttons
+
+`js/search-clear.js`, attached to the four fields that lacked one: Orders,
+Reports, Guest History, Reservations. Menu and Inventory keep the buttons
+they already had rather than being migrated for its own sake.
+
+The helper drives each screen's **existing** `input` listener rather than
+knowing how any of them redraw — clearing dispatches `input` and `change`
+and lets the screen do what it already does. That is what kept it to one
+file instead of four more copies of the same six lines.
+
+**Verified** on the Reports field: hidden when empty, shown when typed,
+44×44 target, clears the value, hides again, **and returns focus to the
+input**. The first run of this test reported a 0×0 button and lost focus —
+because Reports keeps its search row collapsed behind a toggle and the
+test had measured a hidden element. The row uses `hidden`, so it is also
+an incidental second proof of F1.
+
+## F12 — show password, and focus the e-mail field
+
+A real `<button>` inside the field, 44×44, with `aria-pressed` and a label
+that changes with it. **Verified**: password → text → password, the
+attributes track, the caret stays where it was, and submitting always
+returns the field to hidden so a password is never left on screen for the
+next person.
+
+Autofocus is a function called where the login screen is shown, not the
+`autofocus` attribute — this screen is one of several in one document, so
+the attribute would steal focus at load even when Firebase restores a
+session straight past it. **Verified**, after one false alarm: the first
+test reported focus not landing, which turned out to be the test's own
+submit handler asynchronously moving focus to the password field
+afterwards.
+
+## F13 — one re-read per burst, not per write
+
+The watcher still re-reads all of config rather than applying the
+snapshot's documents, and the comment defending that is right: it keeps
+live updates and sign-in hydration on one code path so they cannot drift.
+What was missing is that Manage Lists writes once per add or remove, so
+six edits meant six snapshots and 6 × 29 = 174 reads on every open device.
+
+Coalesced with a 400 ms settle. One `hydrateConfig` per burst.
+
+Two details worth naming:
+
+- A burst that is purely this device's own echo still re-reads but does
+  **not** repaint, so the screen does not jump under somebody mid-edit.
+  One remote snapshot anywhere in the burst makes it repaint.
+- `stopWatchingConfig()` now cancels the pending timer as well as the
+  listener. Without that, signing out left a `hydrateConfig` scheduled
+  against a database the rules were about to start refusing, surfacing as
+  an unexplained permission error a few hundred milliseconds later.
+
+**Verified**: six rapid writes, the value propagated, last write won, and
+the original list restored exactly (4 entries in, 4 out). The read
+*reduction* is by construction — one timer per burst — and was not
+separately measured.
+
+## F14 — both cycles broken
+
+`reservations → reservation → reservations` and
+`reservations → proforma → reservations`. Both worked only because every
+export involved is a hoisted `function` declaration and nothing calls one
+during module evaluation — neither of which is a property anyone would
+think to preserve while editing.
+
+Broken from the document side, which cost two call sites instead of seven,
+and matches what those two files already did for `openReservationsScreen`.
+**Not awaited**: both sit mid-submit, and yielding there would let the rest
+of the flow — including the `isSubmitting` reset — happen out of order. The
+list is not the screen being shown next, so it has until the next paint.
+
+**Verified** against the shipped source: neither file statically imports
+`./reservations.js` any more (only `./data/reservations.js`, a different
+module), the dynamic import resolves, and the Reservations screen still
+renders.
+
+## F15 — a damaged record cannot be pressed
+
+Availability used to mean "does a record exist", which is a different
+question from "can it be opened". A malformed row counted as present and
+rendered an **enabled** button carrying `data-id="undefined"`; pressing it
+looked up nothing and did nothing, which reads as the app being broken
+rather than the data being wrong.
+
+It is greyed now, with "this record is damaged and can't be opened" —
+distinct from "none for this stay", because those are different facts.
+
+**Verified** against the shipped source, six shapes:
+
+```
+ok   normal record                  -> enabled
+ok   no document for this stay      -> disabled
+ok   record exists, id missing      -> disabled
+ok   id is literally "undefined"    -> disabled
+ok   id is null                     -> disabled
+ok   id is whitespace               -> disabled
+```
+
+The first row is the control: a normal record still carries its real
+`data-id`, so the guard has not simply disabled everything.

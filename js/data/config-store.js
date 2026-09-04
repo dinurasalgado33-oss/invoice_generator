@@ -146,6 +146,14 @@ export function saveConfig(branch, kind, value) {
 // come from Firestore's cache and there are two dozen of them a handful of
 // times a day, which is nothing — and it means live updates and sign-in
 // hydration run the identical code, so they cannot drift apart.
+//
+// Coalesced, because "a handful of times a day" was optimistic. Manage
+// Lists writes once per add or remove, so clearing six entries fired six
+// snapshots, and each one re-read all 29 config documents — 174 reads on
+// every open device, for one person tidying a list. Re-reading is still
+// the right shape; doing it once per burst rather than once per keystroke
+// is the part that was missing.
+const CONFIG_SETTLE_MS = 400;
 let stopConfigWatch = null;
 
 export async function watchConfig(branches, onApplied) {
@@ -154,26 +162,50 @@ export async function watchConfig(branches, onApplied) {
   if (stopConfigWatch) stopConfigWatch();
 
   let first = true;
-  stopConfigWatch = fs.onSnapshot(fs.collection(getDb(), COLLECTIONS.CONFIG), async (snap) => {
+  let settleTimer = null;
+  // Whether anything in the current burst came from another device. A
+  // burst that is purely this device's own echo must not repaint the
+  // screen underneath the person still editing — but if even one snapshot
+  // in it came from elsewhere, the screen is genuinely stale.
+  let burstHasRemote = false;
+
+  const applySoon = () => {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(async () => {
+      const repaint = burstHasRemote;
+      burstHasRemote = false;
+      try {
+        await hydrateConfig(branches);
+        if (repaint && onApplied) onApplied();
+      } catch (err) {
+        logError("Could not apply a configuration change", { source: "config", stack: err && err.stack });
+      }
+    }, CONFIG_SETTLE_MS);
+  };
+
+  const unsubscribe = fs.onSnapshot(fs.collection(getDb(), COLLECTIONS.CONFIG), (snap) => {
     // The first snapshot is what hydrateConfig has just read. Applying it
     // again would be harmless but pointless.
     if (first) { first = false; return; }
 
     // A snapshot carrying this device's own un-acknowledged writes is the
-    // echo of an edit somebody is still making. Applying it is fine;
-    // repainting the screen underneath them is not.
-    const isLocalEcho = snap.metadata.hasPendingWrites;
-    try {
-      await hydrateConfig(branches);
-      if (!isLocalEcho && onApplied) onApplied();
-    } catch (err) {
-      logError("Could not apply a configuration change", { source: "config", stack: err && err.stack });
-    }
+    // echo of an edit somebody is still making.
+    if (!snap.metadata.hasPendingWrites) burstHasRemote = true;
+    applySoon();
   }, (err) => {
     // Not fatal: the device keeps the config it hydrated at sign-in, which
     // is exactly the behaviour it had before this watcher existed.
     logError(`Config watch failed${err && err.code ? ` (${err.code})` : ""}`, { source: "config" });
   });
+
+  // Stopping has to cancel the pending re-read as well as the listener.
+  // Otherwise signing out leaves a hydrateConfig scheduled against a
+  // database the rules are about to start refusing, and it surfaces as an
+  // unexplained permission error a few hundred milliseconds later.
+  stopConfigWatch = () => {
+    clearTimeout(settleTimer);
+    unsubscribe();
+  };
 }
 
 export function stopWatchingConfig() {

@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=174" />
-<link rel="stylesheet" href="css/brand-home.css?v=174" />
-<link rel="stylesheet" href="css/rooms.css?v=174" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=174" />
-<link rel="stylesheet" href="css/invoice.css?v=174" />
-<link rel="stylesheet" href="css/dashboard.css?v=174" />
-<link rel="stylesheet" href="css/reports.css?v=174" />
-<link rel="stylesheet" href="css/reservation.css?v=174" />
-  <link rel="stylesheet" href="css/grc.css?v=174" />
-  <link rel="stylesheet" href="css/proforma.css?v=174" />
-  <link rel="stylesheet" href="css/history.css?v=174" />
+<link rel="stylesheet" href="css/base.css?v=175" />
+<link rel="stylesheet" href="css/brand-home.css?v=175" />
+<link rel="stylesheet" href="css/rooms.css?v=175" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=175" />
+<link rel="stylesheet" href="css/invoice.css?v=175" />
+<link rel="stylesheet" href="css/dashboard.css?v=175" />
+<link rel="stylesheet" href="css/reports.css?v=175" />
+<link rel="stylesheet" href="css/reservation.css?v=175" />
+  <link rel="stylesheet" href="css/grc.css?v=175" />
+  <link rel="stylesheet" href="css/proforma.css?v=175" />
+  <link rel="stylesheet" href="css/history.css?v=175" />
 </head>
 <body>
 
@@ -63,6 +63,10 @@
         <div class="input-icon">
           <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
           <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" enterkeyhint="done" required />
+          <button type="button" id="login-password-toggle" class="password-toggle" aria-label="Show password" aria-pressed="false">
+            <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+            <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2 0 3.7.7 5.1 1.6M22 12s-3.5 7-10 7c-2 0-3.7-.7-5.1-1.6" /><path d="M3 3l18 18" /></svg>
+          </button>
         </div>
         <p class="field-error" id="login-error">Incorrect username or password</p>
       </div>
@@ -71,6 +75,11 @@
         <span class="btn-spinner" aria-hidden="true"></span>
         <span id="login-submit-label">Log In</span>
       </button>
+      <!-- A locked-out receptionist otherwise needs a manager, the Firebase
+           console, and somebody's morning. Firebase Auth sends the e-mail;
+           this is only the way in to asking for it. -->
+      <button type="button" id="login-reset-btn" class="link-btn">Forgot your password?</button>
+      <p class="login-note" id="login-reset-note" hidden></p>
     </form>
   </section>
 
@@ -2600,6 +2609,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=174"></script>
+<script type="module" src="js/main.js?v=175"></script>
 </body>
 </html>

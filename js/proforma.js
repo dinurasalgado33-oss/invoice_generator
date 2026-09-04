@@ -9,7 +9,6 @@ import {
   findReservationById, PROFORMA_INVOICES, allocateProformaNo,
   PROFORMA_CURRENCIES, DEFAULT_PROFORMA_CURRENCY,
 } from "./data/reservations.js";
-import { refreshReservationsList } from "./reservations.js";
 import { takeNumber, DOC_TYPES } from "./data/numbering.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
@@ -459,7 +458,18 @@ el("proforma-form").addEventListener("submit", (e) => {
   // and a freshly generated invoice must not inherit that destination.
   const backBtn = document.querySelector("#screen-proforma-preview .back-btn");
   if (backBtn) { backBtn.dataset.back = "screen-reservations"; backBtn.textContent = "← Done"; }
-  refreshReservationsList();
+  // Repaint the list behind us. Imported here rather than at the top of the
+  // file because the list screen imports *this* one, and a static import
+  // both ways is a cycle — which works today only because both sides export
+  // hoisted function declarations and nothing calls them while the modules
+  // are still evaluating. Neither of those is a property anyone would think
+  // to preserve while editing.
+  //
+  // Not awaited: this runs mid-submit, and yielding here would let the
+  // rest of the flow — including the isSubmitting reset — happen out of
+  // order. The list is not the screen we are about to show, so it has
+  // until the next paint.
+  import("./reservations.js").then(m => m.refreshReservationsList());
   sourceReservation = null;
   isSubmitting = false;
   showToast(existing

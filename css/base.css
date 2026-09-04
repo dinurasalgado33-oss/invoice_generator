@@ -261,6 +261,88 @@ select {
 }
 .input-icon:focus-within .field-icon { color: var(--maroon); }
 
+/* Show/hide the password.
+   Sits inside the field on the trailing side, mirroring .field-icon on the
+   leading side — but this one is a real button and must be reachable, so it
+   gets a 44px target rather than the icon's 18px. */
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  z-index: 2;
+}
+.password-toggle svg { width: 19px; height: 19px; }
+.password-toggle .eye-hide { display: none; }
+.password-toggle[aria-pressed="true"] .eye-show { display: none; }
+.password-toggle[aria-pressed="true"] .eye-hide { display: block; }
+.password-toggle[aria-pressed="true"] { color: var(--maroon); }
+.password-toggle:focus-visible { outline: 2px solid var(--maroon); outline-offset: -2px; }
+/* Room for the button, plus the browser's own reveal control where it has
+   one — two eyes side by side is a Windows/Edge classic. */
+.input-icon input[type="password"],
+.input-icon input#login-password { padding-right: 48px; }
+#login-password::-ms-reveal,
+#login-password::-webkit-credentials-auto-fill-button { display: none; }
+
+/* Clear button on a search field, attached by js/search-clear.js.
+   Works inside both containers the app uses — .input-icon (Reports, Guest
+   History, Reservations) and .list-search-box (Orders) — so it positions
+   against whichever one is the offset parent. 44px target like every other
+   control here, even though the cross itself is 12px. */
+.search-clear-btn {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  z-index: 2;
+}
+.search-clear-btn svg { width: 14px; height: 14px; }
+.search-clear-btn:active { transform: translateY(-50%) scale(0.9); }
+.search-clear-btn:focus-visible { outline: 2px solid var(--maroon); outline-offset: -2px; }
+.list-search-box { position: relative; }
+/* Keep typing clear of the button, and hide the browser's own clear cross
+   on type=search so there are never two of them. */
+#order-search, #reports-search, #history-search, #reservations-search { padding-right: 46px; }
+input[type="search"]::-webkit-search-cancel-button { display: none; }
+
+/* Forgot-password link and its reply. The shared .link-btn is gold, for
+   maroon panels; this one sits on the cream login card. */
+#login-reset-btn {
+  color: var(--maroon);
+  margin-top: 10px;
+  align-self: center;
+}
+.login-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 /* Generic +/- stepper (guest count, food order quantities) */
 .stepper-input {
   display: flex;

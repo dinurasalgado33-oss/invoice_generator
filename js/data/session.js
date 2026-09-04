@@ -37,6 +37,29 @@ export function scopedBranch() {
   return profile.role === "staff" ? (profile.branch || null) : null;
 }
 
+// Asks Firebase to e-mail a reset link.
+//
+// Deliberately says nothing about whether the address exists — it resolves
+// the same way either way, and the screen says "if that address has an
+// account". Reporting "no such user" would turn the login form into a way
+// of testing which staff addresses are real.
+//
+// The alternative was a manager, the Firebase console and somebody's
+// morning, for a receptionist who is standing at the desk right now.
+export async function sendPasswordReset(email) {
+  await connect();
+  const { sendPasswordResetEmail } = authApiRef();
+  try {
+    await sendPasswordResetEmail(getAuthInstance(), email.trim());
+  } catch (err) {
+    // An unknown address and a malformed one are different: the first is
+    // none of the caller's business, the second is a typo worth pointing
+    // out while they are still looking at the field.
+    if (err && err.code === "auth/user-not-found") return;
+    throw err;
+  }
+}
+
 export async function signIn(email, password) {
   await connect();
   const auth = getAuthInstance();

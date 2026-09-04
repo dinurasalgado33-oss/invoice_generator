@@ -4,7 +4,7 @@ import { safeStorage, showToast } from "./utils.js";
 import { logLogin } from "./data/accounts.js";
 import { selectBranch } from "./branch.js";
 import { confirmAction } from "./confirm.js";
-import { signIn, signOutNow, watchSession, describeAuthError, currentProfile } from "./data/session.js";
+import { signIn, signOutNow, watchSession, describeAuthError, currentProfile, sendPasswordReset } from "./data/session.js";
 import { startSync, stopSync } from "./data/sync.js";
 import { isDemoMode, showDemoBanner } from "./demo.js";
 import { seedDemoBlocks } from "./data/numbering.js";
@@ -157,6 +157,7 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   document.getElementById("login-form").reset();
   document.getElementById("login-error").classList.remove("show");
   showScreen("screen-login");
+  focusLogin();
 });
 
 // Firebase restores the previous session itself on load, so there is no
@@ -197,6 +198,7 @@ export function restoreSession() {
       }
       setBusy(false);
       showScreen("screen-login");
+      focusLogin();
       return;
     }
 
@@ -217,4 +219,79 @@ export function restoreSession() {
     routeAfterLogin(profile);
     setBusy(false);
   });
+}
+
+
+// ---- Login screen conveniences (FIX-PLAN F10 and F12) ----
+
+// Reveal the password.
+//
+// Reception types this on a phone, one-handed, often standing next to the
+// guest they are checking in — and a wrong password here is indistinguishable
+// from a disabled account, because the error deliberately will not say which.
+// Being able to look at what you typed is the difference between one attempt
+// and three.
+const passwordInput = document.getElementById("login-password");
+const passwordToggle = document.getElementById("login-password-toggle");
+
+passwordToggle.addEventListener("click", () => {
+  const shown = passwordInput.type === "text";
+  passwordInput.type = shown ? "password" : "text";
+  passwordToggle.setAttribute("aria-pressed", String(!shown));
+  passwordToggle.setAttribute("aria-label", shown ? "Show password" : "Hide password");
+  // Keep the caret where it was; toggling type moves it to the start in
+  // some browsers, which is maddening halfway through typing.
+  const at = passwordInput.value.length;
+  passwordInput.focus();
+  try { passwordInput.setSelectionRange(at, at); } catch { /* type=email etc. refuse */ }
+});
+
+// Never leave a password on screen for the next person.
+document.getElementById("login-form").addEventListener("submit", () => {
+  passwordInput.type = "password";
+  passwordToggle.setAttribute("aria-pressed", "false");
+  passwordToggle.setAttribute("aria-label", "Show password");
+});
+
+// Send a reset link.
+//
+// The note below the button says the same thing whether or not the address
+// has an account — see sendPasswordReset(). A form that answers "no such
+// user" is a form that lists your staff.
+const resetBtn = document.getElementById("login-reset-btn");
+const resetNote = document.getElementById("login-reset-note");
+
+resetBtn.addEventListener("click", async () => {
+  const email = document.getElementById("login-username").value.trim();
+  if (!email) {
+    resetNote.textContent = "Type your e-mail address above first, then press this again.";
+    resetNote.hidden = false;
+    document.getElementById("login-username").focus();
+    return;
+  }
+
+  resetBtn.disabled = true;
+  const label = resetBtn.textContent;
+  resetBtn.textContent = "Sending…";
+  try {
+    await sendPasswordReset(email);
+    resetNote.textContent = `If ${email} has an account, a reset link is on its way. Check spam if it doesn't arrive.`;
+  } catch (err) {
+    console.error("[Leopard Inn] password reset failed:", err && err.code, err && err.message);
+    resetNote.textContent = describeAuthError(err);
+  } finally {
+    resetNote.hidden = false;
+    resetBtn.disabled = false;
+    resetBtn.textContent = label;
+  }
+});
+
+// Put the cursor in the e-mail field on arrival.
+//
+// Not the autofocus attribute: this screen is one of several in the
+// document and is not always the one showing, so the attribute would steal
+// focus at load even when the app restored a session straight past it.
+export function focusLogin() {
+  const el = document.getElementById("login-username");
+  if (el && el.offsetParent !== null && !el.value) el.focus();
 }
