@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=187" />
-<link rel="stylesheet" href="css/brand-home.css?v=187" />
-<link rel="stylesheet" href="css/rooms.css?v=187" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=187" />
-<link rel="stylesheet" href="css/invoice.css?v=187" />
-<link rel="stylesheet" href="css/dashboard.css?v=187" />
-<link rel="stylesheet" href="css/reports.css?v=187" />
-<link rel="stylesheet" href="css/reservation.css?v=187" />
-  <link rel="stylesheet" href="css/grc.css?v=187" />
-  <link rel="stylesheet" href="css/proforma.css?v=187" />
-  <link rel="stylesheet" href="css/history.css?v=187" />
+<link rel="stylesheet" href="css/base.css?v=190" />
+<link rel="stylesheet" href="css/brand-home.css?v=190" />
+<link rel="stylesheet" href="css/rooms.css?v=190" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=190" />
+<link rel="stylesheet" href="css/invoice.css?v=190" />
+<link rel="stylesheet" href="css/dashboard.css?v=190" />
+<link rel="stylesheet" href="css/reports.css?v=190" />
+<link rel="stylesheet" href="css/reservation.css?v=190" />
+  <link rel="stylesheet" href="css/grc.css?v=190" />
+  <link rel="stylesheet" href="css/proforma.css?v=190" />
+  <link rel="stylesheet" href="css/history.css?v=190" />
 </head>
 <body>
 
@@ -482,14 +482,6 @@
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
-      <button type="button" class="settings-row" id="open-configure-menu-pdfs-btn">
-        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
-        <span class="settings-row-text">
-          <span class="settings-row-title">Menu PDFs</span>
-          <span class="settings-row-sub">Build, publish and copy the guest link</span>
-        </span>
-        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-      </button>
       </div>
     </div>
 
@@ -707,21 +699,6 @@
     </div>
   </section>
 
-  <section id="screen-configure-menu-pdfs" class="screen">
-    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
-    <div class="brand small">
-      <img id="configure-menu-pdfs-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
-      <h2>Menu PDFs — <span id="configure-menu-pdfs-branch-label"></span></h2>
-    </div>
-    <div class="list-wrap">
-      <p class="digital-menu-status" id="digital-menu-status"></p>
-      <p class="step-subtext">Built from the live menu every time, so an edit shows in the PDF immediately. Publishing updates the one public link used by QR codes and the website.</p>
-      <p class="step-subtext" id="digital-menu-hint"></p>
-      <div id="menu-pdf-list" class="menu-pdf-list"></div>
-      <button type="button" class="secondary-btn" id="open-board-menu-btn">Edit board menu</button>
-    </div>
-  </section>
-
   <section id="screen-configure-conditions" class="screen">
     <button class="back-btn" data-back="screen-configure">&larr; Back</button>
     <div class="brand small">
@@ -912,6 +889,14 @@
     <!-- The hotel's own menus, rebuilt as PDFs from the live config. Two
          per property, matching the printed booklets. -->
     
+    <div class="list-wrap menu-pdf-panel">
+      <p class="digital-menu-title">Menu PDFs</p>
+      <p class="digital-menu-status" id="digital-menu-status"></p>
+      <div id="menu-pdf-list" class="menu-pdf-list"></div>
+      <p class="step-subtext" id="digital-menu-hint"></p>
+      <button type="button" class="secondary-btn" id="open-board-menu-btn">Edit board menu</button>
+    </div>
+
     <div class="list-wrap">
       <div class="list-search-row">
         <div class="list-search-box">
@@ -2804,6 +2789,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=187"></script>
+<script type="module" src="js/main.js?v=190"></script>
 </body>
 </html>

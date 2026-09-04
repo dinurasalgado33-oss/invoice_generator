@@ -503,3 +503,14 @@
   cursor: pointer;
 }
 .menu-pdf-copy:active { transform: scale(0.97); background: rgba(74, 14, 28, 0.08); }
+
+/* The PDF panel sits at the top of the Menu screen, above the dishes.
+   Publishing is what you do straight after an edit, so it is the first
+   thing on the screen rather than something found by scrolling past
+   sixty-eight dishes. Set apart from the list below it so the two jobs
+   read as two jobs. */
+.menu-pdf-panel {
+  padding-bottom: 18px;
+  margin-bottom: 4px;
+  border-bottom: 1.5px solid var(--border);
+}

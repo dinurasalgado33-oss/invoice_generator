@@ -56,6 +56,12 @@ function renderCategoryRow(category, dishes, hidden) {
 }
 
 function renderMenuScreen() {
+  // The PDF panel sits at the top of this screen, so an edit to a dish has
+  // to redraw the dish count beside the menu it belongs to. Editing and
+  // publishing are one sitting, not two — which is why the panel is here
+  // rather than on a Configure row of its own.
+  import("./menu-publish.js").then(p => p.refreshDigitalMenuPanel()).catch(() => {});
+
   const list = document.getElementById("dish-list");
   const table = document.getElementById("menu-table");
   const statusEl = document.getElementById("menu-search-status");
