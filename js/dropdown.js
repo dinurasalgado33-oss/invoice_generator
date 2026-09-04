@@ -56,6 +56,21 @@ export function enhanceSelect(select) {
   // would submit a blank booking type without complaint.
   select.classList.add("dd-native");
 
+  // Out of the tab order and out of the accessibility tree.
+  //
+  // The element is only invisible — opacity 0, pointer-events none — because
+  // `display:none` and `hidden` both remove a field from constraint
+  // validation, which would quietly stop `required` working. But invisible
+  // is not the same as gone: every one of these was still a tab stop, so a
+  // keyboard user tabbed onto a control they could not see, and a screen
+  // reader met each dropdown twice — once as the native select, once as the
+  // button. Twenty-one of them.
+  //
+  // tabindex="-1" and aria-hidden do exactly the two things wanted here and
+  // neither touches validation.
+  select.setAttribute("tabindex", "-1");
+  select.setAttribute("aria-hidden", "true");
+
   // Some selects are built by a screen and never given an id — the
   // reservation's villa rows, for one. They still need a stable unique
   // handle, because the option rows below take their ids from it and
