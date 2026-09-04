@@ -2,7 +2,8 @@
 
 ## Status — 2026-09-04
 
-**Live** on `leopard-inn` at `?v=174`, and on dev at the same version.
+**Live** on `leopard-inn` at `?v=175`, and on dev at the same version.
+**All sixteen findings are closed.**
 Rules deployed to both projects.
 
 Verified on production after deploying, not assumed:
@@ -887,3 +888,44 @@ ok   id is whitespace               -> disabled
 
 The first row is the control: a normal record still carries its real
 `data-id`, so the guard has not simply disabled everything.
+
+
+---
+
+# Closed — verified on production at `?v=175`
+
+Checked on `leopard-inn.web.app` itself after deploying, not inferred from
+a successful upload:
+
+| | |
+|---|---|
+| `?v=` served | 175 |
+| `projectId` / `isLiveProject()` | `leopard-inn` / `true` |
+| test-database banner | **absent** — F16 leaves production alone |
+| **autofocus** | **fired on its own** — `login-username` held focus on a real signed-out load |
+| show-password toggle | `password → text → password` |
+| "Forgot your password?" | present |
+| search clear buttons | 4 — Orders, Reports, Guest History, Reservations |
+| stepper buttons | 8 (4 invoice + 4 registration card) |
+| CDN scripts at startup | 0 |
+| `js/cdn.js`, `js/stepper.js`, `js/search-clear.js` | HTTP 200 |
+| console errors | none |
+
+The autofocus row is the one worth noting: every earlier check of it was
+staged, because dev always had a restored session and never showed the
+login screen. Production is signed out, so this is the first time it was
+observed happening by itself.
+
+## What remains, and is not a fix
+
+- **F13's read reduction** is by construction — one timer per burst — and
+  was never separately counted. What was verified is that config still
+  propagates and the value survives a burst intact.
+- **F3 on production** is proved by construction too: verified end to end
+  on dev against the server, with a ruleset the CLI confirms is identical
+  on both projects. Reception's first food order is the first production
+  exercise of that path. If it were wrong the symptom is the old one —
+  "Order placed", then the order gone on reload.
+- The **"Still untested"** list above is untouched by this work: printing,
+  real devices, real inboxes, scale, the Guest Charges screen, interim
+  bills, and the PIN lock.
