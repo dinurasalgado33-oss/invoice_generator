@@ -327,21 +327,15 @@ const BRANCH_FIELDS = {
 
 function loadBranchDetailsForm() {
   const info = BRANCH_INFO[appState.selectedBranch] || {};
-  document.getElementById("cfg-service-charge").value = String(serviceChargeRateFor(appState.selectedBranch));
-  document.getElementById("cfg-vat").value = String(vatRateFor(appState.selectedBranch));
-  const times = standardTimesFor(appState.selectedBranch);
-  document.getElementById("cfg-checkin-time").value = times.checkin;
-  document.getElementById("cfg-checkout-time").value = times.checkout;
-  document.getElementById("cfg-booking-sources").value = bookingSourcesFor(appState.selectedBranch).join("\n");
-  document.getElementById("cfg-currencies").value = CURRENCIES.join("\n");
-  refreshServiceChargeHint();
-  refreshVatHint();
-
   Object.entries(BRANCH_FIELDS).forEach(([inputId, key]) => {
     document.getElementById(inputId).value = info[key] || "";
   });
 }
 
+// Who the property is. The rates, the standard times and the two lists
+// that used to share this form now live on their own screens — this one
+// was a drawer holding identity, tax, policy and lists at once, and the
+// only thing they had in common was having nowhere else to go.
 document.getElementById("branch-details-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const branch = appState.selectedBranch;
@@ -351,35 +345,8 @@ document.getElementById("branch-details-form").addEventListener("submit", (e) =>
     BRANCH_INFO[branch][key] = document.getElementById(inputId).value.trim();
   });
 
-  setServiceChargeRate(branch, document.getElementById("cfg-service-charge").value);
-  setVatRate(branch, document.getElementById("cfg-vat").value);
-  refreshServiceChargeHint();
-  refreshVatHint();
-
-  // Both go to the database, per property. A nightly rate and a service
-  // charge decide what a guest is billed, so they are as financial as the
-  // invoice they end up on — and until now they lived only in this tab.
   saveConfig(branch, CONFIG_KINDS.BRANCH_INFO, BRANCH_INFO[branch]);
-  saveConfig(branch, CONFIG_KINDS.SERVICE_CHARGE, serviceChargeRateFor(branch));
-  saveConfig(branch, CONFIG_KINDS.VAT, vatRateFor(branch));
-
-  // One textarea line per entry, blanks dropped — a manager adding an OTA
-  // types it on its own line rather than learning a separator.
-  const lines = id => document.getElementById(id).value.split("\n").map(t => t.trim()).filter(Boolean);
-
-  setStandardTimes(branch,
-    document.getElementById("cfg-checkin-time").value,
-    document.getElementById("cfg-checkout-time").value);
-  saveConfig(branch, CONFIG_KINDS.TIMES, standardTimesFor(branch));
-
-  setBookingSources(branch, lines("cfg-booking-sources"));
-  saveConfig(branch, CONFIG_KINDS.BOOKING_SOURCES, bookingSourcesFor(branch));
-
-  // Shared, not per property.
-  setCurrencies(lines("cfg-currencies"));
-  saveShared(CONFIG_KINDS.CURRENCIES, CURRENCIES);
-
-  showToast("Branch details saved");
+  showToast("Hotel details saved");
 });
 
 document.getElementById("open-configure-branch-btn").addEventListener("click", () => {
@@ -387,6 +354,85 @@ document.getElementById("open-configure-branch-btn").addEventListener("click", (
   setLogoSrc("configure-branch-logo", appState.selectedBranchLogo);
   loadBranchDetailsForm();
   showScreen("screen-configure-branch");
+});
+
+// ---- Charges & taxes ----
+//
+// Stored once, here. Both rates reach the guest invoice, the travel agent
+// invoice and every revenue report, so filing them under any one document
+// would have been arbitrary — and putting a second copy on the invoice
+// screen would be the same fact in two places, free to disagree.
+function loadChargesForm() {
+  document.getElementById("cfg-service-charge").value = String(serviceChargeRateFor(appState.selectedBranch));
+  document.getElementById("cfg-vat").value = String(vatRateFor(appState.selectedBranch));
+  refreshServiceChargeHint();
+  refreshVatHint();
+}
+
+document.getElementById("cfg-charges-save").addEventListener("click", () => {
+  const branch = appState.selectedBranch;
+  setServiceChargeRate(branch, document.getElementById("cfg-service-charge").value);
+  setVatRate(branch, document.getElementById("cfg-vat").value);
+  refreshServiceChargeHint();
+  refreshVatHint();
+  saveConfig(branch, CONFIG_KINDS.SERVICE_CHARGE, serviceChargeRateFor(branch));
+  saveConfig(branch, CONFIG_KINDS.VAT, vatRateFor(branch));
+  showToast("Rates saved");
+});
+
+document.getElementById("open-configure-charges-btn").addEventListener("click", () => {
+  setBranchLabel("configure-charges-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
+  setLogoSrc("configure-charges-logo", appState.selectedBranchLogo);
+  loadChargesForm();
+  showScreen("screen-configure-charges");
+});
+
+// ---- Standard times ----
+document.getElementById("cfg-times-save").addEventListener("click", () => {
+  const branch = appState.selectedBranch;
+  setStandardTimes(branch,
+    document.getElementById("cfg-checkin-time").value,
+    document.getElementById("cfg-checkout-time").value);
+  saveConfig(branch, CONFIG_KINDS.TIMES, standardTimesFor(branch));
+  showToast("Times saved");
+});
+
+document.getElementById("open-configure-times-btn").addEventListener("click", () => {
+  setBranchLabel("configure-times-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
+  setLogoSrc("configure-times-logo", appState.selectedBranchLogo);
+  const times = standardTimesFor(appState.selectedBranch);
+  document.getElementById("cfg-checkin-time").value = times.checkin;
+  document.getElementById("cfg-checkout-time").value = times.checkout;
+  showScreen("screen-configure-times");
+});
+
+// ---- Guest invoice ----
+//
+// Nothing to edit here on purpose: the printed remark is derived from the
+// rates, so it cannot promise one thing while the bill charges another.
+// The rates are shown read-only with a way through to where they live.
+document.getElementById("open-configure-invoice-btn").addEventListener("click", () => {
+  setBranchLabel("configure-invoice-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
+  setLogoSrc("configure-invoice-logo", appState.selectedBranchLogo);
+  const branch = appState.selectedBranch;
+  const remark = invoiceRemark(branch);
+  document.getElementById("cfg-invoice-remark").textContent =
+    remark || "No remark will be printed on the invoice.";
+  document.getElementById("cfg-invoice-service").textContent = `${serviceChargeRateFor(branch)}%`;
+  document.getElementById("cfg-invoice-vat").textContent = `${vatRateFor(branch)}%`;
+  showScreen("screen-configure-invoice");
+});
+
+document.getElementById("cfg-invoice-goto-charges").addEventListener("click", () => {
+  document.getElementById("open-configure-charges-btn").click();
+});
+
+// ---- Registration card ----
+document.getElementById("open-configure-grc-btn").addEventListener("click", () => {
+  setBranchLabel("configure-grc-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
+  setLogoSrc("configure-grc-logo", appState.selectedBranchLogo);
+  document.getElementById("cfg-liability").value = liabilityNoticeFor(appState.selectedBranch);
+  showScreen("screen-configure-grc");
 });
 
 // ---- Reservation conditions ----

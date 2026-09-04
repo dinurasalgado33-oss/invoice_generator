@@ -56,10 +56,6 @@ function renderCategoryRow(category, dishes, hidden) {
 }
 
 function renderMenuScreen() {
-  // Republish on every render, so the guest page and the printed export
-  // always reflect the edit that was just saved.
-  import("./menu-publish.js").then(m => m.refreshDigitalMenuPanel()).catch(() => {});
-
   const list = document.getElementById("dish-list");
   const table = document.getElementById("menu-table");
   const statusEl = document.getElementById("menu-search-status");

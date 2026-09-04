@@ -1257,3 +1257,59 @@ input[readonly] {
   cursor: default;
 }
 input[readonly]:focus { box-shadow: none; border-color: var(--border); background: var(--bg-alt); }
+
+/* Configure, grouped by what a setting affects.
+   The list used to be eight rows using three organising principles at once
+   — by thing, by document, by data shape — plus a drawer holding hotel
+   identity, tax rates, standard times and two lists. Nothing told you which
+   row a setting was behind, so you hunted. Miller's Law: four or five rows
+   per group, three groups, each with a heading that answers "is my thing in
+   here?" before you read a single row. */
+.settings-group { margin-bottom: 26px; }
+.settings-group:last-child { margin-bottom: 10px; }
+.settings-group-title {
+  margin: 0 0 8px;
+  padding: 0 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--maroon);
+}
+
+/* A value shown rather than edited — the rates on the Guest Invoice screen,
+   which live in Charges & Taxes and are only reported here. */
+.cfg-readout { display: flex; gap: 10px; margin-bottom: 14px; }
+.cfg-readout > div {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-alt);
+}
+.cfg-readout-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+.cfg-readout strong {
+  font-size: 1.15rem;
+  color: var(--maroon);
+  font-variant-numeric: tabular-nums;
+}
+
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.digital-menu-status {
+  margin: 0 0 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}

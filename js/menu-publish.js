@@ -1,5 +1,6 @@
 import { appState } from "./state.js";
-import { escapeHtml, showToast } from "./utils.js";
+import { showScreen } from "./navigation.js";
+import { escapeHtml, showToast, setBranchLabel, setLogoSrc } from "./utils.js";
 import { logError } from "./data/error-log.js";
 import { MENU_ITEMS } from "./data/menu.js";
 import { MENU_DOCS, openMenuPdf, downloadMenuPdf, buildMenuPdf } from "./menu-pdf.js";
@@ -190,3 +191,15 @@ export function refreshDigitalMenuPanel() {
       : "Built from this screen every time, so an edit shows in the PDF immediately.";
   }
 }
+
+// ---- Menu PDFs, on their own screen ----
+//
+// This panel used to sit at the bottom of the dish editor, so building and
+// publishing the guest PDF — a weekly job — lived inside the screen for
+// adding a dish, a monthly one. Two unrelated tasks, one screen.
+document.getElementById("open-configure-menu-pdfs-btn").addEventListener("click", () => {
+  setBranchLabel("configure-menu-pdfs-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
+  setLogoSrc("configure-menu-pdfs-logo", appState.selectedBranchLogo);
+  refreshDigitalMenuPanel();
+  showScreen("screen-configure-menu-pdfs");
+});

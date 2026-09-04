@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=185" />
-<link rel="stylesheet" href="css/brand-home.css?v=185" />
-<link rel="stylesheet" href="css/rooms.css?v=185" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=185" />
-<link rel="stylesheet" href="css/invoice.css?v=185" />
-<link rel="stylesheet" href="css/dashboard.css?v=185" />
-<link rel="stylesheet" href="css/reports.css?v=185" />
-<link rel="stylesheet" href="css/reservation.css?v=185" />
-  <link rel="stylesheet" href="css/grc.css?v=185" />
-  <link rel="stylesheet" href="css/proforma.css?v=185" />
-  <link rel="stylesheet" href="css/history.css?v=185" />
+<link rel="stylesheet" href="css/base.css?v=187" />
+<link rel="stylesheet" href="css/brand-home.css?v=187" />
+<link rel="stylesheet" href="css/rooms.css?v=187" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=187" />
+<link rel="stylesheet" href="css/invoice.css?v=187" />
+<link rel="stylesheet" href="css/dashboard.css?v=187" />
+<link rel="stylesheet" href="css/reports.css?v=187" />
+<link rel="stylesheet" href="css/reservation.css?v=187" />
+  <link rel="stylesheet" href="css/grc.css?v=187" />
+  <link rel="stylesheet" href="css/proforma.css?v=187" />
+  <link rel="stylesheet" href="css/history.css?v=187" />
 </head>
 <body>
 
@@ -400,71 +400,135 @@
       <h2>Configure — <span id="configure-branch-label"></span></h2>
     </div>
 
-    <div class="settings-list">
+    <!-- Three groups, by what a setting *affects*, because the old list mixed
+         three organising principles at once — by thing (Villas, Menu), by
+         document (Travel Agent Invoice, Reservation Conditions) and by data
+         shape (Manage Lists) — plus one drawer holding hotel identity, tax
+         rates, standard times and two lists. Nothing told you which row a
+         given setting was behind, so you hunted.
+
+         The rule now: if a guest reads it, it is under "What guests
+         receive", beside the other things they read. -->
+    <div class="settings-group">
+      <p class="settings-group-title">What you sell</p>
+      <div class="settings-list">
       <button type="button" class="settings-row" id="open-configure-villas-btn">
         <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" /></svg>
         <span class="settings-row-text">
-          <span class="settings-row-title">Configure Villas</span>
-          <span class="settings-row-sub">Set the nightly rate for each villa</span>
+          <span class="settings-row-title">Villas &amp; rates</span>
+          <span class="settings-row-sub">Nightly rate for each villa</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
       <button type="button" class="settings-row" id="open-menu-btn">
         <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /><path d="M9 7h7M9 11h5" /></svg>
         <span class="settings-row-text">
-          <span class="settings-row-title">Configure Menu</span>
-          <span class="settings-row-sub">Add, edit, or remove dishes</span>
-        </span>
-        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-      </button>
-      <button type="button" class="settings-row" id="open-configure-proforma-btn">
-        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
-        <span class="settings-row-text">
-          <span class="settings-row-title">Travel Agent / Guide Invoice</span>
-          <span class="settings-row-sub">Cancellation policy and payment terms</span>
-        </span>
-        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-      </button>
-      <button type="button" class="settings-row" id="open-configure-inventory-btn">
-        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg>
-        <span class="settings-row-text">
-          <span class="settings-row-title">Configure Inventory</span>
-          <span class="settings-row-sub">Add items, set categories, min stock and cost</span>
+          <span class="settings-row-title">Menu &amp; dishes</span>
+          <span class="settings-row-sub">Add, edit or remove dishes</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
       <button type="button" class="settings-row" id="open-configure-activities-btn">
         <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M12 2v6" /><path d="M9 5l3-3 3 3" /></svg>
         <span class="settings-row-text">
-          <span class="settings-row-title">Configure Activities</span>
-          <span class="settings-row-sub">Add, edit, or remove guest activities</span>
+          <span class="settings-row-title">Activities</span>
+          <span class="settings-row-sub">Add, edit or remove guest activities</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
+      <button type="button" class="settings-row" id="open-configure-inventory-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Inventory items</span>
+          <span class="settings-row-sub">Categories, minimum stock and cost</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <p class="settings-group-title">What guests receive</p>
+      <div class="settings-list">
+      <button type="button" class="settings-row" id="open-configure-invoice-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Guest invoice</span>
+          <span class="settings-row-sub">The remark printed at the foot of every bill</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-conditions-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Reservation confirmation</span>
+          <span class="settings-row-sub">Conditions printed at the bottom</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-proforma-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87" /><path d="M4 21v-2a4 4 0 0 1 3-3.87" /><circle cx="12" cy="7" r="4" /><path d="M12 14v7" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Travel agent invoice</span>
+          <span class="settings-row-sub">Cancellation policy and payment terms</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-grc-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /><path d="M6 15h4" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Registration card</span>
+          <span class="settings-row-sub">Liability notice the guest signs</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-menu-pdfs-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Menu PDFs</span>
+          <span class="settings-row-sub">Build, publish and copy the guest link</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <p class="settings-group-title">How the business runs</p>
+      <div class="settings-list">
       <button type="button" class="settings-row" id="open-configure-branch-btn">
         <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-6h6v6" /><path d="M9 10h.01M15 10h.01" /></svg>
         <span class="settings-row-text">
-          <span class="settings-row-title">Branch &amp; Bank Details</span>
-          <span class="settings-row-sub">Hotel name, contact and payment info on guest documents</span>
+          <span class="settings-row-title">Hotel &amp; bank details</span>
+          <span class="settings-row-sub">Name, contact and payment info on documents</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-charges-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Charges &amp; taxes</span>
+          <span class="settings-row-sub">Service charge and VAT</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <button type="button" class="settings-row" id="open-configure-times-btn">
+        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Standard times</span>
+          <span class="settings-row-sub">Default check-in and check-out</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
       <button type="button" class="settings-row" id="open-manage-lists-btn">
         <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13" /><path d="M3 6h.01M3 12h.01M3 18h.01" /></svg>
         <span class="settings-row-text">
-          <span class="settings-row-title">Manage Lists</span>
-          <span class="settings-row-sub">Room types, meal plans, categories, units, usage reasons</span>
+          <span class="settings-row-title">Lists</span>
+          <span class="settings-row-sub">Room types, meal plans, categories, units, sources</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
-      <button type="button" class="settings-row" id="open-configure-conditions-btn">
-        <svg class="settings-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></svg>
-        <span class="settings-row-text">
-          <span class="settings-row-title">Reservation Conditions</span>
-          <span class="settings-row-sub">Terms printed on the Reservation Confirmation</span>
-        </span>
-        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-      </button>
+      </div>
     </div>
   </section>
 
@@ -510,36 +574,7 @@
     </div>
 
     <form id="branch-details-form" class="list-wrap">
-      <p class="step-subtext">These appear on the Reservation Confirmation and the checkout Invoice.</p>
-      <div class="field">
-        <label for="cfg-service-charge">Service charge <span class="label-optional">(% of food, this property)</span></label>
-        <input type="number" id="cfg-service-charge" min="0" max="100" step="0.5" inputmode="decimal" />
-        <p class="hint" id="cfg-service-charge-hint"></p>
-      </div>
-      <div class="field">
-        <label for="cfg-vat">VAT <span class="label-optional">(% of the bill after discount, this property)</span></label>
-        <input type="number" id="cfg-vat" min="0" max="100" step="0.5" inputmode="decimal" />
-        <p class="hint" id="cfg-vat-hint"></p>
-      </div>
-      <div class="field">
-        <label for="cfg-checkin-time">Standard check-in time</label>
-        <input type="time" id="cfg-checkin-time" />
-      </div>
-      <div class="field">
-        <label for="cfg-checkout-time">Standard check-out time</label>
-        <input type="time" id="cfg-checkout-time" />
-        <p class="hint">Printed on every registration card and reservation confirmation.</p>
-      </div>
-      <div class="field">
-        <label for="cfg-booking-sources">Booking sources <span class="label-optional">(one per line)</span></label>
-        <textarea id="cfg-booking-sources" rows="4" spellcheck="false"></textarea>
-        <p class="hint">Where a booking came from. Add an OTA here when you list on one.</p>
-      </div>
-      <div class="field">
-        <label for="cfg-currencies">Currencies <span class="label-optional">(one per line, shared by both properties)</span></label>
-        <textarea id="cfg-currencies" rows="4" spellcheck="false"></textarea>
-        <p class="hint">LKR should stay first — it is the currency reports are totalled in.</p>
-      </div>
+      <p class="step-subtext">Who this property is, as it appears on every document a guest is given.</p>
       <div class="field">
         <label for="cfg-hotel-name">Hotel Name</label>
         <input type="text" id="cfg-hotel-name" required autocapitalize="words" enterkeyhint="next" />
@@ -588,6 +623,105 @@
   </section>
 
   <!-- SCREEN: Configure reservation conditions (manager only) -->
+  <section id="screen-configure-charges" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-charges-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Charges &amp; Taxes — <span id="configure-charges-branch-label"></span></h2>
+    </div>
+    <div class="list-wrap">
+      <p class="step-subtext">These two rates reach the guest invoice, the travel agent invoice and every revenue report. They are stored once, here.</p>
+      <div class="field">
+        <label for="cfg-service-charge">Service charge <span class="label-optional">% of food</span></label>
+        <input type="number" id="cfg-service-charge" min="0" max="100" step="0.5" inputmode="decimal" />
+        <p class="field-hint" id="cfg-service-charge-hint"></p>
+      </div>
+      <div class="field">
+        <label for="cfg-vat">VAT <span class="label-optional">% of the net bill</span></label>
+        <input type="number" id="cfg-vat" min="0" max="100" step="0.5" inputmode="decimal" />
+        <p class="field-hint" id="cfg-vat-hint"></p>
+      </div>
+      <button type="button" class="primary-btn big" id="cfg-charges-save">Save rates</button>
+    </div>
+  </section>
+
+  <section id="screen-configure-times" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-times-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Standard Times — <span id="configure-times-branch-label"></span></h2>
+    </div>
+    <div class="list-wrap">
+      <p class="step-subtext">Filled in for you on new reservations and registration cards. Either can still be changed on the day.</p>
+      <div class="field-row">
+        <div class="field">
+          <label for="cfg-checkin-time">Check-in</label>
+          <input type="time" id="cfg-checkin-time" />
+        </div>
+        <div class="field">
+          <label for="cfg-checkout-time">Check-out</label>
+          <input type="time" id="cfg-checkout-time" />
+        </div>
+      </div>
+      <button type="button" class="primary-btn big" id="cfg-times-save">Save times</button>
+    </div>
+  </section>
+
+  <section id="screen-configure-invoice" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-invoice-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Guest Invoice — <span id="configure-invoice-branch-label"></span></h2>
+    </div>
+    <div class="list-wrap">
+      <p class="step-subtext">The remark printed at the foot of every guest bill. It is built from the rates below, so it can never disagree with what was actually charged.</p>
+      <div class="field">
+        <label>Printed remark</label>
+        <p class="fixed-remark-preview" id="cfg-invoice-remark"></p>
+      </div>
+      <!-- Shown, not editable. The rates live in Charges &amp; Taxes and are
+           read by invoices, agent invoices and reports alike; a second set of
+           inputs here would be the same fact stored twice, free to disagree. -->
+      <p class="step-subtext">Rates currently applied</p>
+      <div class="cfg-readout">
+        <div><span class="cfg-readout-label">Service charge</span><strong id="cfg-invoice-service"></strong></div>
+        <div><span class="cfg-readout-label">VAT</span><strong id="cfg-invoice-vat"></strong></div>
+      </div>
+      <button type="button" class="secondary-btn" id="cfg-invoice-goto-charges">Change these rates</button>
+    </div>
+  </section>
+
+  <section id="screen-configure-grc" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-grc-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Registration Card — <span id="configure-grc-branch-label"></span></h2>
+    </div>
+    <div class="list-wrap">
+      <p class="step-subtext">Printed on every registration card the guest signs. It was previously buried at the bottom of the reservation conditions screen, which is a different document entirely.</p>
+      <div class="field">
+        <label for="cfg-liability">Liability notice</label>
+        <textarea id="cfg-liability" rows="5"></textarea>
+      </div>
+      <button type="button" class="primary-btn big" id="cfg-liability-save">Save notice</button>
+    </div>
+  </section>
+
+  <section id="screen-configure-menu-pdfs" class="screen">
+    <button class="back-btn" data-back="screen-configure">&larr; Back</button>
+    <div class="brand small">
+      <img id="configure-menu-pdfs-logo" src="" alt="Leopard Inn" class="logo-small" onerror="this.style.display='none'" />
+      <h2>Menu PDFs — <span id="configure-menu-pdfs-branch-label"></span></h2>
+    </div>
+    <div class="list-wrap">
+      <p class="digital-menu-status" id="digital-menu-status"></p>
+      <p class="step-subtext">Built from the live menu every time, so an edit shows in the PDF immediately. Publishing updates the one public link used by QR codes and the website.</p>
+      <p class="step-subtext" id="digital-menu-hint"></p>
+      <div id="menu-pdf-list" class="menu-pdf-list"></div>
+      <button type="button" class="secondary-btn" id="open-board-menu-btn">Edit board menu</button>
+    </div>
+  </section>
+
   <section id="screen-configure-conditions" class="screen">
     <button class="back-btn" data-back="screen-configure">&larr; Back</button>
     <div class="brand small">
@@ -600,13 +734,6 @@
     <div class="list-wrap">
       <p class="step-subtext">Printed at the bottom of every Reservation Confirmation, in this order.</p>
       <div id="configure-conditions-list"><!-- condition rows injected by JS --></div>
-    </div>
-    <div class="list-wrap">
-      <p class="step-subtext">Liability notice — printed on every registration card the guest signs.</p>
-      <div class="field">
-        <textarea id="cfg-liability" rows="4"></textarea>
-      </div>
-      <button type="button" class="secondary-btn" id="cfg-liability-save">Save notice</button>
     </div>
   </section>
 
@@ -784,14 +911,7 @@
 
     <!-- The hotel's own menus, rebuilt as PDFs from the live config. Two
          per property, matching the printed booklets. -->
-    <div class="digital-menu-panel">
-      <p class="digital-menu-title">Menu PDFs</p>
-      <p class="digital-menu-sub" id="digital-menu-status"></p>
-      <div id="menu-pdf-list" class="menu-pdf-list"></div>
-      <p class="hint" id="digital-menu-hint"></p>
-      <button type="button" class="secondary-btn" id="open-board-menu-btn">Edit board menu</button>
-    </div>
-
+    
     <div class="list-wrap">
       <div class="list-search-row">
         <div class="list-search-box">
@@ -2684,6 +2804,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=185"></script>
+<script type="module" src="js/main.js?v=187"></script>
 </body>
 </html>

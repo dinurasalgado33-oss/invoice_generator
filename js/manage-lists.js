@@ -5,6 +5,7 @@ import { confirmAction } from "./confirm.js";
 import { saveConfig, saveShared, CONFIG_KINDS } from "./data/config-store.js";
 import { ROOM_TYPES, MEAL_PLANS } from "./data/grc.js";
 import { MENU_CATEGORIES } from "./data/menu.js";
+import { bookingSourcesFor, CURRENCIES } from "./data/charges.js";
 import {
   INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS,
   INVENTORY_DEPARTMENTS, CATEGORY_DEPARTMENT,
@@ -93,6 +94,20 @@ const LISTS = {
     shared: true,
     note: "A kilogram is a kilogram.",
   },
+  bookingSources: {
+    label: "Booking sources",
+    arrayFor: () => bookingSourcesFor(appState.selectedBranch),
+    kind: CONFIG_KINDS.BOOKING_SOURCES,
+    shared: false,
+    note: "Where the booking came from — walk-in, an OTA, an agent.",
+  },
+  currencies: {
+    label: "Currencies",
+    array: CURRENCIES,
+    kind: CONFIG_KINDS.CURRENCIES,
+    shared: true,
+    note: "Offered on the guest invoice and the travel agent invoice.",
+  },
   usageReasons: {
     label: "Stock usage reasons",
     array: USAGE_REASONS,
@@ -101,6 +116,13 @@ const LISTS = {
     note: "Why stock left the shelf. This is the vocabulary of the stock audit trail.",
   },
 };
+
+// Most lists are one shared array. Booking sources are per property, so
+// the array itself changes when the branch does — resolved on each use
+// rather than captured once when this module loaded.
+function arrayOf(cfg) {
+  return cfg.arrayFor ? cfg.arrayFor() : cfg.array;
+}
 
 let current = "roomTypes";
 
@@ -112,8 +134,8 @@ function showError(message) {
 
 function persist() {
   const cfg = LISTS[current];
-  if (cfg.shared) saveShared(cfg.kind, cfg.array);
-  else saveConfig(appState.selectedBranch, cfg.kind, cfg.array);
+  if (cfg.shared) saveShared(cfg.kind, arrayOf(cfg));
+  else saveConfig(appState.selectedBranch, cfg.kind, arrayOf(cfg));
 }
 
 function render() {
@@ -122,12 +144,12 @@ function render() {
     (cfg.shared ? "Shared by both properties. " : `${appState.selectedBranchLabel || appState.selectedBranch} only. `) + cfg.note;
 
   const list = el("ml-entries");
-  if (!cfg.array.length) {
+  if (!arrayOf(cfg).length) {
     list.innerHTML = `<p class="room-detail-empty">Nothing in this list yet.</p>`;
     return;
   }
   const picker = cfg.picker;
-  list.innerHTML = cfg.array.map((entry, i) => {
+  list.innerHTML = arrayOf(cfg).map((entry, i) => {
     const select = picker ? `
       <select class="ml-row-picker" data-entry="${escapeHtml(entry)}"
               aria-label="Department for ${escapeHtml(entry)}">
@@ -160,7 +182,7 @@ function render() {
 
 async function removeEntry(index) {
   const cfg = LISTS[current];
-  const entry = cfg.array[index];
+  const entry = arrayOf(cfg)[index];
   if (entry === undefined) return;
 
   // Removing one of these does not touch records that already use it — a
@@ -174,7 +196,7 @@ async function removeEntry(index) {
   });
   if (!ok) return;
 
-  cfg.array.splice(index, 1);
+  arrayOf(cfg).splice(index, 1);
   // A removed category should not leave its department behind. Nothing
   // reads a stale entry, but a map that only ever grows is a map nobody
   // can read either.
@@ -192,12 +214,12 @@ el("ml-add-form").addEventListener("submit", (e) => {
 
   // Case-insensitive, because "Twin" and "twin" in the same dropdown is
   // the same duplication problem the suggestion list exists to prevent.
-  if (cfg.array.some(v => v.toLowerCase() === value.toLowerCase())) {
+  if (arrayOf(cfg).some(v => v.toLowerCase() === value.toLowerCase())) {
     showError("That is already in the list.");
     return;
   }
   showError("");
-  cfg.array.push(value);
+  arrayOf(cfg).push(value);
   persist();
   el("ml-new").value = "";
   render();
