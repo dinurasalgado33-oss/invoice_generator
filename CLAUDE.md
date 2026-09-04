@@ -41,6 +41,19 @@ a rate, a percentage, a time, a policy line. See `HARDCODED-AUDIT.md`.
   `firebase deploy --only firestore:rules`; never hand-paste into the
   console (that drift caused a real two-commit bug).
 
+## Routine audits
+
+- `/walkthrough` — walk the portal as reception and managers do, at phone
+  width, against the **dev** project. Fixes bugs found on the way, records
+  UX findings without changing them, writes `WALKTHROUGH-<date>.md`.
+- `/walkthrough-fix` — build the findings from that document once they have
+  been reviewed, verifying each on dev before shipping.
+
+Both live in `.claude/skills/`. They encode the checks that caught real bugs
+here: confirm which *project* you are on rather than trusting the URL, prove
+the deployed version is the one under test, and make a check fail before
+trusting it to pass.
+
 ## Testing
 
 There is no test suite. Verify in the Browser pane by importing modules
