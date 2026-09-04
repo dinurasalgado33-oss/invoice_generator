@@ -239,6 +239,33 @@
 }
 
 .inv-td-actions { display: flex; gap: 6px; }
+
+/* Log usage — stock going out, so the arrow points up and out of the shelf,
+   mirroring restock's arrow coming down into it.
+   This rule did not exist: the button was rendered with an inline SVG that
+   had no width or height, and an SVG with no intrinsic size inside a flex
+   parent collapses to nothing. It looked like an empty box beside two
+   working icons — nothing errored, so there was nothing to find in a log.
+   Amber rather than restock's green, because taking stock off the shelf and
+   putting it back should not look like the same action in a hurry. */
+.list-usage-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1.5px solid #e6d3ac;
+  background: var(--white);
+  color: #8a6520;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.list-usage-btn svg { width: 14px; height: 14px; }
+.list-usage-btn:active { transform: scale(0.9); }
+@media (hover: hover) and (pointer: fine) {
+  .list-usage-btn:hover { background: #fdf6e8; }
+}
+
 .list-restock-btn {
   width: 26px;
   height: 26px;
@@ -460,13 +487,14 @@
 .menu-pdf-actions button:disabled { opacity: .6; cursor: default; }
 .digital-menu-panel .hint { margin: 10px 0 0; }
 
-/* The guest link under each menu in the PDFs panel. */
+/* Copy link, under each menu in the PDFs panel. Was a blue anchor beside a
+   "Copy" button, each doing half the job; the margin-left existed only to
+   clear that anchor. */
 .menu-pdf-link { margin: 6px 0 0; font-size: 0.85rem; }
 .menu-pdf-link:empty { display: none; }
 .menu-pdf-copy {
   min-height: 44px;
-  padding: 0 10px;
-  margin-left: 6px;
+  padding: 0 12px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--white);

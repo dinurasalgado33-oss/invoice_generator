@@ -45,8 +45,10 @@ async function withBusy(btn, label, fn) {
 function showLink(key, url) {
   const el = document.querySelector(`.menu-pdf-link[data-link="${key}"]`);
   if (!el) return;
-  el.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Guest link</a> `
-    + `<button type="button" class="menu-pdf-copy">Copy</button>`;
+  // One button, not a blue link beside a button doing half the job each.
+  // "Copy link" says what it does; "Guest link" named a thing without
+  // saying what pressing it was for.
+  el.innerHTML = `<button type="button" class="menu-pdf-copy">Copy link</button>`;
   const copy = el.querySelector(".menu-pdf-copy");
   copy.addEventListener("click", async () => {
     try {
@@ -54,8 +56,11 @@ function showLink(key, url) {
       showToast("Link copied");
     } catch {
       // Clipboard access is refused often enough on mobile browsers that
-      // failing silently would look like a dead button.
-      showToast("Couldn't copy — press and hold the link instead");
+      // failing silently would look like a dead button. There is no longer
+      // a link to press and hold, so open it instead — the address bar is
+      // then somewhere the address can be copied from by hand.
+      window.open(url, "_blank", "noopener");
+      showToast("Couldn't copy — opened it instead, copy from the address bar");
     }
   });
 }
