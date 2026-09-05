@@ -79,8 +79,21 @@ export function invoiceRemark(branch) {
     // would be worse than saying nothing.
     return "";
   }
-  return `Please note that a ${rate}% service charge will be added to all BB (Bed & Breakfast), ` +
-    "HB (Half Board) and FB (Full Board) Bookings.";
+  // Says what the invoice actually does, which it did not.
+  //
+  // The old wording promised the charge "on all BB, HB and FB Bookings",
+  // while serviceChargeFor() has always charged it on food line items and
+  // nothing else. Both directions were wrong on a guest's bill: a Villa
+  // Only guest who ordered dinner was charged something the notice said
+  // did not apply to them, and a half-board guest who ordered nothing was
+  // charged nothing while the notice said otherwise.
+  //
+  // The wording changed rather than the arithmetic, because the arithmetic
+  // is what has been billed for real and restating it would re-price
+  // history. If the hotel's actual policy is the old sentence — a charge
+  // on board bookings rather than on food — then it is serviceChargeFor()
+  // that needs changing, and that is a decision about money.
+  return `Please note that a ${rate}% service charge is added to all food and beverage.`;
 }
 
 export function foodSubtotal(items) {
