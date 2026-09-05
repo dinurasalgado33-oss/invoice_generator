@@ -341,8 +341,21 @@ makeStepperNavigable(
   });
 });
 
-["grc-arrival-date", "grc-departure-date"].forEach(id => {
+// The meal plan belongs in this list because the total depends on it: a
+// booking type carries a supplement, and stayTotal() adds it. It was left
+// out when the supplement was introduced, so on a walk-in card reception
+// could pick Half Board and watch the Total Amount not move — the figure
+// the guest signs, quietly short by the supplement, unless someone
+// happened to re-touch a date afterwards and trigger the recompute.
+//
+// Only walk-ins were affected: a linked reservation supplies the plan and
+// re-runs this on link, which is why it survived the earlier walkthrough.
+["grc-arrival-date", "grc-departure-date", "grc-meal-plan"].forEach(id => {
   el(id).addEventListener("change", syncDerivedFields);
+});
+// Clearing the departure error is the dates' business only — the meal plan
+// shares the recompute above, not this.
+["grc-arrival-date", "grc-departure-date"].forEach(id => {
   el(id).addEventListener("input", () => {
     el("grc-departure-error").classList.remove("show");
     el("grc-departure-date").classList.remove("invalid");
