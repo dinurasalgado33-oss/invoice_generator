@@ -1,4 +1,11 @@
-.claude/
+# Ignore the contents of .claude, not the directory itself — git will not
+# descend into an excluded directory, so a negation under it never matches
+# and the skills below would stay invisible.
+.claude/*
+# The skills are project documentation and belong in the repo: they encode
+# the checks that caught real bugs here, and a clone without them loses the
+# routine. settings.local.json stays ignored, being machine-specific.
+!.claude/skills/
 dev/menu-preview/
 node_modules/
 firebase-debug.log
