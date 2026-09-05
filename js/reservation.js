@@ -6,6 +6,7 @@ import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDate
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
 import { mealPlanRateFor } from "./data/charges.js";
+import { standardTimesFor } from "./data/grc.js";
 import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
 } from "./data/reservations.js";
@@ -59,9 +60,14 @@ function addVillaRow(roomId = null) {
 function resetReservationForm() {
   document.getElementById("reservation-form").reset();
   document.getElementById("resv-checkin-date").value = todayISO();
-  document.getElementById("resv-checkin-time").value = "14:00";
+  // The property's configured times, not a literal. These were hardcoded
+  // here and in the markup, so Configure → Standard Times changed the
+  // registration card and left every new reservation on 14:00 — a
+  // setting that looked like it worked and did nothing.
+  const std = standardTimesFor(appState.selectedBranch);
+  document.getElementById("resv-checkin-time").value = std.checkin;
   document.getElementById("resv-checkout-date").value = toDateISO(new Date(Date.now() + 86400000));
-  document.getElementById("resv-checkout-time").value = "11:00";
+  document.getElementById("resv-checkout-time").value = std.checkout;
   villaList.innerHTML = "";
   addVillaRow();
   document.getElementById("resv-guest-name-error").classList.remove("show");
@@ -88,9 +94,10 @@ function fillReservationForm(r) {
   setPhone("resv-country-code", "resv-contact", r.contact);
   document.getElementById("resv-email").value = r.email || "";
   resvCheckinDateInput.value = r.checkinDate || "";
-  document.getElementById("resv-checkin-time").value = r.checkinTime || "14:00";
+  const stdEdit = standardTimesFor(appState.selectedBranch);
+  document.getElementById("resv-checkin-time").value = r.checkinTime || stdEdit.checkin;
   resvCheckoutDateInput.value = r.checkoutDate || "";
-  document.getElementById("resv-checkout-time").value = r.checkoutTime || "11:00";
+  document.getElementById("resv-checkout-time").value = r.checkoutTime || stdEdit.checkout;
   document.getElementById("resv-booking-type").value = r.bookingType || "";
 
   villaList.innerHTML = "";
