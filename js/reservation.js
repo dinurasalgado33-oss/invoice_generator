@@ -5,7 +5,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT, setBranchLabel } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { mealPlanRateFor, quotedMealPlanRate } from "./data/charges.js";
+import { mealPlanRateFor, quotedMealPlanRate, invoiceRemark } from "./data/charges.js";
 import { standardTimesFor } from "./data/grc.js";
 import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
@@ -346,8 +346,21 @@ function renderReservationPreview(r, { hidePrices = false } = {}) {
   // manager's phrasing; the tick makes it their decision.
   const conditions = (RESERVATION_CONDITIONS[r.branch] || [])
     .filter(c => !(hidePrices && c.hideFromGuest));
-  document.getElementById("resv-prev-conditions").innerHTML = conditions
-    .map(c => `<p>* ${escapeHtml(c.text)}</p>`).join("") ||
+  const lines = conditions.map(c => `<p>* ${escapeHtml(c.text)}</p>`);
+
+  // The service charge, from the same function the invoice prints. It is
+  // not one of the editable conditions above and must not become one: it
+  // was, as a typed sentence with the rate written into it, and it drifted
+  // from the invoice the first time either was touched. A guest holding
+  // both documents can now only read one policy, and a manager changing
+  // the rate in Configure changes both at once.
+  //
+  // Printed last and in the same style, so it reads as one list — the
+  // guest has no reason to care which line is derived.
+  const notice = invoiceRemark(r.branch);
+  if (notice) lines.push(`<p>* ${escapeHtml(notice)}</p>`);
+
+  document.getElementById("resv-prev-conditions").innerHTML = lines.join("") ||
     `<p class="room-detail-empty">No conditions set.</p>`;
 }
 

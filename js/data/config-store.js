@@ -257,6 +257,28 @@ export function applyArray(target, incoming) {
   return true;
 }
 
+// The service-charge notice on the reservation confirmation is printed
+// from invoiceRemark() now, the same source the invoice uses. Any saved
+// copy of it as a hand-typed condition is the same policy stored twice —
+// which is how the two documents came to say different things, and how a
+// rate change in Configure moved one and not the other.
+//
+// Dropping it from the shipped defaults is not enough: a manager who has
+// ever opened the conditions screen has the old list saved in the
+// database, and that overrides the defaults on load. So it is stripped
+// here, on the way in, and any later save writes the stripped list back.
+//
+// Deliberately narrow. It matches a condition that states a service
+// charge as a percentage, which is exactly the sentence now printed
+// automatically — not a condition that happens to mention service.
+const DERIVED_CONDITION = /service\s*charge/i;
+
+function stripDerivedConditions(incoming) {
+  if (!Array.isArray(incoming)) return incoming;
+  return incoming.filter(c => !(c && typeof c.text === "string"
+    && DERIVED_CONDITION.test(c.text) && /\d\s*%/.test(c.text)));
+}
+
 
 // Pulls every stored config value back into the in-memory objects the
 // screens already read from.
@@ -298,7 +320,7 @@ export async function hydrateConfig(branches) {
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
     if (applyArray(ACTIVITIES_BY_BRANCH[branch], activities)) loaded.push(branch + ":activities");
-    if (applyArray(RESERVATION_CONDITIONS[branch], conditions)) loaded.push(branch + ":conditions");
+    if (applyArray(RESERVATION_CONDITIONS[branch], stripDerivedConditions(conditions))) loaded.push(branch + ":conditions");
     if (applyArray(CANCELLATION_POLICY[branch], cancellation)) loaded.push(branch + ":cancellation");
     if (applyArray(PROFORMA_NOTICES[branch], notices)) loaded.push(branch + ":notices");
     if (applyInventoryConfig(INVENTORY_BY_BRANCH[branch], inventory)) loaded.push(branch + ":inventory");

@@ -618,10 +618,20 @@ document.getElementById("open-configure-conditions-btn").addEventListener("click
   setBranchLabel("configure-conditions-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-conditions-logo", appState.selectedBranchLogo);
   renderConditionList();
+  // The service-charge line the confirmation prints on its own, shown so a
+  // manager can see it is already covered and does not type it again —
+  // which is what produced two versions of one policy in the first place.
+  const conditionsRemark = invoiceRemark(appState.selectedBranch);
+  document.getElementById("cfg-conditions-remark").textContent =
+    conditionsRemark || "No service charge notice will be printed.";
   // Populated on open, not at load: it is per property now, and which
   // property is selected is not known when this module evaluates.
   document.getElementById("cfg-liability").value = liabilityNoticeFor(appState.selectedBranch);
   showScreen("screen-configure-conditions");
+});
+
+document.getElementById("cfg-conditions-goto-charges").addEventListener("click", () => {
+  document.getElementById("open-configure-charges-btn").click();
 });
 
 // ---- Inventory (shared screen) ----
