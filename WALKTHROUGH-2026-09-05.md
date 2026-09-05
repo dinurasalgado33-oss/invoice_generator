@@ -280,3 +280,92 @@ entry nobody reads.
 **Suggested fix:** have the store distinguish "queued" from "refused", and
 surface only the refusal — a toast that says the change did not stick.
 Offline stays silent, which is the point of it.
+
+---
+
+# Arugam Bay and the remaining paths — 5 September 2026
+
+The second property, untouched by three previous passes. Manager session,
+dev, 375px.
+
+## Bug fixed — every occupied villa showed "Contact -"
+
+The villa detail sheet has a Contact row. It could never show anything.
+
+Check-in set `r.phone` on the villa object directly, but the **booking
+record it wrote carried no phone**. `deriveOccupancy()` rebuilds every
+villa from its booking — `delete room.phone`, then
+`if (booking.phone != null) room.phone = booking.phone` — so the first
+re-derive after check-in dropped it and nothing ever put it back.
+
+The derive had been ready for this all along. Check-in simply never wrote
+the field it reads.
+
+Measured before the fix, across both properties:
+
+```
+Arugam Bay / Zenith Villa : phone = ABSENT
+Wilpattu   / Balcony Villa: phone = ABSENT
+```
+
+Every occupied villa, permanently, while the number sat on the
+registration card one lookup away. Reception looking at a villa is exactly
+who needs to ring the guest in it.
+
+**Fix:** `phone: card.phone || ""` on the booking record, matching what the
+derive already expects.
+
+**Verified** with a natural control: a guest checked in after the fix shows
+`+94 771119999` on the Contact row and keeps it through a full reload; the
+guest checked in *before* the fix still reads ABSENT.
+
+**Limitation worth stating:** this fixes new check-ins only. Stays already
+in progress keep no phone on their booking, so their Contact row stays "-"
+until they check out. Nothing is lost — the number is on their registration
+card — and backfilling would mean rewriting existing booking records, which
+is not something a walkthrough should do unasked.
+
+## Arugam Bay — the spine works, and is genuinely separate
+
+| | Wilpattu | Arugam Bay |
+|---|---|---|
+| Villas | 4 | **6** — three rate tiers, 8,500 / 11,500 / 15,000 |
+| Dishes | 68 | **93** |
+| Dish numbering | from #1 | from #1, independently |
+| Hotel name | "Leopard Inn Wilpattu **Hotel**" | "Leopard Inn Arugam Bay **Villa**" |
+
+Walked: reservation → check-in from it → card numbered → villa occupied.
+`RES-2026/27-351`, Zenith Villa at 11,500 × 3 = **34,500**, e-mail and phone
+carried from the reservation, `GRC-2026/27-351` issued, reservation moved
+to Checked In.
+
+**Numbering is per property, and that is deliberate.** Arugam Bay's
+reservation is also `-351`, the same number the staff device took at
+Wilpattu. The counter key is `counters/{branch}__{type}__{year}`, so the
+two properties keep independent sequences and a shared number is expected
+rather than a collision. Confirmed in the source, not assumed.
+
+## F-I. The two properties are named inconsistently — **low, and yours to decide**
+
+`BRANCH_INFO` on dev holds:
+
+- Wilpattu — "Leopard Inn Wilpattu **Hotel**"
+- Arugam Bay — "Leopard Inn Arugam Bay **Villa**"
+
+Both print at the top of every guest document. You said earlier "it's villa
+not hotel", so Wilpattu's is likely wrong — but this is configuration, not
+code, and it is worth checking what **production** says rather than trusting
+dev. Editable from Configure → Hotel & bank details.
+
+## Checked, and not a bug
+
+**The interim bill button is conditional, not missing.** "Bill this now
+(keep stay open)" renders inside the running-tab block, so it appears only
+once a stay has unbilled charges. A freshly checked-in guest has none. That
+is correct behaviour, and it is why two walks reported it as unreached.
+
+## Still not walked
+
+Guest Charges screen, board menu editing, menu publish, inventory usage
+logging, and the interim bill actually being *raised* — reached its
+condition, did not exercise it. Printing, still.

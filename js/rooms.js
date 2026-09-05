@@ -712,6 +712,18 @@ function showNewBookingForm() {
         checkin: card.arrivalDate,
         checkout: card.departureDate,
         source,
+        // The guest's number, on the booking rather than only on the card.
+        //
+        // deriveOccupancy() rebuilds every villa from its booking and has
+        // always been ready for this — `if (booking.phone != null)
+        // room.phone = booking.phone`. Check-in set r.phone directly and
+        // never wrote it here, so the first re-derive after check-in
+        // deleted it and nothing put it back: the villa detail sheet's
+        // Contact row read "-" for every occupied villa at both properties,
+        // permanently, while the number sat on the registration card one
+        // lookup away. Reception looking at a villa is exactly who needs to
+        // ring the guest in it.
+        phone: card.phone || "",
         reservationId: reservation ? reservation.id : null,
         status: "Checked In",
       };
