@@ -10,7 +10,7 @@ import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { makeStepperNavigable } from "./stepper.js";
 import { readPhone, setPhone } from "./phone-field.js";
-import { bookingSourcesFor, mealPlanTotal, mealPlanRateFor } from "./data/charges.js";
+import { bookingSourcesFor, mealPlanTotal, mealPlanRateFor, planKey } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 import {
@@ -278,9 +278,17 @@ el("grc-reservation-select").addEventListener("change", (e) => {
   el("grc-adults").value = String(r.adults ?? 1);
   el("grc-children").value = String(r.children ?? 0);
   el("grc-reservation-by").value = `${r.no}`;
-  // The reservation's booking type is the meal plan on the card, when it
-  // matches one the card knows about.
-  if (MEAL_PLANS.includes(r.bookingType)) el("grc-meal-plan").value = r.bookingType;
+  // The reservation's booking type is the meal plan on the card.
+  //
+  // Matched on the normalised key, not the exact string. A reservation
+  // says "HB" and this list says "H/B", so an exact match never found
+  // anything: the card kept its default of R/O — room only — while the
+  // guest was on half board and being charged for it. The money was right,
+  // because that comes from the booking type; the card the guest signs was
+  // the thing saying otherwise.
+  const wanted = planKey(r.bookingType);
+  const match = MEAL_PLANS.find(m => planKey(m) === wanted);
+  if (match) el("grc-meal-plan").value = match;
 
   el("grc-guest-name-error").classList.remove("show");
   syncDerivedFields();

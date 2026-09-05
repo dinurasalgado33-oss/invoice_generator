@@ -5,6 +5,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT, setBranchLabel } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
+import { mealPlanRateFor } from "./data/charges.js";
 import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
 } from "./data/reservations.js";
@@ -303,9 +304,23 @@ function renderReservationPreview(r, { hidePrices = false } = {}) {
   document.getElementById("resv-prev-villa-count").textContent = String((r.villas || []).length);
   document.getElementById("resv-prev-booking-type").textContent = r.bookingType || "N/A";
 
-  document.getElementById("resv-prev-pricing-body").innerHTML = (r.villas || []).map(v => `
+  // Villas, then whatever the booking type adds on top.
+  //
+  // The supplement was missing here while the registration card and the
+  // invoice both charged it, so the guest's own copy quoted less than they
+  // would be asked to pay — the one document where that is least
+  // forgivable. Same rate function as the other two, so all three agree.
+  const planRate = mealPlanRateFor(r.branch, r.bookingType);
+  const pricingRows = (r.villas || []).map(v => `
     <tr><td>${escapeHtml(v.name) || "-"}</td><td>${v.rate ? fmtLKR(v.rate) : "-"}</td></tr>
-  `).join("") || `<tr><td colspan="2" class="room-detail-empty">No villas added.</td></tr>`;
+  `);
+  if (planRate > 0) {
+    pricingRows.push(`
+    <tr><td>${escapeHtml(r.bookingType)} — per villa, per night</td><td>${fmtLKR(planRate)}</td></tr>
+  `);
+  }
+  document.getElementById("resv-prev-pricing-body").innerHTML = pricingRows.join("")
+    || `<tr><td colspan="2" class="room-detail-empty">No villas added.</td></tr>`;
 
   document.getElementById("resv-prev-bank-account-name").textContent = branchInfo.bankAccountName || "-";
   document.getElementById("resv-prev-bank-account-no").textContent = branchInfo.bankAccountNumber || "-";

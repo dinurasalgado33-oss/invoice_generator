@@ -197,7 +197,7 @@ export const MEAL_PLAN_RATES = {
 // the two lists being forcibly merged, which would rewrite cards already
 // signed. "Villa Only" and "R/O" both normalise to something with no rate,
 // which is correct: they are the villa on its own.
-function planKey(bookingType) {
+export function planKey(bookingType) {
   return String(bookingType || "").replace(/[^a-z]/gi, "").toUpperCase();
 }
 
