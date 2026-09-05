@@ -112,7 +112,14 @@ async function renderDashboard(branch) {
   // subtracting food and activity records from the invoice total. The old
   // subtraction quietly mis-attributed anything that belonged to neither
   // set, and went negative if a record outlived its invoice.
-  const branchInvoices = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active");
+  // This month, like every other figure on this screen. It used to be every
+  // Active invoice the branch had ever raised, sitting directly under a KPI
+  // headed "This month's revenue" on a dashboard stamped with today's date.
+  // Nothing looked wrong — the slices were real money, correctly attributed,
+  // just for the wrong span. On the dev data at the time of writing the pie
+  // read Villa 81,000 where September was 52,500: overstated by half, and
+  // getting worse every month the hotel traded.
+  const branchInvoices = monthInvoices;
   const splitKeys = ["villa", "food", "safari", "transport", "ticket", "other"];
   const split = {};
   splitKeys.forEach(k => { split[k] = 0; });
@@ -140,7 +147,12 @@ async function renderDashboard(branch) {
   // Written-off records are excluded: a safari charged to a stay whose
   // check-in was then cancelled is not money owed to the provider, and
   // showing it as payable sends the manager to pay a bill twice.
-  const branchActivities = ACTIVITY_RECORDS.filter(r => r.branch === branch && countsAsRevenue(r));
+  // Also this month. Same defect as the split above and the same reason it
+  // stayed invisible: what a provider is owed accumulates, so an unscoped
+  // total only ever looks large, never wrong. A manager paying against this
+  // figure in October would be paying September's safaris a second time.
+  const branchActivities = ACTIVITY_RECORDS.filter(r =>
+    r.branch === branch && countsAsRevenue(r) && monthKey(r.date) === thisMonthKey);
   const activityGross = branchActivities.reduce((s, r) => s + r.revenue, 0);
   const activityPayout = branchActivities.reduce((s, r) => s + (r.payout || 0), 0);
   const payoutEl = document.getElementById("kpi-payout");

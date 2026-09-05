@@ -110,3 +110,28 @@ export function showScreen(id) {
 document.querySelectorAll(".back-btn").forEach(btn => {
   btn.addEventListener("click", () => showScreen(btn.dataset.back));
 });
+
+// Closed sheets are hidden with opacity and pointer-events, which stops a
+// finger but not the Tab key. Every one of the fourteen overlays in the
+// markup kept its fields, buttons and dropdowns in the focus order while
+// invisible — 69 controls in total. Tabbing through a screen walked into
+// them: focus vanished off-screen with no visible ring, and Enter could
+// press a button nobody could see.
+//
+// `inert` is the one thing that removes a subtree from focus, from the
+// accessibility tree and from clicks together, so it is kept in step with
+// the `.open` class rather than added at each of the many places a sheet
+// is opened or closed — that list is exactly what a future sheet would be
+// forgotten from.
+function syncSheetInert(overlay) {
+  overlay.inert = !overlay.classList.contains("open");
+}
+
+const sheetObserver = new MutationObserver(records => {
+  records.forEach(r => syncSheetInert(r.target));
+});
+
+document.querySelectorAll(".room-detail-overlay").forEach(overlay => {
+  syncSheetInert(overlay);
+  sheetObserver.observe(overlay, { attributes: true, attributeFilter: ["class"] });
+});
