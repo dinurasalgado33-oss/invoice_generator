@@ -199,3 +199,84 @@ never trust a bounding box as proof something is on screen.
 - `RES-2026/27-252` / `ZZ EMAIL CARRY` — still Confirmed
 
 Nothing on production.
+
+---
+
+# Staff permissions — walked 5 September 2026
+
+The largest untested area in the app, unexercised across two previous
+walks. Dinura created a staff account on dev; this section is what a
+receptionist can and cannot do.
+
+Signed in as `role: staff`, `branch: Wilpattu`, `active: true`.
+
+**The boundary holds completely.** Every crossing was refused, and the
+control passed — so the refusals mean something.
+
+## What the interface does
+
+Reports, Finance, Staff and Configure are not shown. The branch picker is
+skipped entirely: a staff account goes straight to its own property's home
+screen and is never asked which hotel it is at.
+
+## What the rules do, with the interface bypassed
+
+`CLAUDE.md` says nothing may depend on a screen hiding a button, so every
+one of these went straight to Firestore as the staff account.
+
+| Attempt | Result |
+|---|---|
+| Read own branch — invoices, bookings, cards | **allowed** (4, 6, 5) |
+| Read **Arugam Bay** invoices | refused |
+| Read **Arugam Bay** bookings, cards, guest charges | refused |
+| Read invoices **with no branch filter** | refused |
+| Read `logins`, `errors`, `users` | refused |
+| **Write** a record tagged `Arugam Bay` | refused |
+| **Promote self to manager** (`users/{uid}`) | **refused** |
+| Move self to the other branch | refused |
+| Delete an invoice | refused |
+| Delete a registration card | refused |
+| Write a config value | refused |
+| **Control — write own branch** | **allowed** |
+
+The last row is the one that makes the rest worth reading. Without it, a
+broken connection would have produced the same eleven refusals and looked
+like perfect security.
+
+Two details worth naming. Self-promotion is refused, which is the specific
+thing `firestore.rules` was written to prevent and the first thing an audit
+should try. And an unfiltered read is refused rather than silently
+filtered — a staff device cannot ask for everything and receive only its
+own share, it is turned away.
+
+## Staff can still do the job
+
+Created `RES-2026/27-351` — Confirmed, A Type Villa — through the real
+screens.
+
+Worth noting the number: **351**, not continuing from the manager device's
+252. Each device draws from its own reserved block, which is the design
+that stops two offline devices allocating the same number to different
+guests. Seen working across two real sessions here for the first time.
+
+## F-H. A refused write still says it saved — **medium**
+
+Force-navigating to a manager screen is possible — the screens exist in the
+DOM for everyone — and harmless: the write is refused and the value does not
+change. Verified by setting VAT to 99 as staff; it stayed 0.
+
+But the app said **"Rates saved"**.
+
+`js/configure.js:380` calls `showToast("Rates saved")` unconditionally,
+after two fire-and-forget `saveConfig()` calls. Fire-and-forget is
+deliberate and right — reception cannot be made to wait for the network —
+but it means a **permanently refused** write is indistinguishable from a
+queued offline one, and the person is told the opposite of what happened.
+
+Staff reaching that screen is an edge case. The shape is not: any write
+refused for any reason reports success, and the only trace is an error log
+entry nobody reads.
+
+**Suggested fix:** have the store distinguish "queued" from "refused", and
+surface only the refusal — a toast that says the change did not stick.
+Offline stays silent, which is the point of it.
