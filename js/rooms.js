@@ -14,6 +14,8 @@ import {
 } from "./data/charges.js";
 import { openGrcForm, reprintGrc } from "./grc.js";
 import { findGrcByBookingId } from "./data/grc.js";
+import { RESERVATIONS, findReservationById, RESERVATION_STATUS } from "./data/reservations.js";
+import { refreshReservationsList } from "./reservations.js";
 import {
   addGuestCharge, openChargesFor, tabTotal, markCharged, writeOffCharges,
 } from "./data/guest-charges.js";
@@ -385,6 +387,27 @@ async function cancelCheckIn() {
 
   const booking = BOOKINGS.find(b => b.id === room.bookingId);
   if (booking) update(COLLECTIONS.BOOKINGS, booking, { status: "Cancelled" });
+
+  // Check-in marks the reservation fulfilled and points it at the booking.
+  // Cancelling the check-in has to undo both, or the reservation is
+  // stranded: still reading "Checked In", still naming a booking that is
+  // now Cancelled, and — because only Confirmed reservations are offered
+  // at check-in — no longer available to check the guest in against.
+  // Reception's only way out was to key the whole reservation again, under
+  // a new number, while the guest holds a confirmation quoting the old one.
+  //
+  // Cancelled is wrong here: the guest has not cancelled anything. The
+  // check-in was the mistake, so the reservation goes back to being an
+  // outstanding promise, which is what it was a minute ago.
+  const reservation = findReservationById(booking ? booking.reservationId : null)
+    || RESERVATIONS.find(r => r.bookingId === room.bookingId);
+  if (reservation && reservation.status === RESERVATION_STATUS.CHECKED_IN) {
+    update(COLLECTIONS.RESERVATIONS, reservation, {
+      status: RESERVATION_STATUS.CONFIRMED,
+      bookingId: null,
+    });
+    refreshReservationsList();
+  }
   // The charges are gone from the tab, so no invoice will ever carry them.
   // Left untouched they'd go on counting as revenue in the Food Orders and
   // Activities reports — money the hotel never billed and never took.
