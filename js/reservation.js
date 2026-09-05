@@ -5,7 +5,7 @@ import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, formatDate, setLogoSrc, showToast, todayISO, toDateISO, clampMoney, capNumericInput, MAX_COUNT, setBranchLabel } from "./utils.js";
 import { BRANCH_INFO, RESERVATION_CONDITIONS } from "./data/branches.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { mealPlanRateFor } from "./data/charges.js";
+import { mealPlanRateFor, quotedMealPlanRate } from "./data/charges.js";
 import { standardTimesFor } from "./data/grc.js";
 import {
   RESERVATIONS, allocateReservationNo, findConflicts, RESERVATION_STATUS, findReservationById, PROFORMA_INVOICES,
@@ -316,8 +316,12 @@ function renderReservationPreview(r, { hidePrices = false } = {}) {
   // The supplement was missing here while the registration card and the
   // invoice both charged it, so the guest's own copy quoted less than they
   // would be asked to pay — the one document where that is least
-  // forgivable. Same rate function as the other two, so all three agree.
-  const planRate = mealPlanRateFor(r.branch, r.bookingType);
+  // forgivable.
+  //
+  // Read off the record, not the configuration, so a reprint of an old
+  // confirmation shows the figure that was actually sent to that guest —
+  // the same principle as the villa rates on the row below.
+  const planRate = quotedMealPlanRate(r, r.branch, r.bookingType);
   const pricingRows = (r.villas || []).map(v => `
     <tr><td>${escapeHtml(v.name) || "-"}</td><td>${v.rate ? fmtLKR(v.rate) : "-"}</td></tr>
   `);
@@ -480,6 +484,17 @@ document.getElementById("reservation-form").addEventListener("submit", (e) => {
     checkoutTime: document.getElementById("resv-checkout-time").value,
     nights,
     bookingType: document.getElementById("resv-booking-type").value.trim(),
+    // The supplement rate quoted on this confirmation, snapshot the same
+    // way and for the same reason as each villa's nightly rate above: the
+    // guest agreed to this figure, and a later change to the configured
+    // rate must not reach back and re-price them at checkout.
+    //
+    // Re-read on a correction, exactly as the villa rates are — saving a
+    // reservation is what fixes its prices, and a correction is a save.
+    mealPlanRate: mealPlanRateFor(
+      appState.selectedBranch,
+      document.getElementById("resv-booking-type").value.trim()
+    ),
     villas,
     // A correction must not resurrect a cancelled reservation, un-link a
     // stay that has already started, or reset when it was taken.

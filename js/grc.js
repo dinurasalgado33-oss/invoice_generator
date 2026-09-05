@@ -10,7 +10,7 @@ import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { makeStepperNavigable } from "./stepper.js";
 import { readPhone, setPhone } from "./phone-field.js";
-import { bookingSourcesFor, mealPlanTotal, mealPlanRateFor, planKey } from "./data/charges.js";
+import { bookingSourcesFor, mealPlanTotalAt, mealPlanRateFor, quotedMealPlanRate, planKey } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 import {
@@ -144,6 +144,22 @@ function villaRatesForStay() {
   return [{ name: context.room.name, rate: clampMoney(context.room.rate) }];
 }
 
+// The booking type this stay is on, and the supplement it is charged at.
+// Both come off the linked reservation when there is one, for the same
+// reason its villa rates do: that is what the guest was quoted. A walk-in
+// has no reservation to quote, so the card fixes the rate itself, here, on
+// the day they arrive.
+function planForStay() {
+  return linkedReservation ? linkedReservation.bookingType : el("grc-meal-plan").value;
+}
+
+function planRateForStay() {
+  const plan = planForStay();
+  return linkedReservation
+    ? quotedMealPlanRate(linkedReservation, linkedReservation.branch, plan)
+    : mealPlanRateFor(appState.selectedBranch, plan);
+}
+
 // Room charge for the whole stay: every villa's nightly rate times the
 // nights. Same arithmetic the reservation uses, so the card, the
 // confirmation and the eventual invoice all say the same number.
@@ -153,8 +169,7 @@ function stayTotal(nights) {
   const rooms = villas.reduce((sum, v) => sum + v.rate * nights, 0);
   // Whatever the booking type adds, on the same terms the invoice will
   // use — one function, so the card and the bill cannot disagree.
-  const plan = linkedReservation ? linkedReservation.bookingType : el("grc-meal-plan").value;
-  return rooms + mealPlanTotal(appState.selectedBranch, plan, villas.length, nights);
+  return rooms + mealPlanTotalAt(planRateForStay(), villas.length, nights);
 }
 
 function syncDerivedFields() {
@@ -177,8 +192,8 @@ function syncDerivedFields() {
   // carries a supplement it is part of that sum, so it is part of the
   // working — a line reading "8,500 × 2 nights" under a total of 22,000 is
   // a document arguing with itself.
-  const plan = linkedReservation ? linkedReservation.bookingType : el("grc-meal-plan").value;
-  const planRate = mealPlanRateFor(appState.selectedBranch, plan);
+  const plan = planForStay();
+  const planRate = planRateForStay();
   const terms = villas.map(v => `${v.name} ${fmtLKR(v.rate)} × ${nights} night${nights === 1 ? "" : "s"}`);
   if (planRate > 0) {
     terms.push(`${plan} ${fmtLKR(planRate)} × ${villas.length} villa${villas.length === 1 ? "" : "s"} × ${nights} night${nights === 1 ? "" : "s"}`);
@@ -446,6 +461,12 @@ el("grc-form").addEventListener("submit", (e) => {
     // the card came from. A walk-in has no reservation, so the meal plan
     // chosen on the card is the booking type.
     bookingType: linkedReservation ? (linkedReservation.bookingType || "") : el("grc-meal-plan").value,
+    // The supplement this card was signed at, carried forward so checkout
+    // bills the figure on the signed document rather than whatever the
+    // configuration says on the day the guest leaves. On a linked stay
+    // that figure came from the reservation, so the confirmation, the card
+    // and the invoice all quote one number for the whole chain.
+    mealPlanRate: planRateForStay(),
     adults: paxCount("grc-adults"),
     children: paxCount("grc-children"),
     kids: paxCount("grc-kids"),

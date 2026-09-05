@@ -11,8 +11,11 @@
 //      data/activities.js.
 //
 // `villa` is assigned automatically at checkout, `food` by the Orders
-// screen, and safari/transport/ticket come from the activity's own
-// category. Staff can override any line's category on the invoice form.
+// screen and by the board supplement checkout raises beside each villa
+// line, and safari/transport/ticket come from the activity's own
+// category. Staff can override any line's category on the invoice form,
+// which is the escape hatch if a particular stay's supplement should not
+// be treated as food.
 export const CHARGE_CATEGORIES = ["villa", "food", "safari", "transport", "ticket", "other"];
 
 export const CHARGE_CATEGORY_LABELS = {
@@ -88,11 +91,14 @@ export function invoiceRemark(branch) {
   // did not apply to them, and a half-board guest who ordered nothing was
   // charged nothing while the notice said otherwise.
   //
-  // The wording changed rather than the arithmetic, because the arithmetic
-  // is what has been billed for real and restating it would re-price
-  // history. If the hotel's actual policy is the old sentence — a charge
-  // on board bookings rather than on food — then it is serviceChargeFor()
-  // that needs changing, and that is a decision about money.
+  // Both halves are now true at once, and the two rules turn out to be one
+  // rule. The board supplement is billed as a `food` line, because that is
+  // what it is — the meals component of the stay, priced separately from
+  // the villa. So a half-board guest always carries at least one food line
+  // and is always charged the service charge, which is what the old
+  // sentence promised; and it is still food that is charged, never the
+  // villa, which is what the arithmetic has always done. One sentence
+  // covers both.
   return `Please note that a ${rate}% service charge is added to all food and beverage.`;
 }
 
@@ -229,14 +235,39 @@ export function setMealPlanRate(branch, bookingType, amount) {
   return clean;
 }
 
-// The whole supplement for a stay: one villa, one booking type, n nights.
-// Kept here rather than at each call site so the reservation, the
-// registration card and the invoice cannot arrive at three different
-// answers — which is exactly how this codebase has gone wrong before.
-export function mealPlanTotal(branch, bookingType, villaCount, nights) {
-  const rate = mealPlanRateFor(branch, bookingType);
-  if (!rate) return 0;
-  return rate * Math.max(0, villaCount || 0) * Math.max(0, nights || 0);
+// The supplement a stay was actually quoted at, not what it would be
+// quoted at today.
+//
+// Villa rates already snapshot onto the reservation, for a reason that
+// applies here identically: a manager raising the half-board rate from
+// 1,000 to 1,500 must not silently re-price the guests already in-house,
+// who agreed to 1,000 on a document the hotel sent them. Without the
+// snapshot, the confirmation says one figure and the invoice at checkout
+// says another, with nothing in between to explain it.
+//
+// Records written before booking-type pricing existed carry no snapshot,
+// so they fall back to the configured rate — which is what they were
+// being billed at anyway, so nothing they show changes. `null` is a real
+// snapshot of zero-was-not-recorded, hence the explicit check rather than
+// `|| mealPlanRateFor(...)`: a genuine snapshot of 0 must stay 0.
+export function quotedMealPlanRate(record, branch, bookingType) {
+  const snap = record ? record.mealPlanRate : null;
+  if (snap === null || snap === undefined || !Number.isFinite(Number(snap))) {
+    return mealPlanRateFor(branch, bookingType);
+  }
+  return Math.max(0, Number(snap));
+}
+
+// The whole supplement for a stay: n villas, n nights, at a rate already
+// decided by quotedMealPlanRate() above. Kept here rather than at each
+// call site so the registration card and the invoice cannot arrive at two
+// different answers — which is exactly how this codebase has gone wrong
+// before. It takes the rate rather than looking it up, because the rate
+// now depends on the record being priced, not only on the configuration.
+export function mealPlanTotalAt(rate, villaCount, nights) {
+  const clean = Math.max(0, Number(rate) || 0);
+  if (!clean) return 0;
+  return clean * Math.max(0, villaCount || 0) * Math.max(0, nights || 0);
 }
 export function vatRateFor(branch) {
   return Number(VAT_RATES[branch]) || 0;

@@ -10,7 +10,7 @@ import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
   isChargeCategory, bookingSourcesFor, DEFAULT_BOOKING_SOURCE,
-  mealPlanRateFor,
+  quotedMealPlanRate,
 } from "./data/charges.js";
 import { openGrcForm, reprintGrc } from "./grc.js";
 import { findGrcByBookingId } from "./data/grc.js";
@@ -840,12 +840,22 @@ function prefillInvoiceForCheckout(room) {
   // The booking type, as its own line rather than folded into the room
   // rate. A guest should be able to see what the villa cost and what the
   // meals cost; a single blended figure hides both.
+  //
+  // Categorised `food`, because that is what it is: the meals component of
+  // the stay. Two things follow, both intended — it attracts the service
+  // charge, so the printed notice about food and beverage is true for a
+  // half-board guest who never orders anything à la carte; and it reports
+  // as F&B revenue rather than inflating the room line. Staff can still
+  // recategorise the line on this form if a particular stay needs it.
+  //
+  // Rate comes off the signed card, not the configuration, so raising the
+  // supplement tomorrow does not re-price the guest checking out today.
   const card = room.bookingId ? findGrcByBookingId(room.bookingId) : null;
   const plan = card ? (card.bookingType || card.mealPlan) : null;
-  const planRate = mealPlanRateFor(branch, plan);
+  const planRate = quotedMealPlanRate(card, branch, plan);
   if (planRate > 0) {
     rooms.forEach(r => {
-      addItemRow(`${r.name} — ${plan}`, String(nights), String(planRate), String(nights * planRate), "villa");
+      addItemRow(`${r.name} — ${plan}`, String(nights), String(planRate), String(nights * planRate), "food");
     });
   }
 
