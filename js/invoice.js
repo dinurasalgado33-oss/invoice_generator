@@ -195,21 +195,29 @@ function updateLiveTotals() {
 // come from the booking and the signed registration card, and a bill
 // without them is a guest leaving without paying for their room.
 //
+// No remove button on those rows, for anyone. Two reasons, and the second
+// is the real one.
+//
 // Reception works this screen on a phone, where the ✕ sits a few
 // millimetres from the value field they are actually aiming at. One
 // mis-tap and the largest line on the bill is gone, with nothing to say it
 // was ever there — the totals simply come out lower and look plausible.
-// So staff do not get the button on those rows at all; removing a control
-// beats confirming it, since a confirm dialog at a busy desk is another
-// thing to tap through.
+// A manager's thumb is no more accurate than reception's, so gating this
+// by role would only have narrowed the window, not closed it.
 //
-// Managers keep it. Somebody has to be able to correct a villa added by
-// mistake, and the manager is who that is — the same split the rest of the
-// app already draws.
+// And deleting the line was never the right repair anyway. These lines are
+// derived from the booking, so an invoice missing one is an invoice that
+// disagrees with the stay behind it — the same one-fact-in-two-places
+// shape this codebase keeps producing. If the villa is wrong, the booking
+// is wrong, and that is what needs correcting.
+//
+// The escape hatch already exists and is better: the rate stays editable,
+// so a comped villa is billed at 0 and the line still prints, saying so.
+// That is what "nothing financial is ever deleted" means on this screen —
+// written off in the open, not made to vanish.
 export function addItemRow(desc = "", qty = "", rate = "", value = "", category = DEFAULT_CHARGE_CATEGORY, { locked = false } = {}) {
   const row = document.createElement("tr");
   const cat = isChargeCategory(category) ? category : DEFAULT_CHARGE_CATEGORY;
-  const staffLocked = locked && appState.currentRole === "staff";
   // desc/qty are set as DOM properties below, not interpolated into the
   // HTML string — escapeHtml() only neutralizes <, >, & (via textContent
   // round-tripping), not quotes, so it can't safely sit inside value="...".
@@ -222,8 +230,8 @@ export function addItemRow(desc = "", qty = "", rate = "", value = "", category 
     <td class="col-qty" data-label="Qty"><input type="text" class="item-qty" placeholder="e.g. 2 nights"></td>
     <td class="col-price" data-label="Rate (LKR)"><input type="number" class="item-rate" min="0" step="0.01" inputmode="decimal" value="${rate}"></td>
     <td class="col-total" data-label="Value"><input type="number" class="item-value" min="0" step="0.01" inputmode="decimal" value="${value}"></td>
-    <td class="col-del">${staffLocked
-      ? `<span class="row-locked" title="The room charge is part of the stay and can't be removed here" aria-label="Locked line">&#128274;</span>`
+    <td class="col-del">${locked
+      ? `<span class="row-locked" title="This comes from the booking. To take it off the bill, set the rate to 0 — the line still prints, showing it was comped." aria-label="Locked line">&#128274;</span>`
       : `<button type="button" class="row-del-btn" title="Remove item">✕</button>`}</td>
   `;
   row.querySelector(".item-desc").value = desc;
