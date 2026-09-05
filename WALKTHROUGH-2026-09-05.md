@@ -86,10 +86,10 @@ command and it is your call:
 firebase deploy --only firestore:rules --project leopard-inn
 ```
 
-There is a second question underneath it, which is a business decision
-rather than a code one: **agent invoices raised on production before today
-do not exist as records.** Whether any need re-raising is not something a
-walkthrough can answer.
+**Closed 5 September 2026.** The second question underneath — whether any
+agent invoice raised on production before today needs reconstructing —
+is answered: the feature was never used on the live system, so nothing was
+lost. Numbers may have been consumed by test presses; that is harmless.
 
 ---
 

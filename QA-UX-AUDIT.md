@@ -231,7 +231,7 @@ status table. It was found by re-reading the audit section by section
 after every F-item was closed, which is the check worth repeating: a
 finding that never became a task is invisible to a list of tasks.
 
-### 5.4 The invoice PDF has a large blank middle — **Observed, still open — your call**
+### 5.4 The invoice PDF has a large blank middle — **CLOSED, decided: leave it**
 
 Signatures are pinned near the bottom of the page, so a one-line bill
 leaves roughly a third of the page empty between the totals and the
@@ -239,7 +239,13 @@ signature lines. It reads as formal rather than broken, and a signature
 block belongs at the foot of an invoice — but it is worth a deliberate
 look, since most bills here will be short.
 
-**Still open, deliberately.** The audit's own wording — "reads as formal
+**Closed 5 September 2026 — Dinura's call: leave it.** A signature block
+belongs at the foot of an invoice and the space reads as deliberate. Not to
+be raised again.
+
+Original note follows.
+
+**Was open, deliberately.** The audit's own wording — "reads as formal
 rather than broken", "a signature block belongs at the foot of an invoice"
 — makes this a judgement about how the hotel wants its bills to look, not
 a defect. It is also the one document a guest signs, so it should not be
