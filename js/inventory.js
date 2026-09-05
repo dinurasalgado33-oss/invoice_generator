@@ -17,8 +17,43 @@ let editingItemId = null;
 
 // Department > category > item. Everything starts collapsed so the table
 // opens short — staff drill down into only what they need.
+// Everything used to start collapsed, so the one screen whose whole purpose
+// is checking stock opened showing none of it: departments and categories
+// only, and not a single number until you tapped. Measured on the walk —
+// zero item rows visible on arrival.
+//
+// Anything low is open on arrival now, because running out is the reason
+// somebody opens this screen. The rest stays collapsed, so a hundred items
+// do not become a hundred rows to scroll past. If nothing is low, the first
+// department opens instead — an empty-looking screen is worse than a long
+// one. See WALKTHROUGH-2026-09-05 F-F.
 const collapsedDepartments = new Set(INVENTORY_DEPARTMENTS);
 const collapsedCategories = new Set(INVENTORY_CATEGORIES);
+
+// Whether the opening state has been decided for this branch yet. Once a
+// person has expanded or collapsed anything, their choice stands — this
+// must not fight them on every re-render.
+let openingStateSettledFor = null;
+
+function settleOpeningState(branch, items) {
+  if (openingStateSettledFor === branch) return;
+  openingStateSettledFor = branch;
+
+  const low = items.filter(i => i.stock < i.minStock);
+  if (low.length) {
+    low.forEach(i => {
+      collapsedCategories.delete(i.category);
+      const dept = CATEGORY_DEPARTMENT[i.category];
+      if (dept) collapsedDepartments.delete(dept);
+    });
+    return;
+  }
+  // Nothing low: open the first department that actually has something in
+  // it, so the screen says something on arrival.
+  const first = departmentsWithCategories([...new Set(items.map(i => i.category))])
+    .find(d => d.categories.length);
+  if (first) collapsedDepartments.delete(first.name);
+}
 
 // Search / low-stock filter — bypasses the department/category hierarchy
 // entirely and shows a flat, immediately-scannable list of matches.
@@ -192,6 +227,7 @@ function renderInventoryScreen() {
     // Grouped by department, rebuilt from the two flat lists rather than
     // stored. A category with no department gathers under "Other" — see
     // departmentsWithCategories().
+    settleOpeningState(appState.selectedBranch, inventory);
     const departments = departmentsWithCategories(Object.keys(groups));
 
     list.innerHTML = departments.map(dept => {

@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=199" />
-<link rel="stylesheet" href="css/brand-home.css?v=199" />
-<link rel="stylesheet" href="css/rooms.css?v=199" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=199" />
-<link rel="stylesheet" href="css/invoice.css?v=199" />
-<link rel="stylesheet" href="css/dashboard.css?v=199" />
-<link rel="stylesheet" href="css/reports.css?v=199" />
-<link rel="stylesheet" href="css/reservation.css?v=199" />
-  <link rel="stylesheet" href="css/grc.css?v=199" />
-  <link rel="stylesheet" href="css/proforma.css?v=199" />
-  <link rel="stylesheet" href="css/history.css?v=199" />
+<link rel="stylesheet" href="css/base.css?v=200" />
+<link rel="stylesheet" href="css/brand-home.css?v=200" />
+<link rel="stylesheet" href="css/rooms.css?v=200" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=200" />
+<link rel="stylesheet" href="css/invoice.css?v=200" />
+<link rel="stylesheet" href="css/dashboard.css?v=200" />
+<link rel="stylesheet" href="css/reports.css?v=200" />
+<link rel="stylesheet" href="css/reservation.css?v=200" />
+  <link rel="stylesheet" href="css/grc.css?v=200" />
+  <link rel="stylesheet" href="css/proforma.css?v=200" />
+  <link rel="stylesheet" href="css/history.css?v=200" />
 </head>
 <body>
 
@@ -1029,7 +1029,12 @@
       </div>
       <div class="bulk-restock-bar-actions">
         <button type="button" class="bulk-restock-cancel-btn" id="bulk-restock-cancel">Cancel</button>
-        <button type="button" class="primary-btn" id="bulk-restock-save" disabled>Save Restock</button>
+        <!-- "Restock All", not "Save Restock". The single-item sheet already
+             uses that exact label, and two controls reading identically is the
+             same shape as the duplicate-id bug this project has had — it cost
+             a walkthrough three failed attempts before noticing it was
+             pressing the hidden one. WALKTHROUGH-2026-09-05 F-G. -->
+        <button type="button" class="primary-btn" id="bulk-restock-save" disabled>Restock All</button>
       </div>
     </div>
   </section>
@@ -2799,6 +2804,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=199"></script>
+<script type="module" src="js/main.js?v=200"></script>
 </body>
 </html>
