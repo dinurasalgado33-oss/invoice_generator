@@ -190,9 +190,26 @@ function updateLiveTotals() {
   document.getElementById("grand-total-warning").classList.toggle("show", grandTotal < 0);
 }
 
-export function addItemRow(desc = "", qty = "", rate = "", value = "", category = DEFAULT_CHARGE_CATEGORY) {
+// `locked` marks a line the stay itself produced — the villa's room charge
+// and the board supplement beside it. Those are not typed by anyone: they
+// come from the booking and the signed registration card, and a bill
+// without them is a guest leaving without paying for their room.
+//
+// Reception works this screen on a phone, where the ✕ sits a few
+// millimetres from the value field they are actually aiming at. One
+// mis-tap and the largest line on the bill is gone, with nothing to say it
+// was ever there — the totals simply come out lower and look plausible.
+// So staff do not get the button on those rows at all; removing a control
+// beats confirming it, since a confirm dialog at a busy desk is another
+// thing to tap through.
+//
+// Managers keep it. Somebody has to be able to correct a villa added by
+// mistake, and the manager is who that is — the same split the rest of the
+// app already draws.
+export function addItemRow(desc = "", qty = "", rate = "", value = "", category = DEFAULT_CHARGE_CATEGORY, { locked = false } = {}) {
   const row = document.createElement("tr");
   const cat = isChargeCategory(category) ? category : DEFAULT_CHARGE_CATEGORY;
+  const staffLocked = locked && appState.currentRole === "staff";
   // desc/qty are set as DOM properties below, not interpolated into the
   // HTML string — escapeHtml() only neutralizes <, >, & (via textContent
   // round-tripping), not quotes, so it can't safely sit inside value="...".
@@ -205,7 +222,9 @@ export function addItemRow(desc = "", qty = "", rate = "", value = "", category 
     <td class="col-qty" data-label="Qty"><input type="text" class="item-qty" placeholder="e.g. 2 nights"></td>
     <td class="col-price" data-label="Rate (LKR)"><input type="number" class="item-rate" min="0" step="0.01" inputmode="decimal" value="${rate}"></td>
     <td class="col-total" data-label="Value"><input type="number" class="item-value" min="0" step="0.01" inputmode="decimal" value="${value}"></td>
-    <td class="col-del"><button type="button" class="row-del-btn" title="Remove item">✕</button></td>
+    <td class="col-del">${staffLocked
+      ? `<span class="row-locked" title="The room charge is part of the stay and can't be removed here" aria-label="Locked line">&#128274;</span>`
+      : `<button type="button" class="row-del-btn" title="Remove item">✕</button>`}</td>
   `;
   row.querySelector(".item-desc").value = desc;
   itemsBody.appendChild(row);
@@ -237,7 +256,9 @@ export function addItemRow(desc = "", qty = "", rate = "", value = "", category 
   rateInput.addEventListener("input", autoFillValue);
   valueInput.addEventListener("input", updateLiveTotals);
 
-  row.querySelector(".row-del-btn").addEventListener("click", () => {
+  // Absent on a locked row, so this is a query rather than an assumption.
+  const delBtn = row.querySelector(".row-del-btn");
+  if (delBtn) delBtn.addEventListener("click", () => {
     row.remove();
     renumberRows();
     updateLiveTotals();

@@ -192,6 +192,22 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 }
 .row-del-btn:active { background: rgba(179, 65, 58, 0.12); transform: scale(0.92); }
 
+/* Stands where the remove button would be on a line the stay produced, so
+   the row still reads as a row and the column keeps its width. Muted and
+   inert — it says "not yours to remove", not "press me". */
+.row-locked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.55;
+  cursor: default;
+  user-select: none;
+}
+
 .hint { font-size: 0.82rem; color: var(--text-muted); margin: -6px 0 20px; }
 
 .live-summary {

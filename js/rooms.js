@@ -855,9 +855,11 @@ function prefillInvoiceForCheckout(room) {
 
   // One room-charge line per villa, each at its own nightly rate — the
   // villas on a stay are often different sizes and prices.
+  // Locked: these come from the booking, not from anyone typing. See the
+  // note on addItemRow — staff get no remove button on them, managers do.
   rooms.forEach(r => {
     const rate = r.rate || 0;
-    addItemRow(r.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa");
+    addItemRow(r.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa", { locked: true });
   });
 
   // The booking type, as its own line rather than folded into the room
@@ -877,8 +879,12 @@ function prefillInvoiceForCheckout(room) {
   const plan = card ? (card.bookingType || card.mealPlan) : null;
   const planRate = quotedMealPlanRate(card, branch, plan);
   if (planRate > 0) {
+    // Locked with the room charge above it, and for the same reason: it is
+    // one line per villa, taken from the card the guest signed. Leaving it
+    // deletable while the villa's own line is protected would just move the
+    // mis-tap one row down.
     rooms.forEach(r => {
-      addItemRow(`${r.name} — ${plan}`, String(nights), String(planRate), String(nights * planRate), "food");
+      addItemRow(`${r.name} — ${plan}`, String(nights), String(planRate), String(nights * planRate), "food", { locked: true });
     });
   }
 
