@@ -12,6 +12,7 @@ import {
   isChargeCategory, bookingSourcesFor, DEFAULT_BOOKING_SOURCE,
 } from "./data/charges.js";
 import { openGrcForm, reprintGrc } from "./grc.js";
+import { findGrcByBookingId } from "./data/grc.js";
 import {
   addGuestCharge, openChargesFor, tabTotal, markCharged, writeOffCharges,
 } from "./data/guest-charges.js";
@@ -270,6 +271,7 @@ async function startInterimInvoice() {
   setPhone("guest-country-code", "guest-phone", room.phone);
   document.getElementById("checkin-date").value = room.checkin || "";
   document.getElementById("checkout-date").value = room.checkout || "";
+  prefillFromRegistrationCard(room);
 
   clearItems();
   charges.forEach(c => addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category));
@@ -768,6 +770,50 @@ function roomsOnStay(branch, room) {
   return rooms.length ? rooms : [room];
 }
 
+
+// Everything the invoice form asks for that this stay already answered.
+//
+// The registration card carries the guest's reservation number, voucher
+// code and head count; reception typed all three again at checkout, from a
+// card sitting one screen away. Retyping is where a bill and a card start
+// to disagree.
+//
+// The reservation number and voucher are locked when they come from a
+// reservation: they identify a document that already exists, and nothing
+// good comes of a bill quoting a different one. A walk-in has no
+// reservation, so both stay editable — a walk-in can still hand a voucher
+// over at the desk.
+function prefillFromRegistrationCard(room) {
+  const card = room.bookingId ? findGrcByBookingId(room.bookingId) : null;
+
+  const resvField = document.getElementById("reg-card-no");
+  const voucherField = document.getElementById("voucher-no");
+  const countField = document.getElementById("guest-count");
+
+  // Unlocked every time. resetForm() clears values but not this flag, so a
+  // previous guest's readonly state would otherwise survive onto the next
+  // bill and refuse to be corrected.
+  [resvField, voucherField].forEach(f => {
+    f.readOnly = false;
+    f.removeAttribute("title");
+  });
+
+  if (!card) return;
+
+  const heads = (card.adults || 0) + (card.children || 0) + (card.kids || 0);
+  if (heads > 0) countField.value = String(heads);
+
+  if (card.reservationNo) {
+    resvField.value = card.reservationNo;
+    resvField.readOnly = true;
+    resvField.title = "From the reservation this stay was checked in against";
+  }
+  if (card.voucherNo) {
+    voucherField.value = card.voucherNo;
+    voucherField.readOnly = true;
+    voucherField.title = "From the registration card";
+  }
+}
 function prefillInvoiceForCheckout(room) {
   const branch = activeRoomRef ? activeRoomRef.branch : appState.selectedBranch;
   const rooms = roomsOnStay(branch, room);
@@ -778,6 +824,7 @@ function prefillInvoiceForCheckout(room) {
   setPhone("guest-country-code", "guest-phone", room.phone);
   document.getElementById("checkin-date").value = room.checkin || "";
   document.getElementById("checkout-date").value = room.checkout || "";
+  prefillFromRegistrationCard(room);
 
   const nights = nightsBetween(room.checkin, room.checkout);
   clearItems();
