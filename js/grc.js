@@ -10,7 +10,7 @@ import { refreshReservationsList } from "./reservations.js";
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { makeStepperNavigable } from "./stepper.js";
 import { readPhone, setPhone } from "./phone-field.js";
-import { bookingSourcesFor } from "./data/charges.js";
+import { bookingSourcesFor, mealPlanTotal, mealPlanRateFor } from "./data/charges.js";
 import { queueWelcomeEmail } from "./data/guest-email.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 import {
@@ -149,7 +149,12 @@ function villaRatesForStay() {
 // confirmation and the eventual invoice all say the same number.
 function stayTotal(nights) {
   if (!nights) return 0;
-  return villaRatesForStay().reduce((sum, v) => sum + v.rate * nights, 0);
+  const villas = villaRatesForStay();
+  const rooms = villas.reduce((sum, v) => sum + v.rate * nights, 0);
+  // Whatever the booking type adds, on the same terms the invoice will
+  // use — one function, so the card and the bill cannot disagree.
+  const plan = linkedReservation ? linkedReservation.bookingType : el("grc-meal-plan").value;
+  return rooms + mealPlanTotal(appState.selectedBranch, plan, villas.length, nights);
 }
 
 function syncDerivedFields() {
@@ -168,8 +173,18 @@ function syncDerivedFields() {
   const villas = villaRatesForStay();
   const total = stayTotal(nights);
   el("grc-total-amount").value = nights ? fmtLKR(total) : "—";
+  // The working has to add up to the total beside it. When a booking type
+  // carries a supplement it is part of that sum, so it is part of the
+  // working — a line reading "8,500 × 2 nights" under a total of 22,000 is
+  // a document arguing with itself.
+  const plan = linkedReservation ? linkedReservation.bookingType : el("grc-meal-plan").value;
+  const planRate = mealPlanRateFor(appState.selectedBranch, plan);
+  const terms = villas.map(v => `${v.name} ${fmtLKR(v.rate)} × ${nights} night${nights === 1 ? "" : "s"}`);
+  if (planRate > 0) {
+    terms.push(`${plan} ${fmtLKR(planRate)} × ${villas.length} villa${villas.length === 1 ? "" : "s"} × ${nights} night${nights === 1 ? "" : "s"}`);
+  }
   el("grc-total-basis").textContent = nights
-    ? villas.map(v => `${v.name} ${fmtLKR(v.rate)} × ${nights} night${nights === 1 ? "" : "s"}`).join("  +  ")
+    ? terms.join("  +  ")
     : "Set the arrival and departure dates to work out the total.";
 }
 
@@ -405,6 +420,11 @@ el("grc-form").addEventListener("submit", (e) => {
     departureTime: val("grc-departure-time"),
     roomType: el("grc-room-type").value,
     mealPlan: el("grc-meal-plan").value,
+    // The reservation's booking type, kept beside the meal plan so the
+    // invoice can price this stay without re-deriving which reservation
+    // the card came from. A walk-in has no reservation, so the meal plan
+    // chosen on the card is the booking type.
+    bookingType: linkedReservation ? (linkedReservation.bookingType || "") : el("grc-meal-plan").value,
     adults: paxCount("grc-adults"),
     children: paxCount("grc-children"),
     kids: paxCount("grc-kids"),

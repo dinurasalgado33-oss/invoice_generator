@@ -10,6 +10,7 @@ import { ACTIVITY_RECORDS, allocateActivityRecordId, BOOKINGS, allocateBookingId
 import {
   CHARGE_CATEGORIES, CHARGE_CATEGORY_LABELS, DEFAULT_CHARGE_CATEGORY,
   isChargeCategory, bookingSourcesFor, DEFAULT_BOOKING_SOURCE,
+  mealPlanRateFor,
 } from "./data/charges.js";
 import { openGrcForm, reprintGrc } from "./grc.js";
 import { findGrcByBookingId } from "./data/grc.js";
@@ -835,6 +836,18 @@ function prefillInvoiceForCheckout(room) {
     const rate = r.rate || 0;
     addItemRow(r.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa");
   });
+
+  // The booking type, as its own line rather than folded into the room
+  // rate. A guest should be able to see what the villa cost and what the
+  // meals cost; a single blended figure hides both.
+  const card = room.bookingId ? findGrcByBookingId(room.bookingId) : null;
+  const plan = card ? (card.bookingType || card.mealPlan) : null;
+  const planRate = mealPlanRateFor(branch, plan);
+  if (planRate > 0) {
+    rooms.forEach(r => {
+      addItemRow(`${r.name} — ${plan}`, String(nights), String(planRate), String(nights * planRate), "villa");
+    });
+  }
 
   // Food orders and activity charges placed during the stay ride along
   // onto the same invoice, each keeping the category it was charged under.

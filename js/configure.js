@@ -8,6 +8,7 @@ import {
   serviceChargeRateFor, setServiceChargeRate, invoiceRemark,
   vatRateFor, setVatRate,
   bookingSourcesFor, setBookingSources, CURRENCIES, setCurrencies,
+  PAID_BOOKING_TYPES, mealPlanRateFor, setMealPlanRate, MEAL_PLAN_RATES,
 } from "./data/charges.js";
 import { standardTimesFor, setStandardTimes, liabilityNoticeFor, setLiabilityNotice } from "./data/grc.js";
 import { saveConfig, saveShared, CONFIG_KINDS, villaConfig } from "./data/config-store.js";
@@ -121,10 +122,71 @@ document.getElementById("open-configure-btn").addEventListener("click", () => {
   showScreen("screen-configure");
 });
 
+
+// What each booking type adds, per villa per night.
+//
+// Same table, same row shape and same edit sheet as the villa rates above
+// it, because it is the same kind of decision — what a night here costs —
+// and two different-looking editors for one question is how a screen stops
+// feeling like one screen.
+let editingPlanKey = null;
+
+function renderMealPlanRates() {
+  const branch = appState.selectedBranch;
+  const list = document.getElementById("configure-mealplan-list");
+
+  list.innerHTML = PAID_BOOKING_TYPES.map(t => `
+    <tr class="list-item-row">
+      <td class="list-td-name">${escapeHtml(t.label)}</td>
+      <td class="list-td-price">${fmtLKR(mealPlanRateFor(branch, t.key))}</td>
+      <td>
+        <button type="button" class="list-edit-btn" data-plan="${escapeHtml(t.key)}" aria-label="Edit ${escapeHtml(t.label)} supplement">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+        </button>
+      </td>
+    </tr>`).join("");
+
+  list.querySelectorAll(".list-edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => openMealPlanSheet(btn.dataset.plan));
+  });
+}
+
+function openMealPlanSheet(key) {
+  const type = PAID_BOOKING_TYPES.find(t => t.key === key);
+  if (!type) return;
+  editingPlanKey = key;
+  document.getElementById("cfg-mealplan-name").value = type.label;
+  document.getElementById("mealplan-rate-input").value = mealPlanRateFor(appState.selectedBranch, key);
+  document.getElementById("mealplan-rate-sheet-overlay").classList.add("open");
+}
+
+function closeMealPlanSheet() {
+  document.getElementById("mealplan-rate-sheet-overlay").classList.remove("open");
+  editingPlanKey = null;
+}
+
+document.getElementById("mealplan-rate-sheet-close").addEventListener("click", closeMealPlanSheet);
+document.getElementById("mealplan-rate-sheet-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "mealplan-rate-sheet-overlay") closeMealPlanSheet();
+});
+
+document.getElementById("mealplan-rate-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (editingPlanKey === null) return;
+  const branch = appState.selectedBranch;
+  setMealPlanRate(branch, editingPlanKey, document.getElementById("mealplan-rate-input").value);
+  // The whole map for this property in one document, like every other
+  // config here — an edit cannot half-apply.
+  saveConfig(branch, CONFIG_KINDS.MEAL_PLAN_RATES, MEAL_PLAN_RATES[branch] || {});
+  closeMealPlanSheet();
+  renderMealPlanRates();
+  showToast("Supplement saved");
+});
 document.getElementById("open-configure-villas-btn").addEventListener("click", () => {
   setBranchLabel("configure-villas-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("configure-villas-logo", appState.selectedBranchLogo);
   renderVillaList();
+  renderMealPlanRates();
   showScreen("screen-configure-villas");
 });
 

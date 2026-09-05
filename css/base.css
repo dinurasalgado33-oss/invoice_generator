@@ -1331,3 +1331,4 @@ input[readonly]:focus { box-shadow: none; border-color: var(--border); backgroun
    minimum the rest of the app keeps to. WALKTHROUGH-2026-09-04 F-C. */
 #login-reset-btn { min-height: 44px; }
 #cfg-invoice-goto-charges { min-height: 44px; }
+

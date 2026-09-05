@@ -40,6 +40,8 @@ export const CONFIG_KINDS = {
   NOTICES: "notices",
   INVENTORY: "inventory",
   VAT: "vat",
+  // Per-booking-type supplements, per property.
+  MEAL_PLAN_RATES: "mealPlanRates",
   SERVICE_CHARGE: "serviceCharge",
   TIMES: "times",
   LIABILITY: "liability",
@@ -267,7 +269,7 @@ export async function hydrateConfig(branches) {
   const { ROOMS_BY_BRANCH } = await import("./rooms.js");
   const { ACTIVITIES_BY_BRANCH } = await import("./activities.js");
   const { BRANCH_INFO, RESERVATION_CONDITIONS, CANCELLATION_POLICY, PROFORMA_NOTICES } = await import("./branches.js");
-  const { setServiceChargeRate, setVatRate, setBookingSources, setCurrencies } = await import("./charges.js");
+  const { setServiceChargeRate, setVatRate, setBookingSources, setCurrencies, setMealPlanRate, PAID_BOOKING_TYPES } = await import("./charges.js");
   const { setStandardTimes, setLiabilityNotice } = await import("./grc.js");
   const { INVENTORY_BY_BRANCH, applyInventoryConfig, INVENTORY_CATEGORIES, INVENTORY_UNITS, USAGE_REASONS,
           INVENTORY_DEPARTMENTS, applyCategoryDepartments } = await import("./inventory.js");
@@ -276,7 +278,7 @@ export async function hydrateConfig(branches) {
 
   const loaded = [];
   for (const branch of branches) {
-    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability, boardMenu] =
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability, boardMenu, mealPlanRates] =
       await Promise.all([
         loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
@@ -291,6 +293,7 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.BOOKING_SOURCES).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.LIABILITY).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.BOARD_MENU).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.MEAL_PLAN_RATES).catch(() => undefined),
       ]);
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
@@ -308,6 +311,14 @@ export async function hydrateConfig(branches) {
     }
     if (serviceCharge !== undefined) { setServiceChargeRate(branch, serviceCharge); loaded.push(branch + ":serviceCharge"); }
     if (vat !== undefined) { setVatRate(branch, vat); loaded.push(branch + ":vat"); }
+    if (mealPlanRates && typeof mealPlanRates === "object") {
+      // Only the types that exist today. A stored rate for a booking
+      // type since removed should not resurrect it.
+      PAID_BOOKING_TYPES.forEach(t => {
+        if (mealPlanRates[t.key] !== undefined) setMealPlanRate(branch, t.key, mealPlanRates[t.key]);
+      });
+      loaded.push(branch + ":mealPlanRates");
+    }
     if (times && times.checkin) { setStandardTimes(branch, times.checkin, times.checkout); loaded.push(branch + ":times"); }
     if (Array.isArray(sources) && sources.length) { setBookingSources(branch, sources); loaded.push(branch + ":sources"); }
     if (typeof liability === "string" && liability) { setLiabilityNotice(branch, liability); loaded.push(branch + ":liability"); }

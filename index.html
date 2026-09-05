@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=202" />
-<link rel="stylesheet" href="css/brand-home.css?v=202" />
-<link rel="stylesheet" href="css/rooms.css?v=202" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=202" />
-<link rel="stylesheet" href="css/invoice.css?v=202" />
-<link rel="stylesheet" href="css/dashboard.css?v=202" />
-<link rel="stylesheet" href="css/reports.css?v=202" />
-<link rel="stylesheet" href="css/reservation.css?v=202" />
-  <link rel="stylesheet" href="css/grc.css?v=202" />
-  <link rel="stylesheet" href="css/proforma.css?v=202" />
-  <link rel="stylesheet" href="css/history.css?v=202" />
+<link rel="stylesheet" href="css/base.css?v=207" />
+<link rel="stylesheet" href="css/brand-home.css?v=207" />
+<link rel="stylesheet" href="css/rooms.css?v=207" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=207" />
+<link rel="stylesheet" href="css/invoice.css?v=207" />
+<link rel="stylesheet" href="css/dashboard.css?v=207" />
+<link rel="stylesheet" href="css/reports.css?v=207" />
+<link rel="stylesheet" href="css/reservation.css?v=207" />
+  <link rel="stylesheet" href="css/grc.css?v=207" />
+  <link rel="stylesheet" href="css/proforma.css?v=207" />
+  <link rel="stylesheet" href="css/history.css?v=207" />
 </head>
 <body>
 
@@ -842,10 +842,55 @@
           <tbody id="configure-villas-list"><!-- villa rows injected by JS --></tbody>
         </table>
       </div>
+
+      <label class="group-title">Booking type supplements</label>
+      <p class="step-subtext">Added per villa, per night, on top of the villa rate. Villa Only adds nothing — it is the villa on its own.</p>
+      <div class="list-table-wrap">
+        <table class="list-table" id="configure-mealplan-table">
+          <thead>
+            <tr>
+              <th>Booking Type</th>
+              <th>Added / Night</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="configure-mealplan-list"><!-- rows injected by JS --></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
   <!-- Villa rate edit sheet -->
+  <!-- Same shape as the villa rate sheet above it. A supplement is the same
+       kind of decision as a nightly rate, so it is edited the same way. -->
+  <div class="room-detail-overlay" id="mealplan-rate-sheet-overlay">
+    <div class="room-detail-sheet" id="mealplan-rate-sheet" role="dialog" aria-modal="true">
+      <div class="room-detail-handle"></div>
+      <div class="room-detail-header">
+        <h3 id="mealplan-rate-sheet-title">Edit Supplement</h3>
+        <button type="button" class="sheet-icon-btn" id="mealplan-rate-sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="room-detail-body">
+        <form id="mealplan-rate-form">
+          <div class="field">
+            <label for="cfg-mealplan-name">Booking Type</label>
+            <input type="text" id="cfg-mealplan-name" readonly />
+          </div>
+          <div class="field">
+            <label for="mealplan-rate-input">Added per Villa, per Night (LKR)</label>
+            <input type="number" id="mealplan-rate-input" min="0" step="50" inputmode="decimal" required enterkeyhint="done" />
+          </div>
+          <button type="submit" class="primary-btn big">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+            Save Supplement
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div class="room-detail-overlay" id="villa-rate-sheet-overlay">
     <div class="room-detail-sheet" id="villa-rate-sheet" role="dialog" aria-modal="true">
       <div class="room-detail-handle"></div>
@@ -2804,6 +2849,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=202"></script>
+<script type="module" src="js/main.js?v=207"></script>
 </body>
 </html>

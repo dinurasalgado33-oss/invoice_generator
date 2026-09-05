@@ -160,6 +160,71 @@ export const VAT_RATES = {
   "Arugam Bay": 0,
 };
 
+// What a booking type costs on top of the villa, per villa per night.
+//
+// A villa rate buys the villa. Bed & Breakfast, Half Board and Full Board
+// each add meals to that, and the hotel charges for them — so the
+// supplement is a nightly amount added beside the room line rather than
+// folded into it, which keeps the bill legible: the guest can see what the
+// villa cost and what the meals cost.
+//
+// Villa Only is not listed because it is the absence of a supplement, not a
+// supplement of zero. mealPlanRateFor() returns 0 for anything it does not
+// know, which covers it and every future type somebody adds before setting
+// a price.
+//
+// Per property: the two hotels feed guests differently and one may charge
+// for breakfast where the other includes it.
+export const BOOKING_TYPES = [
+  { key: "Villa Only", label: "Villa Only" },
+  { key: "BB", label: "BB (Bed & Breakfast)" },
+  { key: "HB", label: "HB (Half Board)" },
+  { key: "FB", label: "FB (Full Board)" },
+];
+
+// The types that carry a price. Villa Only never does.
+export const PAID_BOOKING_TYPES = BOOKING_TYPES.filter(t => t.key !== "Villa Only");
+
+export const MEAL_PLAN_RATES = {
+  "Wilpattu":   { BB: 1000, HB: 1000, FB: 1000 },
+  "Arugam Bay": { BB: 1000, HB: 1000, FB: 1000 },
+};
+
+// The same plan is written two ways in this app: a reservation's booking
+// type is "BB", and the registration card's meal plan list — which is
+// configurable, so a manager may have typed either — says "B/B". They mean
+// one thing and must price the same, so the key is normalised rather than
+// the two lists being forcibly merged, which would rewrite cards already
+// signed. "Villa Only" and "R/O" both normalise to something with no rate,
+// which is correct: they are the villa on its own.
+function planKey(bookingType) {
+  return String(bookingType || "").replace(/[^a-z]/gi, "").toUpperCase();
+}
+
+export function mealPlanRateFor(branch, bookingType) {
+  const forBranch = MEAL_PLAN_RATES[branch] || {};
+  const wanted = planKey(bookingType);
+  if (!wanted) return 0;
+  const match = Object.keys(forBranch).find(k => planKey(k) === wanted);
+  return match ? (Number(forBranch[match]) || 0) : 0;
+}
+
+export function setMealPlanRate(branch, bookingType, amount) {
+  if (!MEAL_PLAN_RATES[branch]) MEAL_PLAN_RATES[branch] = {};
+  const clean = Math.max(0, Number(amount) || 0);
+  MEAL_PLAN_RATES[branch][bookingType] = clean;
+  return clean;
+}
+
+// The whole supplement for a stay: one villa, one booking type, n nights.
+// Kept here rather than at each call site so the reservation, the
+// registration card and the invoice cannot arrive at three different
+// answers — which is exactly how this codebase has gone wrong before.
+export function mealPlanTotal(branch, bookingType, villaCount, nights) {
+  const rate = mealPlanRateFor(branch, bookingType);
+  if (!rate) return 0;
+  return rate * Math.max(0, villaCount || 0) * Math.max(0, nights || 0);
+}
 export function vatRateFor(branch) {
   return Number(VAT_RATES[branch]) || 0;
 }
