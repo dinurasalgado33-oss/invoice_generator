@@ -488,8 +488,14 @@ function startWalkinInvoice(order) {
   resetForm();
   setCheckoutContext({ roomId: null, bookingId: null, source: "Walk-in", walkin: true });
   clearItems();
+  // Stamped with the sitting, exactly as a resident's line is. This path
+  // does not run through chargeRoom() — a walk-in has no room — so it was
+  // getting the bare dish name, and the same juice read "Papaya Juice —
+  // 07 Sept, Lunch" on one bill and "Papaya Juice" on the next.
+  const eatenOn = String(order.createdAt || "").slice(0, 10) || todayISO();
   order.items.forEach(item => {
-    addItemRow(item.name, String(item.qty), String(item.price), String(item.qty * item.price), "food");
+    const desc = order.meal ? `${item.name} — ${mealStamp(eatenOn, order.meal)}` : item.name;
+    addItemRow(desc, String(item.qty), String(item.price), String(item.qty * item.price), "food");
   });
   showToast(`Walk-in order ready to bill — ${fmtLKR(order.total)}`);
   showScreen("screen-form");
