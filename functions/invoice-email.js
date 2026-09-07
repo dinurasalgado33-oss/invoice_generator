@@ -56,17 +56,30 @@ function buildHtml(row) {
   const phone = BRANCH_PHONES[row.branch] || "";
   const first = String(row.guestName || "").trim().split(/\s+/)[0] || "there";
 
+  // A guest now receives two of these a few days apart — the villa on
+  // arrival, what they consumed on departure. Worded identically they
+  // would read as the same bill sent twice, so each says which it is and
+  // what happens next.
+  //
   // An interim bill is a running total mid-stay. Thanking somebody for
   // their stay while they are still in the villa reads as being shown the
-  // door.
+  // door, and the same is true of the villa invoice — it arrives as they
+  // walk in.
+  const isVilla = row.kind === "villa";
   const closing = row.interim
     ? "Nothing is due yet — this is just where your bill stands so far."
-    : "Thank you for staying with us. We hope to welcome you back.";
+    : isVilla
+      ? "Anything you order during your stay is billed separately when you leave. Enjoy your stay."
+      : "Thank you for staying with us. We hope to welcome you back.";
+
+  const opening = row.interim ? "Your bill so far"
+    : isVilla ? "Your villa invoice"
+    : "Your invoice for food and activities";
 
   return `<!doctype html>
 <html><body style="margin:0;padding:24px;font-family:Georgia,'Times New Roman',serif;color:#2b2b2b;line-height:1.5">
   <p>Dear ${escapeHtml(first)},</p>
-  <p>${row.interim ? "Your bill so far" : "Your invoice"} ${escapeHtml(row.invoiceNo || "")} is attached, for ${escapeHtml(money(row.grandTotal, row.currency))}.</p>
+  <p>${escapeHtml(opening)} ${escapeHtml(row.invoiceNo || "")} is attached, for ${escapeHtml(money(row.grandTotal, row.currency))}.</p>
   <p>${escapeHtml(closing)}</p>
   ${phone ? `<p>Any question about this bill, just call reception on ${escapeHtml(phone)}.</p>` : ""}
   <p>${escapeHtml(label)}</p>
@@ -122,7 +135,11 @@ exports.sendInvoiceEmail = onDocumentCreated(
         to: row.email,
         subject: row.interim
           ? `Your bill so far — ${label}`
-          : `Your invoice ${row.invoiceNo || ""} — ${label}`,
+          : row.kind === "villa"
+            ? `Your villa invoice ${row.invoiceNo || ""} — ${label}`
+            : row.kind === "charges"
+              ? `Your food & activities invoice ${row.invoiceNo || ""} — ${label}`
+              : `Your invoice ${row.invoiceNo || ""} — ${label}`,
         html: buildHtml(row),
         attachments: [{ filename: fileName, content: row.pdf, encoding: "base64", contentType: "application/pdf" }],
       });

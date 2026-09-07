@@ -59,6 +59,11 @@ export function queueInvoiceEmail({ invoice, pdfBase64, bookingId }) {
     // An interim bill is a running total mid-stay, not the final word, so
     // it is marked — the guest should not read it as "you are done".
     interim: Boolean(invoice.interim),
+    // Which of the stay's two documents this is: "villa" on arrival,
+    // "charges" on departure. A guest now receives two e-mails a few days
+    // apart, and without this they would arrive worded identically — the
+    // second one reading as though the first had been sent twice.
+    kind: invoice.kind || null,
     status: email && pdfBase64 ? EMAIL_STATUS.QUEUED : EMAIL_STATUS.SKIPPED,
     pdf: pdfBase64 || "",
     queuedAt: new Date().toISOString(),

@@ -1,6 +1,6 @@
 import { appState } from "./state.js";
 import { setPhone } from "./phone-field.js";
-import { showScreen } from "./navigation.js";
+import { showScreen, onScreenEnter } from "./navigation.js";
 import { escapeHtml, formatDate, fmtLKR, nightsBetween, showToast, todayISO, orDash, toDateISO, clampMoney } from "./utils.js";
 import { ROOMS_BY_BRANCH, ROOM_STATUS_LABELS, logRoomActivity } from "./data/rooms.js";
 import { ACTIVITIES_BY_BRANCH, clampHotelIncome } from "./data/activities.js";
@@ -187,6 +187,10 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
           Registration Card
         </button>
+        <button type="button" class="secondary-btn" id="villa-invoice-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
+          Villa Invoice
+        </button>
         <button type="button" class="primary-btn big" id="check-out-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
@@ -199,6 +203,7 @@ function renderRoomDetailBody() {
         <button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
+      document.getElementById("villa-invoice-btn").addEventListener("click", raiseVillaInvoiceForRoom);
       document.getElementById("cancel-checkin-btn").addEventListener("click", cancelCheckIn);
       const releaseBtn = document.getElementById("release-villa-btn");
       if (releaseBtn) releaseBtn.addEventListener("click", releaseVilla);
@@ -769,15 +774,88 @@ function showNewBookingForm() {
       if (rooms.length > 1) {
         showToast(`${card.guestName} checked into ${rooms.length} villas`);
       }
+
+      // The villa invoice is raised next, from the card preview that is
+      // about to open. Held as the villa staff started from — the stay's
+      // other villas come back out of the booking when the invoice is
+      // built, so one bill still covers the whole party.
+      pendingVillaInvoice = { branch, roomId: room.id };
+
       rerenderRooms();
       return booking.id;
     },
   });
 }
 
-function startCheckout() {
+// The stay just checked in, waiting for its villa invoice to be raised.
+// Set as the booking is created and read once, by the registration card
+// preview that opens immediately afterwards.
+let pendingVillaInvoice = null;
+
+// Read and consumed on the way in, so the button appears on the card that
+// has just been filled in and not on a reprint of one from last week —
+// where the invoice was raised long ago and offering to raise it again
+// would invite a duplicate bill.
+onScreenEnter("screen-grc-preview", () => {
+  const btn = document.getElementById("grc-villa-invoice-btn");
+  if (!btn) return;
+  btn.hidden = !pendingVillaInvoice;
+});
+
+document.getElementById("grc-villa-invoice-btn").addEventListener("click", () => {
+  const pending = pendingVillaInvoice;
+  pendingVillaInvoice = null;
+  if (!pending) return;
+  const room = (ROOMS_BY_BRANCH[pending.branch] || []).find(r => r.id === pending.roomId);
+  if (!room || !room.bookingId) {
+    showToast("That stay is no longer open");
+    return;
+  }
+  prefillVillaInvoiceForCheckIn(pending.branch, room);
+  showScreen("screen-form");
+});
+
+// Raising the villa invoice later: the manager pressed Done on the card, or
+// voided the first one and needs another. Reached from the villa itself,
+// which is where somebody looking for a stay's paperwork already goes.
+function raiseVillaInvoiceForRoom() {
   const room = getActiveRoom();
-  checkoutRoomRef = { branch: activeRoomRef.branch, roomId: room.id };
+  const branch = activeRoomRef.branch;
+  closeRoomDetail();
+  prefillVillaInvoiceForCheckIn(branch, room);
+  showScreen("screen-form");
+}
+
+async function startCheckout() {
+  const room = getActiveRoom();
+  const branch = activeRoomRef.branch;
+  const charges = openChargesFor(room.bookingId);
+
+  // A guest who ordered nothing has nothing left to bill: their villa was
+  // invoiced when they arrived. Sending reception to an invoice form with
+  // no lines on it would either produce a zero-value document or, worse,
+  // invite somebody to type one — so the stay simply closes.
+  //
+  // Said out loud rather than done silently, because "Check Out" leading
+  // straight back to the room map with no paperwork is exactly the kind of
+  // thing that reads as a failed tap.
+  if (!charges.length) {
+    const ok = await confirmAction({
+      title: "Check out with no bill?",
+      message: `${room.guest} has nothing on their tab — no food and no activities. Their villa was invoiced at check-in, so there is nothing left to charge. Check them out?`,
+      confirmLabel: "Check Out",
+      tone: "safe",
+    });
+    if (!ok) return;
+
+    closeRoomDetail();
+    closeStay(branch, room, null);
+    showToast(`${room.name} checked out — nothing to bill`);
+    rerenderRooms();
+    return;
+  }
+
+  checkoutRoomRef = { branch, roomId: room.id };
   closeRoomDetail();
   prefillInvoiceForCheckout(room);
   showScreen("screen-form");
@@ -838,12 +916,25 @@ function prefillFromRegistrationCard(room) {
     voucherField.title = "From the registration card";
   }
 }
-function prefillInvoiceForCheckout(room) {
-  const branch = activeRoomRef ? activeRoomRef.branch : appState.selectedBranch;
+// The stay's own bill, raised on arrival: the villa and whatever the
+// booking type adds, and nothing else. The guest gets this by e-mail
+// before they have ordered so much as a coffee.
+//
+// It is billed for the nights the booking says, so it commits to the stay
+// before the stay has happened. A guest who leaves early or extends means
+// this document is wrong, and the answer is to void it and raise another —
+// which is a manager's job, and check-in is a manager's job, so the person
+// who can fix it is the person who was already standing there.
+export function prefillVillaInvoiceForCheckIn(branch, room) {
   const rooms = roomsOnStay(branch, room);
 
   resetForm();
-  setCheckoutContext({ roomId: room.id, bookingId: room.bookingId ?? null, source: room.source ?? null });
+  setCheckoutContext({
+    roomId: room.id,
+    bookingId: room.bookingId ?? null,
+    source: room.source ?? null,
+    kind: "villa",
+  });
   document.getElementById("guest-name").value = room.guest || "";
   setPhone("guest-country-code", "guest-phone", room.phone);
   document.getElementById("checkin-date").value = room.checkin || "";
@@ -852,11 +943,16 @@ function prefillInvoiceForCheckout(room) {
 
   const nights = nightsBetween(room.checkin, room.checkout);
   clearItems();
+  addStayLines(branch, room, rooms, nights);
+}
 
+// The villa and board lines, shared by the check-in invoice and by nothing
+// else. Kept as one function because the two of them have to move together
+// — a stay billed for the room without its meal plan, or the other way
+// round, is the disagreement this codebase keeps producing.
+function addStayLines(branch, room, rooms, nights) {
   // One room-charge line per villa, each at its own nightly rate — the
   // villas on a stay are often different sizes and prices.
-  // Locked: these come from the booking, not from anyone typing. See the
-  // note on addItemRow — staff get no remove button on them, managers do.
   rooms.forEach(r => {
     const rate = r.rate || 0;
     addItemRow(r.name + " — Room Charge", String(nights), String(rate), String(nights * rate), "villa", { locked: true });
@@ -866,32 +962,49 @@ function prefillInvoiceForCheckout(room) {
   // rate. A guest should be able to see what the villa cost and what the
   // meals cost; a single blended figure hides both.
   //
-  // Categorised `food`, because that is what it is: the meals component of
-  // the stay. Two things follow, both intended — it attracts the service
-  // charge, so the printed notice about food and beverage is true for a
-  // half-board guest who never orders anything à la carte; and it reports
-  // as F&B revenue rather than inflating the room line. Staff can still
-  // recategorise the line on this form if a particular stay needs it.
-  //
-  // Rate comes off the signed card, not the configuration, so raising the
-  // supplement tomorrow does not re-price the guest checking out today.
+  // Still categorised `food`, so it still attracts the service charge and
+  // still reports as F&B — the split moved which document it prints on,
+  // not what kind of money it is.
   const card = room.bookingId ? findGrcByBookingId(room.bookingId) : null;
   const plan = card ? (card.bookingType || card.mealPlan) : null;
   const planRate = quotedMealPlanRate(card, branch, plan);
   if (planRate > 0) {
-    // Locked with the room charge above it, and for the same reason: it is
-    // one line per villa, taken from the card the guest signed. Leaving it
-    // deletable while the villa's own line is protected would just move the
-    // mis-tap one row down.
     rooms.forEach(r => {
       addItemRow(`${r.name} — ${plan}`, String(nights), String(planRate), String(nights * planRate), "food", { locked: true });
     });
   }
+}
 
-  // Food orders and activity charges placed during the stay ride along
-  // onto the same invoice, each keeping the category it was charged under.
-  // One read for the whole stay — they are the party's charges, not any
-  // one villa's, so no sweeping across villas and no risk of missing one.
+// Checkout bills what the guest consumed, and nothing else — the villa was
+// invoiced on arrival. If they consumed nothing there is no second
+// document at all; see the empty-tab path in the Check Out handler.
+function prefillInvoiceForCheckout(room) {
+  const branch = activeRoomRef ? activeRoomRef.branch : appState.selectedBranch;
+
+  resetForm();
+  setCheckoutContext({
+    roomId: room.id,
+    bookingId: room.bookingId ?? null,
+    source: room.source ?? null,
+    kind: "charges",
+  });
+  document.getElementById("guest-name").value = room.guest || "";
+  setPhone("guest-country-code", "guest-phone", room.phone);
+  document.getElementById("checkin-date").value = room.checkin || "";
+  document.getElementById("checkout-date").value = room.checkout || "";
+  prefillFromRegistrationCard(room);
+
+  clearItems();
+
+  // One room-charge line per villa, each at its own nightly rate — the
+  // villas on a stay are often different sizes and prices.
+  // Food orders and activity charges placed during the stay. One read for
+  // the whole stay — they are the party's charges, not any one villa's, so
+  // no sweeping across villas and no risk of missing one.
+  //
+  // No room charge and no board supplement here any more: both were billed
+  // on the villa invoice when the guest arrived. Billing them again at
+  // checkout would charge the stay twice.
   openChargesFor(room.bookingId).forEach(c => {
     addItemRow(c.desc, c.qty, String(c.rate), String(c.value), c.category);
   });
@@ -929,9 +1042,14 @@ onAfterGenerate((record) => {
     // The interim branch above has always carried a guard of this shape;
     // this one never did. Matching on the stay rather than only the villa,
     // because a villa can be re-let the same day.
+    // `kind === "villa"` is the arrival invoice, raised while the guest is
+    // moving in. Without this it would satisfy every other test here — same
+    // villa, same booking, not interim, not a walk-in — and check the guest
+    // out of the room they had just been given.
     const isThisCheckout = Boolean(room) && Boolean(record)
       && !record.interim
       && !record.walkin
+      && record.kind !== "villa"
       && record.roomId === checkoutRoomRef.roomId
       && (record.bookingId ?? null) === (room.bookingId ?? null);
 
@@ -939,28 +1057,41 @@ onAfterGenerate((record) => {
     // checkout was abandoned, so the pending reference is stale.
     if (!isThisCheckout) { checkoutRoomRef = null; return; }
 
-    const booking = BOOKINGS.find(b => b.id === room.bookingId);
-    if (booking) update(COLLECTIONS.BOOKINGS, booking, { status: "Checked Out" });
-
-    // Frees every villa on the stay. The invoice just billed all of them,
-    // so leaving the others occupied would strand them with no bill left
-    // to raise.
-    // The invoice just carried the whole tab, so those charges are settled.
-    markCharged(openChargesFor(room.bookingId), record && record.id);
-
-    roomsOnStay(checkoutRoomRef.branch, room).forEach(r => {
-      logRoomActivity(checkoutRoomRef.branch, r, r.guest, "Check Out");
-      r.status = "available";
-      delete r.guest;
-      delete r.phone;
-      delete r.checkin;
-      delete r.checkout;
-      delete r.source;
-      delete r.bookingId;
-    });
+    closeStay(checkoutRoomRef.branch, room, record && record.id);
     checkoutRoomRef = null;
   }
 });
+
+// Ends a stay: the booking is closed, whatever is left on the tab is
+// settled against the bill that just paid for it, and every villa the
+// party held goes back on the market.
+//
+// Extracted from the checkout callback because a stay can now end without
+// producing an invoice at all — a guest who ordered nothing has nothing to
+// bill at checkout, their villa having been invoiced on arrival. Both
+// paths have to free the villas identically, and the way to guarantee that
+// is for there to be one of them.
+function closeStay(branch, room, invoiceId) {
+  const booking = BOOKINGS.find(b => b.id === room.bookingId);
+  if (booking) update(COLLECTIONS.BOOKINGS, booking, { status: "Checked Out" });
+
+  // Anything still open is settled by the bill just raised. On the
+  // nothing-to-bill path there is nothing here to mark, which is the point.
+  markCharged(openChargesFor(room.bookingId), invoiceId || null);
+
+  // Frees every villa on the stay, not just the one on screen — leaving the
+  // others occupied would strand them with no bill left to raise.
+  roomsOnStay(branch, room).forEach(r => {
+    logRoomActivity(branch, r, r.guest, "Check Out");
+    r.status = "available";
+    delete r.guest;
+    delete r.phone;
+    delete r.checkin;
+    delete r.checkout;
+    delete r.source;
+    delete r.bookingId;
+  });
+}
 
 document.getElementById("rooms-filter-clear").addEventListener("click", () => renderRooms(null, null));
 

@@ -32,6 +32,19 @@ let isSubmitting = false;
 // Which stay this invoice is billing, set by rooms.js when a checkout
 // prefills the form. Stamped onto the INVOICES row so a bill can be traced
 // back to its villa and booking instead of only matching on guest name.
+//
+// `kind` says which of a stay's two documents this is:
+//
+//   "villa"   — raised at check-in: the room charge and the board
+//               supplement, e-mailed to the guest on arrival.
+//   "charges" — raised at checkout: the food and activities they ran up
+//               during the stay.
+//
+// A stay produces both, in that order, and they are separate documents
+// because that is how the hotel wants to bill. Rows written before the
+// split carry no `kind` at all and are combined bills — Reports has to
+// keep reading them, so the absence of the field is meaningful and must
+// not be defaulted away.
 let checkoutContext = null;
 export function setCheckoutContext(ctx) {
   checkoutContext = ctx;
@@ -666,6 +679,9 @@ document.getElementById("invoice-form").addEventListener("submit", (e) => {
     source: checkoutContext && checkoutContext.source ? checkoutContext.source : null,
     interim: Boolean(checkoutContext && checkoutContext.interim),
     walkin: Boolean(checkoutContext && checkoutContext.walkin),
+    // null rather than a default, so a pre-split combined bill stays
+    // distinguishable from a post-split one. See setCheckoutContext.
+    kind: (checkoutContext && checkoutContext.kind) || null,
     guest: val("guest-name") || "-",
     branch: appState.selectedBranch,
     date: document.getElementById("inv-date").value,

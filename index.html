@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=217" />
-<link rel="stylesheet" href="css/brand-home.css?v=217" />
-<link rel="stylesheet" href="css/rooms.css?v=217" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=217" />
-<link rel="stylesheet" href="css/invoice.css?v=217" />
-<link rel="stylesheet" href="css/dashboard.css?v=217" />
-<link rel="stylesheet" href="css/reports.css?v=217" />
-<link rel="stylesheet" href="css/reservation.css?v=217" />
-  <link rel="stylesheet" href="css/grc.css?v=217" />
-  <link rel="stylesheet" href="css/proforma.css?v=217" />
-  <link rel="stylesheet" href="css/history.css?v=217" />
+<link rel="stylesheet" href="css/base.css?v=218" />
+<link rel="stylesheet" href="css/brand-home.css?v=218" />
+<link rel="stylesheet" href="css/rooms.css?v=218" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=218" />
+<link rel="stylesheet" href="css/invoice.css?v=218" />
+<link rel="stylesheet" href="css/dashboard.css?v=218" />
+<link rel="stylesheet" href="css/reports.css?v=218" />
+<link rel="stylesheet" href="css/reservation.css?v=218" />
+  <link rel="stylesheet" href="css/grc.css?v=218" />
+  <link rel="stylesheet" href="css/proforma.css?v=218" />
+  <link rel="stylesheet" href="css/history.css?v=218" />
 </head>
 <body>
 
@@ -2617,6 +2617,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
         Print Card
       </button>
+      <!-- Shown only straight after a check-in, where raising the villa
+           invoice is the next thing that happens. Hidden on a reprint,
+           when the bill was raised long ago. -->
+      <button class="action-btn" id="grc-villa-invoice-btn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
+        Villa Invoice
+      </button>
       <button class="action-btn secondary" id="grc-done-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4 12 14.01l-3-3" /></svg>
         Done
@@ -2858,6 +2865,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=217"></script>
+<script type="module" src="js/main.js?v=218"></script>
 </body>
 </html>
