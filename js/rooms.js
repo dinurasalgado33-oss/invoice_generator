@@ -22,6 +22,17 @@ import {
 import { attachSuggestions, SUGGESTION_KEYS } from "./suggestions.js";
 import { add, update, COLLECTIONS } from "./data/store.js";
 
+// The villa sheet is rebuilt from scratch each time it opens, so the
+// `data-role="manager"` gates applied once at login never reach it. Every
+// manager-only control in there is guarded through this instead.
+//
+// It hides buttons; it is not the boundary. That lives in firestore.rules,
+// where check-in, reservations and buying stock are manager-only whatever
+// the screen happens to be showing.
+function isStaffUser() {
+  return appState.currentRole === "staff";
+}
+
 let activeRoomRef = null; // { branch, index } — the villa the detail sheet is currently showing
 let checkoutRoomRef = null; // villa currently mid-checkout, reset to available once the invoice is generated
 
@@ -155,15 +166,19 @@ function renderRoomDetailBody() {
   const body = document.getElementById("room-detail-body");
 
   if (room.status === "available") {
+    // This sheet is built fresh every time it opens, so the login-time role
+    // gates never see it — the check has to happen here, at render.
     body.innerHTML = `
       <div class="room-detail-row"><span>Rate</span><span>LKR ${room.rate.toLocaleString("en-US")} / night</span></div>
       <p class="room-detail-empty">This villa is free right now.</p>
+      ${isStaffUser() ? `<p class="room-detail-empty">A manager checks guests in.</p>` : `
       <button type="button" class="primary-btn big" id="new-booking-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
         Check In Guest
-      </button>
+      </button>`}
     `;
-    document.getElementById("new-booking-btn").addEventListener("click", showNewBookingForm);
+    const newBookingBtn = document.getElementById("new-booking-btn");
+    if (newBookingBtn) newBookingBtn.addEventListener("click", showNewBookingForm);
   } else {
     // Two distinct purposes now use this same "occupied villa" sheet: the
     // Activities shortcut (charges to this room's eventual invoice,
@@ -187,10 +202,11 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
           Registration Card
         </button>
+        ${isStaffUser() ? "" : `
         <button type="button" class="secondary-btn" id="villa-invoice-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
           Villa Invoice
-        </button>
+        </button>`}
         <button type="button" class="primary-btn big" id="check-out-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
           Check Out
@@ -200,11 +216,13 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M15 20v-6H9v6" /></svg>
           Release just this villa
         </button>` : ""}
-        <button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>
+        ${isStaffUser() ? "" : `<button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>`}
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
-      document.getElementById("villa-invoice-btn").addEventListener("click", raiseVillaInvoiceForRoom);
-      document.getElementById("cancel-checkin-btn").addEventListener("click", cancelCheckIn);
+      const villaInvBtn = document.getElementById("villa-invoice-btn");
+      if (villaInvBtn) villaInvBtn.addEventListener("click", raiseVillaInvoiceForRoom);
+      const cancelBtn = document.getElementById("cancel-checkin-btn");
+      if (cancelBtn) cancelBtn.addEventListener("click", cancelCheckIn);
       const releaseBtn = document.getElementById("release-villa-btn");
       if (releaseBtn) releaseBtn.addEventListener("click", releaseVilla);
       // Reopens the signed card for this stay. Deliberately here rather
@@ -265,7 +283,10 @@ async function startInterimInvoice() {
     title: "Bill the running tab?",
     // No escapeHtml here — confirmAction sets this via textContent, so
     // escaping would render a guest like "Mr. & Mrs. Silva" as "&amp;".
-    message: `Invoice ${fmtLKR(total)} to ${room.guest} now? ${room.name} stays occupied and the tab starts fresh — the room charge is still billed at checkout.`,
+    // No longer "the room charge is still billed at checkout" — it was
+    // billed on arrival. Checkout now bills whatever is on the tab at the
+    // time, so an interim bill is the same document raised early.
+    message: `Invoice ${fmtLKR(total)} to ${room.guest} now? ${room.name} stays occupied and the tab starts fresh — anything ordered after this is billed when they leave.`,
     confirmLabel: "Create Invoice",
     tone: "safe",
   });

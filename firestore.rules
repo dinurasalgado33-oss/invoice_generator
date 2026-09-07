@@ -140,24 +140,44 @@ service cloud.firestore {
     // Registration cards carry passport and NIC numbers, so they follow
     // the same property scoping as everything else and are never deleted —
     // they are the record the law requires the hotel to keep.
+    // Checking a guest in is a manager's job, always. The guest's details
+    // arrive on a form they fill themselves and the manager enters them,
+    // raising the villa invoice in the same breath — so the person who
+    // creates the card is the person who bills for the stay, and the
+    // person who can void that bill if the stay changes.
+    //
+    // Staff still read these: reception reprints a card at the desk daily,
+    // and reading is already scoped to their own property.
     match /registrationCards/{id} {
       allow read: if mayTouchExisting();
-      allow create: if mayWriteIncoming();
-      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow create: if isManager() && mayWriteIncoming();
+      allow update: if isManager() && mayWriteIncoming() && mayTouchExisting();
       allow delete: if false;
     }
 
+    // Created only by a check-in, so manager-only to create. Updates stay
+    // open to staff for exactly one transition: closing the stay at
+    // checkout, which is theirs to do. Anything else a booking update can
+    // express — cancelling a check-in, reopening a closed stay, moving it
+    // to another property — is a manager's.
+    //
+    // Written as an allow-list of the resulting status rather than a
+    // comparison against the old one, because a rule that reasons about
+    // what changed is a rule nobody can read six months later.
     match /bookings/{id} {
       allow read: if mayTouchExisting();
-      allow create: if mayWriteIncoming();
-      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow create: if isManager() && mayWriteIncoming();
+      allow update: if mayWriteIncoming() && mayTouchExisting()
+        && (isManager() || request.resource.data.status == 'Checked Out');
       allow delete: if false;
     }
 
+    // Taking a booking is a manager's job for the same reason check-in is:
+    // it is a promise about money and a villa, made before anyone arrives.
     match /reservations/{id} {
       allow read: if mayTouchExisting();
-      allow create: if mayWriteIncoming();
-      allow update: if mayWriteIncoming() && mayTouchExisting();
+      allow create: if isManager() && mayWriteIncoming();
+      allow update: if isManager() && mayWriteIncoming() && mayTouchExisting();
       allow delete: if false;
     }
 
@@ -206,13 +226,26 @@ service cloud.firestore {
     // ---------------------------------------------------------------
     // Stock
     // ---------------------------------------------------------------
+    // Stock coming in. A restock row carries a unit cost and a total, and
+    // those feed Inventory Spend and the estimated profit — so buying
+    // stock is a manager's, along with the rest of the inventory screen.
+    //
+    // The one exception is stock going back on the shelf because a pending
+    // food order was edited or cancelled. Staff keep food orders, and that
+    // path writes a positive movement; refusing it would leave the shelf
+    // permanently short by whatever they corrected. It carries no cost, so
+    // it cannot inflate spend.
     match /restocks/{id} {
       allow read: if mayTouchExisting();
-      allow create: if mayWriteIncoming();
+      allow create: if mayWriteIncoming()
+        && (isManager() || request.resource.data.kind == 'order-return');
       allow update: if isManager() && mayTouchExisting();
       allow delete: if false;
     }
 
+    // Stock going out. Left open to staff: every completed food order
+    // deducts its ingredients, so this is a consequence of the work they
+    // do rather than a screen they visit.
     match /stockUsage/{id} {
       allow read: if mayTouchExisting();
       allow create: if mayWriteIncoming();

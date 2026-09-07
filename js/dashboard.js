@@ -98,12 +98,23 @@ async function renderDashboard(branch) {
   const monthInvoices = INVOICES.filter(inv => inv.branch === branch && inv.status === "Active" && monthKey(inv.date) === thisMonthKey);
   const revenue = monthInvoices.reduce((s, inv) => s + invoiceLKR(inv), 0);
   const invoiceCount = monthInvoices.length;
-  const avgInvoice = invoiceCount ? revenue / invoiceCount : 0;
+  // Averaged over stays, not documents. A stay raises two invoices now —
+  // the villa on arrival, food and activities on departure — so dividing
+  // by invoices roughly halved the figure and answered no question anybody
+  // asks. What a manager wants is what a stay is worth.
+  //
+  // A walk-in food sale has no booking, so it counts as its own
+  // transaction, which is what it is. Pre-split combined bills also carry
+  // a bookingId, so an old month still averages correctly.
+  const stayCount = new Set(
+    monthInvoices.map(inv => inv.bookingId || `invoice:${inv.id}`)
+  ).size;
+  const avgPerStay = stayCount ? revenue / stayCount : 0;
   const occupancy = computeMonthlyOccupancy(branch, now.getFullYear(), now.getMonth());
 
   document.getElementById("kpi-revenue").textContent = fmtLKR(revenue);
   document.getElementById("kpi-invoices").textContent = invoiceCount.toLocaleString("en-US");
-  document.getElementById("kpi-avg").textContent = fmtLKR(avgInvoice);
+  document.getElementById("kpi-avg").textContent = fmtLKR(avgPerStay);
   document.getElementById("kpi-occupancy").textContent = occupancy + "%";
   document.getElementById("dashboard-report-date").textContent = "Generated " + now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
