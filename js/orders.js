@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast, todayISO, setBranchLabel } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { MENU_ITEMS } from "./data/menu.js";
+import { MENU_ITEMS, MEAL_SERVICES, suggestedMealService } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH, logStockMovement } from "./data/inventory.js";
 import { FOOD_ORDER_RECORDS, allocateFoodOrderRecordId } from "./data/reports.js";
 import { FOOD_ORDERS, allocateOrderId } from "./data/orders.js";
@@ -209,8 +209,33 @@ function resetCreateView() {
   document.getElementById("order-room-select").disabled = false;
   document.getElementById("order-submit-label").textContent = "Place Order";
   populateRoomSelect();
+  populateMealSelect();
   renderDishList();
   updateOrderTotal();
+}
+
+// "10 Sept, Dinner" — day and month only. The year is on the invoice's own
+// date line, and a line item on a phone has no room to repeat it.
+function mealStamp(isoDate, meal) {
+  const parsed = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return meal;
+  const day = parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  return `${day}, ${meal}`;
+}
+
+// Rebuilt each time rather than filled once at load, so the suggestion
+// follows the clock: an order taken at breakfast and another at dinner on
+// the same shift should not both open on whatever the first one said.
+function populateMealSelect(selected = null) {
+  const sel = document.getElementById("order-meal-select");
+  const wanted = selected || suggestedMealService();
+  sel.innerHTML = MEAL_SERVICES
+    .map(m => `<option value="${m}" ${m === wanted ? "selected" : ""}>${m}</option>`)
+    .join("");
+  sel.value = wanted;
+  // The custom dropdown paints from the native select and has to be told
+  // the options underneath it changed.
+  sel.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 document.getElementById("order-search").addEventListener("input", (e) => {
@@ -240,6 +265,10 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
   if (!items.length) return;
 
   const total = items.reduce((s, it) => s + it.qty * it.price, 0);
+  // Whichever sitting reception confirmed. Fixed on the order rather than
+  // worked out when it is completed, because the kitchen may not finish a
+  // dinner order until after midnight and the guest ate it at dinner.
+  const mealService = document.getElementById("order-meal-select").value || "Other";
 
   const shortages = new Set();
 
@@ -251,7 +280,7 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
         const dish = MENU_ITEMS.find(d => d.id === item.dishId);
         deductIngredients(order.branch, dish, item.qty).forEach(name => shortages.add(name));
       });
-      update(COLLECTIONS.PENDING_ORDERS, order, { items, total });
+      update(COLLECTIONS.PENDING_ORDERS, order, { items, total, meal: mealService });
       showToast(shortages.size
         ? `Order updated for ${order.roomName} — ran out of ${[...shortages].join(", ")}`
         : `Order updated for ${order.roomName}`);
@@ -270,6 +299,7 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
       guestName: isWalkin ? "Walk-in customer" : room.guest,
       items,
       total,
+      meal: mealService,
       status: "pending",
       createdAt: new Date().toISOString(),
     });
@@ -300,7 +330,7 @@ function renderPendingOrdersList() {
       <div class="pending-order-top">
         <div>
           <span class="pending-order-guest">${escapeHtml(order.guestName)}</span>
-          <span class="pending-order-room">${escapeHtml(order.roomName)}</span>
+          <span class="pending-order-room">${escapeHtml(order.roomName)}${order.meal ? ` · ${escapeHtml(order.meal)}` : ""}</span>
         </div>
         <span class="pending-order-total">${fmtLKR(order.total)}</span>
       </div>
@@ -338,6 +368,10 @@ function editOrder(orderId) {
   const roomSelect = document.getElementById("order-room-select");
   roomSelect.value = String(order.roomId);
   roomSelect.disabled = true;
+  // The sitting this order was taken for, not whatever the clock says now.
+  // Correcting a breakfast order at four in the afternoon must not quietly
+  // turn it into a lunch.
+  populateMealSelect(order.meal || null);
 
   document.getElementById("order-edit-banner").style.display = "flex";
   document.getElementById("order-submit-label").textContent = "Save Changes";
@@ -388,9 +422,20 @@ async function completeOrder(orderId) {
     return;
   }
   const today = todayISO();
+  // The day the guest actually ate, which is the day the order was taken —
+  // not today. A dinner order the kitchen closes after midnight was still
+  // dinner, and still yesterday's. It differs from the record's `date`
+  // below only across midnight; that one stays as the day of sale because
+  // the revenue reports are built on it.
+  const eatenOn = String(order.createdAt || "").slice(0, 10) || today;
 
   order.items.forEach(item => {
-    if (room) chargeRoom(room, item.name, item.qty, item.price, "food");
+    // What the guest reads on their bill days later: the dish, the day,
+    // and which sitting it was. Composed here and stored on the charge, so
+    // the line is fixed at the moment it happened rather than rebuilt from
+    // whatever the order looks like afterwards.
+    const desc = order.meal ? `${item.name} — ${mealStamp(eatenOn, order.meal)}` : item.name;
+    if (room) chargeRoom(room, desc, item.qty, item.price, "food");
     add(COLLECTIONS.FOOD_ORDERS, FOOD_ORDER_RECORDS, {
       id: allocateFoodOrderRecordId(),
       dishId: item.dishId,
@@ -398,6 +443,10 @@ async function completeOrder(orderId) {
       qty: item.qty,
       branch: order.branch,
       date: today,
+      // Which sitting, kept on the sale as well as on the guest's line, so
+      // a manager can ask what breakfast costs them without reading it
+      // back out of invoice descriptions.
+      meal: order.meal || null,
       // Ties the sale to the stay it belongs to. Without it, a guest's
       // food history could only be guessed from villa + date, which is
       // wrong the moment two guests use the same villa on the same day.

@@ -388,3 +388,37 @@ export const BOARD_MENU = [
     foot: "Portion size for every meal above — chicken 300g.",
   },
 ];
+
+// Which sitting a food order belongs to, asked when the order is placed
+// and printed on the invoice beside the date.
+//
+// It labels *when the guest ate*, and restricts nothing: the menu is one
+// menu, and a guest who wants an English breakfast at nine in the evening
+// gets one. The tag exists so that a bill read days later reminds them
+// what they actually had, rather than listing eleven dishes with no shape.
+//
+// "Other" is here because not everything is a meal. A king coconut at
+// three in the afternoon belongs to no sitting, and filing it under lunch
+// would make the invoice say something untrue about the guest's day.
+export const MEAL_SERVICES = ["Breakfast", "Lunch", "Dinner", "Other"];
+
+// The sitting the clock suggests, used only to preselect the field. Shown,
+// never silent — reception can see what it picked and change it, which is
+// the difference between a helpful default and a wrong answer nobody was
+// told about. An order keyed in late still says what the guest ate,
+// because a person confirmed it.
+//
+// Candidate for Configure if the properties ever serve to different hours;
+// it is here as a constant rather than buried in the orders screen so that
+// move is a small one. See HARDCODED-AUDIT.md.
+export const MEAL_WINDOWS = [
+  { until: 11, service: "Breakfast" },
+  { until: 16, service: "Lunch" },
+  { until: 22, service: "Dinner" },
+];
+
+export function suggestedMealService(date = new Date()) {
+  const hour = date.getHours();
+  const match = MEAL_WINDOWS.find(w => hour < w.until);
+  return match ? match.service : "Other";
+}
