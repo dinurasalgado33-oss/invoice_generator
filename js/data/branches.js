@@ -1,15 +1,21 @@
-// Contact + bank details shown on guest-facing documents (currently just
-// the Reservation Confirmation). Real business info for Wilpattu as
-// supplied; Arugam Bay reuses the same bank account (common for a small
-// group operating on one account) but its address/phone are placeholders
-// until the real branch details are provided — update before sending
-// anything real to a guest.
+// Contact + bank details printed at the head of every guest-facing
+// document. One e-mail address and one bank account serve both properties
+// — confirmed by Dinura, not an oversight: it is a small group operating
+// on one account and one inbox.
+//
+// The address was leopardinnwilpattu@gmail.com for both, which put
+// "wilpattu" on the head of every Arugam Bay guest's invoice. Arugam Bay's
+// own address and phone are still the placeholders they shipped as.
+//
+// Note that a saved config row overrides everything here, so correcting a
+// default fixes a fresh project and changes nothing on one that has been
+// configured. Both have to be done.
 export const BRANCH_INFO = {
   "Wilpattu": {
     hotelName: "Leopard Inn Wilpattu Villa",
     address: "Old Eluwankulama, Eluwankulama, Sri Lanka",
     phone: "+94 740 559 024",
-    email: "leopardinnwilpattu@gmail.com",
+    email: "leopardinnvillas@gmail.com",
     bankAccountName: "A M C Ashen",
     bankAccountNumber: "81626399",
     bankName: "Bank Of Ceylon",
@@ -19,7 +25,7 @@ export const BRANCH_INFO = {
     hotelName: "Leopard Inn Arugam Bay Villa",
     address: "Arugam Bay, Sri Lanka",
     phone: "+94 740 559 024",
-    email: "leopardinnwilpattu@gmail.com",
+    email: "leopardinnvillas@gmail.com",
     bankAccountName: "A M C Ashen",
     bankAccountNumber: "81626399",
     bankName: "Bank Of Ceylon",
