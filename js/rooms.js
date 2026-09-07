@@ -202,6 +202,10 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
           Registration Card
         </button>
+        <button type="button" class="secondary-btn" id="villa-food-order-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg>
+          Food Order
+        </button>
         ${isStaffUser() ? "" : `
         <button type="button" class="secondary-btn" id="villa-invoice-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
@@ -219,6 +223,15 @@ function renderRoomDetailBody() {
         ${isStaffUser() ? "" : `<button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>`}
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
+      // Ordering for the guest whose sheet is already open. Imported here
+      // rather than at the top because orders.js imports chargeRoom from
+      // this module — a static import would close the cycle at load time.
+      document.getElementById("villa-food-order-btn").addEventListener("click", async () => {
+        const roomId = room.id;
+        closeRoomDetail();
+        const { openOrdersScreen } = await import("./orders.js");
+        openOrdersScreen({ roomId });
+      });
       const villaInvBtn = document.getElementById("villa-invoice-btn");
       if (villaInvBtn) villaInvBtn.addEventListener("click", raiseVillaInvoiceForRoom);
       const cancelBtn = document.getElementById("cancel-checkin-btn");

@@ -489,3 +489,78 @@
    still tied up and no bill has been raised. */
 .today-checkout-row.is-overdue { border-left: 3px solid var(--danger); }
 .today-checkout-bill-badge.overdue { background: var(--danger); color: #fff; }
+
+/* ---- Staff home: the villa list ----------------------------------------
+   Staff's three jobs all start by choosing a villa, so this replaces the
+   quick-action tiles for them. Deliberately a dense list rather than the
+   card grid on the Room Map: this is for scanning "who is in, what do they
+   owe" at a glance, not for admiring. */
+.dash-villa-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .12s ease, transform .1s ease;
+}
+.dash-villa-row:active { transform: scale(0.99); }
+.dash-villa-row:last-child { margin-bottom: 0; }
+
+/* A free villa is information, not an invitation — staff cannot check
+   anyone in, so it reads quieter and does not pretend to be a button. */
+.dash-villa-row.is-free {
+  background: transparent;
+  border-style: dashed;
+  min-height: 44px;
+  cursor: default;
+}
+.dash-villa-name { font-weight: 600; color: var(--text-muted); }
+.dash-villa-free {
+  margin-left: auto;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dash-villa-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dash-villa-guest { font-weight: 700; overflow-wrap: anywhere; }
+.dash-villa-sub { font-size: .8rem; color: var(--text-muted); }
+
+/* The running tab leads the right-hand side because it is the number
+   reception is asked for most, and it used to be two screens away. */
+.dash-villa-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.dash-villa-tab {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dash-villa-chip {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.dash-villa-chip.leaving { background: #fdf3dd; color: #8a5a00; }
+.dash-villa-chip.overdue { background: var(--danger); color: #fff; }
+
+@media (hover: hover) {
+  .dash-villa-row:not(.is-free):hover { border-color: var(--maroon); }
+}

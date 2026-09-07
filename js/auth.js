@@ -26,6 +26,16 @@ function applyRoleGates() {
     el.style.display = isStaff ? "none" : "";
   });
 
+  // The mirror of the above. Staff and managers do different jobs, so a
+  // couple of things exist for staff that would only be noise for a
+  // manager — the villa list that is their home screen, for one.
+  //
+  // `hidden` rather than a style, so the element starts out hidden in the
+  // markup and does not flash on screen before this runs.
+  document.querySelectorAll('[data-role="staff"]').forEach(el => {
+    el.hidden = !isStaff;
+  });
+
   // Staff are locked to one branch — the "Change branch" entry point
   // is the only way back to screen-branch, so hide it for them.
   const changeBranchBtn = document.querySelector("#screen-home .back-btn");

@@ -509,10 +509,31 @@ document.querySelectorAll("#orders-nav .report-tab").forEach(tab => {
   tab.addEventListener("click", () => switchOrdersView(tab.dataset.ordersView));
 });
 
-document.getElementById("qa-food-order-btn").addEventListener("click", () => {
+// Opens the order screen ready to take an order. `roomId` preselects the
+// villa, so ordering from a guest's own sheet does not ask which room it is
+// for — the person tapping is stood in front of the answer.
+export function openOrdersScreen({ roomId = null } = {}) {
   setBranchLabel("orders-branch-label", appState.selectedBranchLabel, appState.selectedBranch);
   setLogoSrc("orders-logo", appState.selectedBranchLogo);
   resetCreateView();
+  if (roomId != null) {
+    const select = document.getElementById("order-room-select");
+    // Only if the villa is actually on the list. A stay that ended between
+    // opening the sheet and tapping through would otherwise leave the
+    // select on someone else's room.
+    if ([...select.options].some(o => o.value === String(roomId))) {
+      select.value = String(roomId);
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
   switchOrdersView("create");
   showScreen("screen-orders");
-});
+}
+
+document.getElementById("qa-food-order-btn").addEventListener("click", () => openOrdersScreen());
+
+// Staff's own entry, since their Quick Actions tiles are gone — a walk-in
+// has no villa to start from, so it needs a route that is not the villa
+// list. Same screen, no preselection.
+const staffFoodRow = document.getElementById("qa-food-order-row");
+if (staffFoodRow) staffFoodRow.addEventListener("click", () => openOrdersScreen());

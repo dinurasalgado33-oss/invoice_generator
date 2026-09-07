@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=224" />
-<link rel="stylesheet" href="css/brand-home.css?v=224" />
-<link rel="stylesheet" href="css/rooms.css?v=224" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=224" />
-<link rel="stylesheet" href="css/invoice.css?v=224" />
-<link rel="stylesheet" href="css/dashboard.css?v=224" />
-<link rel="stylesheet" href="css/reports.css?v=224" />
-<link rel="stylesheet" href="css/reservation.css?v=224" />
-  <link rel="stylesheet" href="css/grc.css?v=224" />
-  <link rel="stylesheet" href="css/proforma.css?v=224" />
-  <link rel="stylesheet" href="css/history.css?v=224" />
+<link rel="stylesheet" href="css/base.css?v=226" />
+<link rel="stylesheet" href="css/brand-home.css?v=226" />
+<link rel="stylesheet" href="css/rooms.css?v=226" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=226" />
+<link rel="stylesheet" href="css/invoice.css?v=226" />
+<link rel="stylesheet" href="css/dashboard.css?v=226" />
+<link rel="stylesheet" href="css/reports.css?v=226" />
+<link rel="stylesheet" href="css/reservation.css?v=226" />
+  <link rel="stylesheet" href="css/grc.css?v=226" />
+  <link rel="stylesheet" href="css/proforma.css?v=226" />
+  <link rel="stylesheet" href="css/history.css?v=226" />
 </head>
 <body>
 
@@ -125,14 +125,35 @@
       </button>
     </div>
 
-    <div class="dash-section">
+    <!-- Staff only. Every job they have — check out, food order, activity
+         charge — starts by choosing a villa, so the villa list is the home
+         screen rather than a menu that leads to a picker that leads to the
+         work. Managers keep the quick-action tiles: they also take
+         reservations and check people in, neither of which starts here. -->
+    <div class="dash-section" id="dash-villas" data-role="staff" hidden>
+      <h3 class="dash-section-title">Villas</h3>
+      <div id="dash-villas-list"></div>
+    </div>
+
+    <!-- Manager only, now that staff have the villa list above. It said the
+         same thing twice on their screen — the same guest, the same villa,
+         the same Overdue badge — and one fact shown twice is the habit this
+         codebase is trying to break. The villa row carries "overdue" and
+         "leaving today" itself. -->
+    <div class="dash-section" data-role="manager">
       <h3 class="dash-section-title">Today's Checkouts</h3>
       <div id="today-checkouts-list"><p class="room-detail-empty">No checkouts today.</p></div>
     </div>
 
+    <!-- The tiles are manager only — staff reach Check Out and Charge
+         Activity from the villa itself, one tap instead of two, so the
+         tiles would only be a longer route to the same sheet. Gated on the
+         grid and the heading rather than on the section, because the rows
+         underneath are shared and hiding the section took Guest History
+         away from staff along with the tiles. -->
     <div class="dash-section">
-      <h3 class="dash-section-title">Quick Actions</h3>
-      <div class="qa-grid">
+      <h3 class="dash-section-title" data-role="manager">Quick Actions</h3>
+      <div class="qa-grid" data-role="manager">
         <button type="button" class="quick-action-btn" id="qa-checkin-btn" data-role="manager" disabled>
           <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg></span>
           <span>Check In</span>
@@ -156,6 +177,19 @@
         <span class="settings-row-text">
           <span class="settings-row-title">Reservation</span>
           <span class="settings-row-sub">Create a confirmation for an upcoming guest</span>
+        </span>
+        <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+      <!-- Staff's route to a walk-in order, which starts with no villa and
+           so cannot begin from the list above. Ordering for a resident is
+           quicker from their own villa. -->
+      <button type="button" class="settings-row" id="qa-food-order-row" data-role="staff" hidden>
+        <span class="settings-row-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg>
+        </span>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Food Order</span>
+          <span class="settings-row-sub">Any villa, or a walk-in</span>
         </span>
         <svg class="settings-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
       </button>
@@ -2877,6 +2911,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=224"></script>
+<script type="module" src="js/main.js?v=226"></script>
 </body>
 </html>
