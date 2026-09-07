@@ -225,6 +225,16 @@ function renderRoomDetailBody() {
         <div class="room-detail-row"><span>Check-in</span><span>${formatDate(room.checkin)}</span></div>
         <div class="room-detail-row"><span>Check-out</span><span>${formatDate(room.checkout)}</span></div>
         ${renderRunningTab(room)}
+        <!-- Staff get two things here: charge something, or close the stay.
+             The registration card, ordering food and billing the tab early
+             are all a manager's, or reached another way — food from the
+             Food Order row on their home screen, and the tab from Check Out
+             itself, which bills exactly the same charges. -->
+        <button type="button" class="secondary-btn" id="charge-activity-open-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /><path d="M2 18c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" /></svg>
+          Charge Activity
+        </button>
+        ${isStaffUser() ? "" : `
         <button type="button" class="secondary-btn" id="view-grc-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
           Registration Card
@@ -233,7 +243,6 @@ function renderRoomDetailBody() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" /><path d="M6 1v3M10 1v3M14 1v3" /></svg>
           Food Order
         </button>
-        ${isStaffUser() ? "" : `
         <button type="button" class="secondary-btn" id="villa-invoice-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
           Villa Invoice
@@ -250,10 +259,17 @@ function renderRoomDetailBody() {
         ${isStaffUser() ? "" : `<button type="button" class="sheet-text-danger-btn" id="cancel-checkin-btn">Cancel this check-in</button>`}
       `;
       document.getElementById("check-out-btn").addEventListener("click", startCheckout);
+      // Reopens this same sheet in activity mode. Staff have no Charge
+      // Activity tile any more — their home is the villa list — so without
+      // this there is no way for them to charge one at all.
+      document.getElementById("charge-activity-open-btn").addEventListener("click", () => {
+        openRoomDetail(activeRoomRef.branch, room.id, "activity");
+      });
       // Ordering for the guest whose sheet is already open. Imported here
       // rather than at the top because orders.js imports chargeRoom from
       // this module — a static import would close the cycle at load time.
-      document.getElementById("villa-food-order-btn").addEventListener("click", async () => {
+      const foodBtn = document.getElementById("villa-food-order-btn");
+      if (foodBtn) foodBtn.addEventListener("click", async () => {
         const roomId = room.id;
         closeRoomDetail();
         const { openOrdersScreen } = await import("./orders.js");
@@ -269,7 +285,8 @@ function renderRoomDetailBody() {
       // than on the villa card in the grid — that card is itself a
       // <button>, and a button inside a button is invalid markup with
       // unreliable click handling.
-      document.getElementById("view-grc-btn").addEventListener("click", () => {
+      const grcBtn = document.getElementById("view-grc-btn");
+      if (grcBtn) grcBtn.addEventListener("click", () => {
         closeRoomDetail();
         reprintGrc(room.bookingId ?? null);
       });
@@ -304,7 +321,7 @@ function renderRunningTab(room) {
           </li>
         `).join("")}
       </ul>
-      <button type="button" class="secondary-btn" id="interim-invoice-btn">Bill this now (keep stay open)</button>
+      ${isStaffUser() ? "" : `<button type="button" class="secondary-btn" id="interim-invoice-btn">Bill this now (keep stay open)</button>`}
     </div>
   `;
 }

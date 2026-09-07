@@ -157,6 +157,38 @@ function docButton({ kind, label, id, available }) {
     </button>`;
 }
 
+// A stay now raises two invoices — the villa on arrival, food and
+// activities on departure — so one button labelled "Invoice" could only
+// open one of them. It opened the last raised, which meant the villa
+// invoice was reachable only through the charges sheet, and nothing on the
+// row said the other existed.
+//
+// Each gets its own button, named for what is on it. Either can be missing:
+// a stay still in progress has no charges invoice, and one where nobody
+// ordered anything never will.
+//
+// Bills raised before the split carry no `kind`. They are combined
+// documents and are shown as a plain "Invoice", because calling one of
+// them "Villa" would describe it wrongly.
+function invoiceButtons(bookingId, invoices) {
+  const villa = invoices.filter(i => i.kind === "villa").slice(-1)[0];
+  const charges = invoices.filter(i => i.kind === "charges").slice(-1)[0];
+  const legacy = invoices.filter(i => !i.kind);
+
+  if (!villa && !charges) {
+    // Either nothing has been raised yet, or this is a pre-split stay.
+    return docButton({
+      kind: "invoice", label: legacy.length > 1 ? `Invoice ×${legacy.length}` : "Invoice",
+      id: bookingId, available: legacy.length > 0,
+    });
+  }
+
+  return [
+    docButton({ kind: "invoice", label: "Villa", id: villa ? villa.id : "", available: Boolean(villa) }),
+    docButton({ kind: "invoice", label: "Food & Activities", id: charges ? charges.id : "", available: Boolean(charges) }),
+  ].join("");
+}
+
 function docIcon(kind) {
   const icons = {
     card: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="M15 9h3M15 13h3M6 16h6" /></svg>`,
@@ -264,7 +296,9 @@ function renderHistory() {
             ${docButton({ kind: "card", label: "Card", id: b.id, available: Boolean(card) })}
             ${docButton({ kind: "reservation", label: "Reservation", id: reservation ? reservation.id : "", available: Boolean(reservation) })}
             ${docButton({ kind: "proforma", label: "Agent", id: proformas.length ? proformas[proformas.length - 1].id : "", available: proformas.length > 0 })}
-            ${docButton({ kind: b.walkInInvoiceId ? "walkin-invoice" : "invoice", label: invoices.length > 1 ? `Invoice ×${invoices.length}` : "Invoice", id: b.walkInInvoiceId || b.id, available: invoices.length > 0 })}
+            ${b.walkInInvoiceId
+              ? docButton({ kind: "walkin-invoice", label: "Invoice", id: b.walkInInvoiceId, available: invoices.length > 0 })
+              : invoiceButtons(b.id, invoices)}
           </div>
         </td>
         <td class="hc-extra" data-label="Activities &amp; Food">
@@ -301,12 +335,20 @@ function openDocument(kind, id) {
   // look it up through.
   if (kind === "walkin-invoice") return reopenInvoice(String(id), BACK_TO_HISTORY);
   if (kind === "invoice") {
-    const bookingId = id;
-    const invoices = INVOICES.filter(i => i.bookingId === bookingId);
+    // The Villa and Food & Activities buttons carry an invoice's own id,
+    // because they name one document each. The legacy button carries a
+    // booking id, because a pre-split stay has no single document to name.
+    // Both arrive here, so which one this is has to be asked rather than
+    // assumed — a booking id looked up as an invoice silently opens
+    // nothing, which reads as a dead button.
+    const direct = INVOICES.find(i => i.id === String(id));
+    if (direct) return reopenInvoice(direct.id, BACK_TO_HISTORY);
+
+    const invoices = INVOICES.filter(i => i.bookingId === id);
     if (!invoices.length) return;
-    // A stay can carry an interim bill and a checkout invoice. The last one
-    // raised is the one staff nearly always want; the rest are listed in
-    // the charges sheet, where every invoice for the stay is shown.
+    // A stay can also carry interim bills. The last raised is the one staff
+    // nearly always want; every invoice for the stay is listed in the
+    // charges sheet.
     reopenInvoice(invoices[invoices.length - 1].id, BACK_TO_HISTORY);
   }
 }
