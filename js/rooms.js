@@ -639,13 +639,42 @@ function wireActivitiesPanel() {
   document.getElementById("charge-activity-btn").addEventListener("click", chargeActivities);
 }
 
-function chargeActivities() {
+// Confirmed, like completing a food order is. It was the odd one out, and
+// backwards: a 2,740 dinner asked before billing, while a 33,000 full-day
+// safari went straight onto the guest's bill on one tap. That is also the
+// charge with a payout attached, so a mis-tap owes an outside provider
+// money the hotel never took.
+//
+// The dialog names the total and lists what is about to be charged, since
+// "are you sure" on its own tells reception nothing they can check.
+async function chargeActivities() {
   const room = getActiveRoom();
   const activities = ACTIVITIES_BY_BRANCH[activeRoomRef.branch] || [];
   const branch = activeRoomRef.branch;
   const today = todayISO();
   const guide = (document.getElementById("activity-guide").value || "").trim();
   let total = 0;
+
+  const lines = [];
+  Object.keys(currentActivitySelection).forEach(id => {
+    const qty = currentActivitySelection[id];
+    if (qty <= 0) return;
+    const activity = activities.find(a => a.id === Number(id));
+    if (activity) lines.push({ label: `${qty}× ${activity.name}`, value: activity.price * qty });
+  });
+  customActivityCharges.forEach(c => lines.push({ label: c.name, value: c.price }));
+  if (!lines.length) return;
+
+  const preview = lines.reduce((s, l) => s + l.value, 0);
+  const ok = await confirmAction({
+    title: "Charge these to the room?",
+    // No escapeHtml — confirmAction sets this with textContent, so escaping
+    // would print "Mr. &amp; Mrs. Silva".
+    message: `${lines.map(l => l.label).join(", ")} — ${fmtLKR(preview)} to ${room.guest}. This goes on their bill at checkout.`,
+    confirmLabel: "Charge to Bill",
+    tone: "safe",
+  });
+  if (!ok) return;
 
   Object.keys(currentActivitySelection).forEach(id => {
     const qty = currentActivitySelection[id];

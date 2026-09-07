@@ -146,8 +146,8 @@
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
+  padding: 11px 14px;
+  margin-bottom: 8px;
   box-shadow: var(--shadow);
 }
 .history-table td { border: none; padding: 3px 0; }
@@ -166,15 +166,20 @@
 .history-table td.hc-no::before, .history-table td.hc-guest::before { display: none; }
 .history-table td.hc-no { display: inline-block; width: auto; margin-right: 8px; }
 .history-table td.hc-guest { display: inline-block; width: auto; }
-.history-table td.hc-stay { margin-top: 6px; }
+.history-table td.hc-stay { margin-top: 4px; }
 /* The line is self-explanatory — a label above it would restate it. */
 .history-table td.hc-stay::before { display: none; }
-.history-table td.hc-docs { margin-top: 12px; }
+.history-table td.hc-docs { margin-top: 8px; }
 /* The button says "View activities & food" or "No activities or food",
    so a heading above it would only repeat itself. */
-.history-table td.hc-extra { margin-top: 10px; }
+.history-table td.hc-extra { margin-top: 6px; }
 .history-table td.hc-extra::before { display: none; }
-.extras-btn { width: 100%; }
+/* Sits with the document buttons rather than claiming a full-width row of
+   its own. Guest History exists to find one stay among many, and a card
+   that took most of a phone screen for a single result made scanning a
+   season's worth of them slower than it needed to be. Still a 44px-tall
+   target — the width came off, not the height. */
+.extras-btn { width: auto; }
 
 /* Charges page */
 .charges-sub {

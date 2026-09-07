@@ -300,7 +300,13 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 14px;
-  max-height: 320px;
+  /* Was a flat 320px, which showed 4.8 of 68 dishes on an 812px phone —
+     reception browsing the menu was scrolling a letterbox while two thirds
+     of the screen sat empty. Proportional to the screen instead, so a
+     taller phone or the tablet shows more rather than the same five.
+     The floor keeps it usable on a very short window; the search box above
+     is still the fast path to a known dish. */
+  max-height: clamp(260px, 55vh, 620px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-right: 2px;

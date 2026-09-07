@@ -403,16 +403,31 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   #items-table thead { display: none; }
   #items-table, #items-table tbody { display: block; width: 100%; }
   #items-table tbody { counter-reset: item-card; }
+  /* A grid rather than a stack. Description and Type take the full width;
+     Qty, Rate and Value share the row below them.
+
+     They are one arithmetic thought — qty × rate = value — so putting them
+     side by side is what Proximity asks for anyway, and it cuts the card
+     from five stacked fields to three rows. A five-line bill measured 3.1
+     screens of scrolling before this; checking it against what a guest is
+     saying meant scrolling back and forth with them stood at the desk.
+
+     Everything stays visible. An expand-on-tap row would have been shorter
+     still and wrong: the moment you need this screen is the moment a guest
+     is querying a number, which is the worst time to hide one. */
   #items-table tr {
     counter-increment: item-card;
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 8px;
     position: relative;
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: 12px;
-    padding: 14px 44px 6px 14px;
-    margin-bottom: 14px;
+    padding: 14px 44px 8px 14px;
+    margin-bottom: 12px;
   }
+  #items-table td.col-desc, #items-table td.col-cat { grid-column: 1 / -1; }
   #items-table tr::before {
     content: "Item " counter(item-card);
     position: absolute;
@@ -432,7 +447,7 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     padding: 6px 0;
   }
   #items-table td.col-no { display: none; }
-  #items-table td.col-desc { margin-top: 26px; }
+  #items-table td.col-desc { margin-top: 22px; }
   /* The fixed 120px column width is a table-layout concern; stacked as a
      card the select should fill the row like every other field. */
   #items-table td.col-cat { width: auto; }
