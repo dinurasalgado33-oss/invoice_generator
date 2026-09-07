@@ -499,3 +499,15 @@
   .pending-order-delete-btn:hover { background: #fdf2f1; }
   .pending-order-complete-btn:hover { background: #dff3e0; }
 }
+
+/* What the guest owes so far, on the villa card. Only the staff home asks
+   for it — see buildRoomCard()'s showTab. Given the card's own emphasis
+   because "what do they owe" is the question reception fields most, and it
+   used to be two screens away. */
+.room-card-tab {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--maroon);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}

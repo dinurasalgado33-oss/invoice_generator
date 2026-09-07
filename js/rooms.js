@@ -98,32 +98,59 @@ export function renderRooms(statusFilter = null, mode = null) {
 
   rooms.forEach((room) => {
     if (statusFilter && room.status !== statusFilter) return;
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "room-card " + room.status;
-
-    const hasStay = room.status === "occupied";
-    const ribbon = hasStay
-      ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
-      : "";
-    const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(orDash(room.guest))}</span>` : "";
-    // When a status filter is active every card shares the same status —
-    // showing the badge on each one is just noise, so skip it then.
-    const statusBadge = statusFilter
-      ? ""
-      : `<span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>`;
-
-    card.innerHTML = `
-      ${ribbon}
-      <svg class="room-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-      <span class="room-card-name">${escapeHtml(room.name || "Unnamed villa")}</span>
-      ${guestLine}
-      ${statusBadge}
-    `;
-
-    card.addEventListener("click", () => openRoomDetail(appState.selectedBranch, room.id, mode));
-    grid.appendChild(card);
+    grid.appendChild(buildRoomCard(room, { mode, showStatus: !statusFilter }));
   });
+}
+
+// One villa card, used by the Room Map and by the staff home. Shared rather
+// than copied: they are the same object on two screens, and a card that
+// drifted between them would be this codebase's favourite kind of bug.
+//
+// `showTab` is the one thing the home screen adds — what the guest owes so
+// far. It belongs there because that is the question reception is asked
+// most, and it is left off the Room Map, where the job in hand is finding a
+// villa rather than reading a bill.
+function buildRoomCard(room, { mode = null, showStatus = true, showTab = false } = {}) {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "room-card " + room.status;
+
+  const hasStay = room.status === "occupied";
+  const ribbon = hasStay
+    ? `<span class="room-card-ribbon">${formatDate(room.checkin)} &rarr; ${formatDate(room.checkout)}</span>`
+    : "";
+  const guestLine = hasStay ? `<span class="room-card-guest">${escapeHtml(orDash(room.guest))}</span>` : "";
+  // When a status filter is active every card shares the same status —
+  // showing the badge on each one is just noise, so skip it then.
+  const statusBadge = showStatus
+    ? `<span class="room-card-status"><span class="room-card-status-dot"></span>${ROOM_STATUS_LABELS[room.status]}</span>`
+    : "";
+  const tab = showTab && hasStay ? tabTotal(room.bookingId) : 0;
+  const tabLine = tab > 0 ? `<span class="room-card-tab">${fmtLKR(tab)}</span>` : "";
+
+  card.innerHTML = `
+    ${ribbon}
+    <svg class="room-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
+    <span class="room-card-name">${escapeHtml(room.name || "Unnamed villa")}</span>
+    ${guestLine}
+    ${tabLine}
+    ${statusBadge}
+  `;
+
+  card.addEventListener("click", () => openRoomDetail(appState.selectedBranch, room.id, mode));
+  return card;
+}
+
+// The same cards, rendered wherever they are asked for. The staff home uses
+// this so its grid cannot drift from the Room Map's.
+export function renderRoomCardsInto(container, { showTab = false } = {}) {
+  const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
+  container.innerHTML = "";
+  if (!rooms.length) {
+    container.innerHTML = `<p class="room-detail-empty">No villas set up for this property yet.</p>`;
+    return;
+  }
+  rooms.forEach(room => container.appendChild(buildRoomCard(room, { showTab })));
 }
 
 export function openRoomDetail(branch, roomId, mode = null) {

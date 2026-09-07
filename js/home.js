@@ -1,63 +1,20 @@
 import { appState } from "./state.js";
 import { showScreen, onScreenEnter } from "./navigation.js";
-import { escapeHtml, showToast, todayISO, orDash, fmtLKR } from "./utils.js";
+import { escapeHtml, showToast, todayISO, orDash } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { renderRooms, openRoomDetail } from "./rooms.js";
-import { tabTotal } from "./data/guest-charges.js";
+import { renderRooms, openRoomDetail, renderRoomCardsInto } from "./rooms.js";
 
-// The staff home: every villa, what is happening in it, and what the guest
-// owes so far. Their three tasks all begin with "which villa?", so this is
-// the first screen rather than a grid of tiles that opens a picker.
-//
-// A free villa is listed but muted — staff cannot check anyone in, so it is
-// information, not an invitation. Occupied villas lead with the guest,
-// because that is what reception is asked about by name.
+// The staff home: the villa cards, exactly as the Room Map draws them, plus
+// what each guest owes so far. Their three tasks all begin with "which
+// villa?", so this is the first screen rather than a grid of tiles that
+// opens a picker.
 function renderStaffVillas() {
-  const list = document.getElementById("dash-villas-list");
-  if (!list) return;
-  const rooms = ROOMS_BY_BRANCH[appState.selectedBranch] || [];
-  const today = todayISO();
-
-  if (!rooms.length) {
-    list.innerHTML = `<p class="room-detail-empty">No villas set up for this property yet.</p>`;
-    return;
-  }
-
-  list.innerHTML = rooms.map(r => {
-    if (r.status !== "occupied") {
-      return `
-        <div class="dash-villa-row is-free" data-room-id="${r.id}">
-          <span class="dash-villa-name">${escapeHtml(r.name || "Unnamed villa")}</span>
-          <span class="dash-villa-free">Free</span>
-        </div>`;
-    }
-    const tab = tabTotal(r.bookingId);
-    const late = r.checkout && r.checkout < today;
-    const leaving = r.checkout === today;
-    // The tab is the number reception is asked about most — "what do we owe
-    // so far" — and it was previously two screens away.
-    return `
-      <div class="dash-villa-row" data-room-id="${r.id}">
-        <div class="dash-villa-main">
-          <span class="dash-villa-guest">${escapeHtml(orDash(r.guest))}</span>
-          <span class="dash-villa-sub">${escapeHtml(r.name || "Unnamed villa")}${
-            late ? " &middot; overdue" : leaving ? " &middot; leaving today" : ""}</span>
-        </div>
-        <div class="dash-villa-end">
-          ${tab > 0 ? `<span class="dash-villa-tab">${fmtLKR(tab)}</span>` : ""}
-          <span class="dash-villa-chip ${late ? "overdue" : leaving ? "leaving" : ""}">${
-            late ? "Overdue" : leaving ? "Out today" : "In"}</span>
-        </div>
-      </div>`;
-  }).join("");
-
-  list.querySelectorAll(".dash-villa-row").forEach(row => {
-    row.addEventListener("click", () => {
-      renderRooms();
-      showScreen("screen-rooms");
-      openRoomDetail(appState.selectedBranch, Number(row.dataset.roomId));
-    });
-  });
+  const grid = document.getElementById("dash-villas-list");
+  if (!grid) return;
+  // The Room Map's own cards, not a list that looks like them. Same
+  // builder, so the two screens cannot drift apart — and tapping one opens
+  // the same sheet from here as it does there.
+  renderRoomCardsInto(grid, { showTab: true });
 }
 
 // announce: only the first render after picking a branch says it out loud.
