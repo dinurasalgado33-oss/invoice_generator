@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { showScreen } from "./navigation.js";
 import { escapeHtml, fmtLKR, setLogoSrc, showToast, todayISO, setBranchLabel } from "./utils.js";
 import { ROOMS_BY_BRANCH } from "./data/rooms.js";
-import { MENU_ITEMS, MEAL_SERVICES, suggestedMealService } from "./data/menu.js";
+import { MENU_ITEMS, MEAL_SERVICES } from "./data/menu.js";
 import { INVENTORY_BY_BRANCH, logStockMovement } from "./data/inventory.js";
 import { FOOD_ORDER_RECORDS, allocateFoodOrderRecordId } from "./data/reports.js";
 import { FOOD_ORDERS, allocateOrderId } from "./data/orders.js";
@@ -223,16 +223,15 @@ function mealStamp(isoDate, meal) {
   return `${day}, ${meal}`;
 }
 
-// Rebuilt each time rather than filled once at load, so the suggestion
-// follows the clock: an order taken at breakfast and another at dinner on
-// the same shift should not both open on whatever the first one said.
+// Empty unless an existing order is being corrected. Nothing is guessed,
+// so placing an order means somebody chose — see the note in data/menu.js.
 function populateMealSelect(selected = null) {
   const sel = document.getElementById("order-meal-select");
-  const wanted = selected || suggestedMealService();
-  sel.innerHTML = MEAL_SERVICES
-    .map(m => `<option value="${m}" ${m === wanted ? "selected" : ""}>${m}</option>`)
-    .join("");
-  sel.value = wanted;
+  const options = [`<option value="">Choose…</option>`]
+    .concat(MEAL_SERVICES.map(m =>
+      `<option value="${m}" ${m === selected ? "selected" : ""}>${m}</option>`));
+  sel.innerHTML = options.join("");
+  sel.value = selected || "";
   // The custom dropdown paints from the native select and has to be told
   // the options underneath it changed.
   sel.dispatchEvent(new Event("change", { bubbles: true }));
@@ -265,10 +264,19 @@ document.getElementById("order-submit-btn").addEventListener("click", () => {
   if (!items.length) return;
 
   const total = items.reduce((s, it) => s + it.qty * it.price, 0);
-  // Whichever sitting reception confirmed. Fixed on the order rather than
-  // worked out when it is completed, because the kitchen may not finish a
-  // dinner order until after midnight and the guest ate it at dinner.
-  const mealService = document.getElementById("order-meal-select").value || "Other";
+
+  // Required, and refused rather than filled in for them. Fixed on the
+  // order rather than worked out when it is completed, because the kitchen
+  // may not finish a dinner order until after midnight and the guest still
+  // ate it at dinner.
+  const mealService = document.getElementById("order-meal-select").value;
+  const mealError = document.getElementById("order-meal-error");
+  if (!mealService) {
+    mealError.classList.add("show");
+    document.getElementById("order-meal-select").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  mealError.classList.remove("show");
 
   const shortages = new Set();
 

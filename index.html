@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=223" />
-<link rel="stylesheet" href="css/brand-home.css?v=223" />
-<link rel="stylesheet" href="css/rooms.css?v=223" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=223" />
-<link rel="stylesheet" href="css/invoice.css?v=223" />
-<link rel="stylesheet" href="css/dashboard.css?v=223" />
-<link rel="stylesheet" href="css/reports.css?v=223" />
-<link rel="stylesheet" href="css/reservation.css?v=223" />
-  <link rel="stylesheet" href="css/grc.css?v=223" />
-  <link rel="stylesheet" href="css/proforma.css?v=223" />
-  <link rel="stylesheet" href="css/history.css?v=223" />
+<link rel="stylesheet" href="css/base.css?v=224" />
+<link rel="stylesheet" href="css/brand-home.css?v=224" />
+<link rel="stylesheet" href="css/rooms.css?v=224" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=224" />
+<link rel="stylesheet" href="css/invoice.css?v=224" />
+<link rel="stylesheet" href="css/dashboard.css?v=224" />
+<link rel="stylesheet" href="css/reports.css?v=224" />
+<link rel="stylesheet" href="css/reservation.css?v=224" />
+  <link rel="stylesheet" href="css/grc.css?v=224" />
+  <link rel="stylesheet" href="css/proforma.css?v=224" />
+  <link rel="stylesheet" href="css/history.css?v=224" />
 </head>
 <body>
 
@@ -347,12 +347,13 @@
           <select id="order-room-select"></select>
         </div>
 
-        <!-- Preselected from the clock and always visible, so reception
-             confirms it rather than being told nothing. Prints on the
-             invoice beside the date. -->
+        <!-- Required, and nothing is preselected: reception says which
+             sitting this was rather than the app guessing from the clock.
+             Prints on the invoice beside the date. -->
         <div class="field">
           <label for="order-meal-select">Meal</label>
           <select id="order-meal-select"></select>
+          <p class="field-error" id="order-meal-error">Pick which meal this order is for.</p>
         </div>
 
         <div class="order-edit-banner" id="order-edit-banner" style="display:none">
@@ -2876,6 +2877,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=223"></script>
+<script type="module" src="js/main.js?v=224"></script>
 </body>
 </html>

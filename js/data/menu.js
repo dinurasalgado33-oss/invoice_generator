@@ -402,23 +402,14 @@ export const BOARD_MENU = [
 // would make the invoice say something untrue about the guest's day.
 export const MEAL_SERVICES = ["Breakfast", "Lunch", "Dinner", "Other"];
 
-// The sitting the clock suggests, used only to preselect the field. Shown,
-// never silent — reception can see what it picked and change it, which is
-// the difference between a helpful default and a wrong answer nobody was
-// told about. An order keyed in late still says what the guest ate,
-// because a person confirmed it.
+// Nothing is preselected and nothing is inferred from the clock. It briefly
+// was — service hours as a constant, used to guess the sitting — and that
+// was two mistakes at once: it hardcoded serving times the properties never
+// agreed to, and it answered on reception's behalf a question only they can
+// answer. An order is keyed in when there is a moment, which is not
+// necessarily when the guest ate.
 //
-// Candidate for Configure if the properties ever serve to different hours;
-// it is here as a constant rather than buried in the orders screen so that
-// move is a small one. See HARDCODED-AUDIT.md.
-export const MEAL_WINDOWS = [
-  { until: 11, service: "Breakfast" },
-  { until: 16, service: "Lunch" },
-  { until: 22, service: "Dinner" },
-];
-
-export function suggestedMealService(date = new Date()) {
-  const hour = date.getHours();
-  const match = MEAL_WINDOWS.find(w => hour < w.until);
-  return match ? match.service : "Other";
-}
+// So the field starts empty and the order cannot be placed until somebody
+// chooses. One deliberate tap beats a default that is usually right, because
+// "usually right" on a guest's bill is the failure this codebase keeps
+// finding: nothing errors, and the document quietly says something untrue.
