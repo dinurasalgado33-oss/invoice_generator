@@ -164,6 +164,14 @@ service cloud.firestore {
     // Written as an allow-list of the resulting status rather than a
     // comparison against the old one, because a rule that reasons about
     // what changed is a rule nobody can read six months later.
+    //
+    // Proven against a real staff account rather than by reading: writing
+    // 'Checked Out' is allowed, 'Cancelled' and 'Checked In' are both
+    // refused. Test it the same way if you change it — and address the
+    // document by its Firestore id, not the `id` field on the record. They
+    // are different values here, and a get on an id that does not exist
+    // returns permission-denied rather than not-found, which reads exactly
+    // like a broken rule.
     match /bookings/{id} {
       allow read: if mayTouchExisting();
       allow create: if isManager() && mayWriteIncoming();
