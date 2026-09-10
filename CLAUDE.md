@@ -82,6 +82,17 @@ Worth knowing, because the same shapes keep recurring:
   UUIDs, because two offline devices would otherwise both allocate `1` and
   one guest's bill would silently contain another's. Config (dishes, villas,
   activities) stays numeric on purpose — guests read dish numbers off a menu.
+- **A glob that only matched leaf names.** `"**/.*"` in `firebase.json`
+  kept `.git` out of the deploy and let everything *inside* it through, so
+  the whole repository was live at `/.git/` for two weeks. Nothing errored;
+  the only tell was `firebase deploy` saying "found 492 files" for a 95-file
+  app. Read that number, and check `.firebase/hosting..cache` — it lists
+  exactly what went up.
+- **A saved config row beats the code default.** `js/data/branches.js` and
+  `js/data/menu.js` hold defaults; a `config/{branch}__{kind}` document
+  overrides them. Correcting a default fixes a fresh project and changes
+  nothing on a configured one, so both have to be done. This is why
+  Wilpattu kept printing the old e-mail after the default was fixed.
 
 ## Working with Dinura
 
