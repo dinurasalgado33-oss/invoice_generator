@@ -912,6 +912,58 @@ body.has-demo-banner .screen { padding-bottom: 52px; }
   margin: 10px 0 10px 4px;
 }
 
+/* One dish per row, each with its own remove.
+   It used to be a single textarea holding "egg fried rice · chicken devel
+   · pol sambol", which meant taking one dish out was a hand-edit of a
+   string — find the words, then delete exactly one of the separators
+   around them. On a phone that is fiddly and it leaves "··" behind when
+   it goes wrong. The stored shape is still that one string; only the
+   editing is per dish. */
+.bm-dish-label {
+  margin: 10px 0 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.bm-dishes { display: flex; flex-direction: column; gap: 6px; }
+.bm-dish-row { display: flex; gap: 8px; align-items: center; }
+/* Two classes, so this beats `.bm-block input`'s full width and vertical
+   margins without needing !important — the row does the spacing now. */
+.bm-dish-row .bm-dish,
+.bm-dish-add .bm-new-dish {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+.bm-dish-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+/* 44px square: the same target the rest of the app gives a tap, kept well
+   clear of the text field beside it so a thumb aiming at the dish name
+   does not land on the remove. */
+.bm-dish-del {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line, #e3ded7);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--danger);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.bm-dish-del:active { transform: scale(0.97); }
+@media (hover: hover) {
+  .bm-dish-del:hover { border-color: var(--danger); background: #fdf2f1; }
+}
+.bm-dish-add { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.bm-dish-add .secondary-btn { flex: none; min-height: 44px; }
+
 /* Press feedback for the controls that had none.
    `* { -webkit-tap-highlight-color: transparent }` at the top of this file
    removes the browser's own tap flash, which is right — it is grey, square

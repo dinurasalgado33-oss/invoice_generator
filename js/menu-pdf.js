@@ -267,7 +267,10 @@ async function build(pdf, doc) {
         const last = i === block.options.length - 1;
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(9.5);
-        const detail = pdf.splitTextToSize(opt.detail, right - margin);
+        // `|| ""` because splitTextToSize throws on undefined, and an
+        // option saved before it had dishes would take the whole sheet
+        // down rather than print one line short.
+        const detail = pdf.splitTextToSize(opt.detail || "", right - margin);
         await room(10 + detail.length * 4.6 + (last ? footLines.length * 4 + 6 : 0));
         pdf.setFont("times", "italic");
         pdf.setFontSize(13);

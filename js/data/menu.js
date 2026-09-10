@@ -365,7 +365,7 @@ export const BOARD_MENU = [
     heading: "Breakfast",
     note: "one option included",
     options: [
-      { name: "Western", detail: "Toast bread · 3 grilled sausages · egg (boiled, scrambled or omelette) · juice · fruit plate" },
+      { name: "Western", detail: "Toast bread · 3 grilled sausages · egg (boiled, scrambled or omelette) · fruit plate · tea or coffee" },
       { name: "Sri Lankan", detail: "4 rotti pieces · katta sambol / pol sambol · chicken curry · dhal curry · tea or coffee" },
     ],
   },
@@ -382,12 +382,40 @@ export const BOARD_MENU = [
     heading: "Dinner",
     note: "one option included",
     options: [
-      { name: "Fried Rice", detail: "Soup (chicken, vegetable or mushroom) · egg fried rice · chicken devel · chilli paste · pol sambol · dessert · sauce" },
+      { name: "Fried Rice", detail: "Soup (chicken, vegetable or mushroom) · egg fried rice · chicken devel · chilli paste · dessert · sauce" },
       { name: "Noodles", detail: "Soup (chicken, vegetable or mushroom) · egg noodles · chicken curry or devel · chilli paste · dessert · sauce" },
     ],
     foot: "Portion size for every meal above — chicken 300g.",
   },
 ];
+
+// A board option's `detail` is one string, and the dishes inside it are
+// separated by "·" — "egg fried rice · chicken devel · pol sambol". The
+// separator is the data's own convention, so reading and writing it lives
+// here beside the data rather than in the editor.
+//
+// It stays one string on purpose. The printed sheet centres the line and
+// wraps it, the welcome e-mail prints it as written, and storing a second
+// dish array beside it would be the same fact in two places, free to
+// disagree — the bug this codebase keeps finding. The editor splits it to
+// show one dish per row and joins it straight back.
+export const BOARD_DISH_SEPARATOR = " · ";
+
+// Blank entries are dropped rather than kept, so a stray "··" or a
+// trailing separator from a hand-typed edit cannot print as a gap on a
+// guest's sheet. A dish keeps whatever is inside it: "egg (boiled,
+// scrambled or omelette)" and "katta sambol / pol sambol" are each one
+// dish, because only "·" separates them.
+export function boardDishes(detail) {
+  return String(detail == null ? "" : detail)
+    .split("·")
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+export function joinBoardDishes(dishes) {
+  return dishes.map(d => String(d == null ? "" : d).trim()).filter(Boolean).join(BOARD_DISH_SEPARATOR);
+}
 
 // Which sitting a food order belongs to, asked when the order is placed
 // and printed on the invoice beside the date.
