@@ -269,7 +269,7 @@ export const MENU_ITEMS = [
 
   // ---- Breakfast (per person) ----
   dish(125, 25, "English Breakfast", "Breakfast", 1850, WP,
-    "Toast Bread · 3 Grilled Sausages · Egg (Boiled, Scrambled or Omelette) · Juice · Fruit Plate"),
+    "Toast Bread · 3 Grilled Sausages · Egg (Boiled, Scrambled or Omelette) · Fruit Plate · Tea/Coffee"),
   dish(126, 26, "Sri Lankan Breakfast — String Hoppers", "Breakfast", 1750, WP,
     "10 String Hoppers · Chicken Curry · Dhal Curry · Pol Sambol · Tea/Coffee"),
   dish(127, 27, "Sri Lankan Breakfast — Rotti", "Breakfast", 1750, WP,
