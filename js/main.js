@@ -33,6 +33,7 @@ import "./branch.js";
 import "./staff.js";
 import "./manage-lists.js";
 import "./board-menu.js";
+import "./menu-docs.js";
 import { restoreSession } from "./auth.js";
 
 // Two elements sharing an id is silent, and it is not harmless.

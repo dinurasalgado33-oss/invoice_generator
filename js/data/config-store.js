@@ -60,6 +60,9 @@ export const CONFIG_KINDS = {
   // Wilpattu has one, and stored at all so the welcome e-mail can read it
   // — it is the guest's answer to "what does my board rate include".
   BOARD_MENU: "boardMenu",
+  // The wording on each printed menu — cover, notes, closing line — plus
+  // which categories it carries. Per property, because the documents are.
+  MENU_DOCS: "menuDocs",
   // Which department each inventory category belongs to, as
   // { category: department }. The department names themselves are their
   // own list; this is only the assignment.
@@ -297,10 +300,11 @@ export async function hydrateConfig(branches) {
           INVENTORY_DEPARTMENTS, applyCategoryDepartments } = await import("./inventory.js");
   const { ROOM_TYPES, MEAL_PLANS } = await import("./grc.js");
   const { MENU_CATEGORIES, BOARD_MENU } = await import("./menu.js");
+  const { applyMenuDocConfig } = await import("./menu-docs.js");
 
   const loaded = [];
   for (const branch of branches) {
-    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability, boardMenu, mealPlanRates] =
+    const [villas, activities, info, conditions, cancellation, notices, inventory, serviceCharge, vat, times, sources, liability, boardMenu, mealPlanRates, menuDocs] =
       await Promise.all([
         loadConfig(branch, CONFIG_KINDS.VILLAS).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.ACTIVITIES).catch(() => undefined),
@@ -316,6 +320,7 @@ export async function hydrateConfig(branches) {
         loadConfig(branch, CONFIG_KINDS.LIABILITY).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.BOARD_MENU).catch(() => undefined),
         loadConfig(branch, CONFIG_KINDS.MEAL_PLAN_RATES).catch(() => undefined),
+        loadConfig(branch, CONFIG_KINDS.MENU_DOCS).catch(() => undefined),
       ]);
 
     if (applyVillaConfig(ROOMS_BY_BRANCH[branch], villas)) loaded.push(branch + ":villas");
@@ -348,6 +353,11 @@ export async function hydrateConfig(branches) {
     // Only Wilpattu has a board sheet today, so a property without one
     // stored is the normal case rather than a failure.
     if (Array.isArray(boardMenu) && applyArray(BOARD_MENU, boardMenu)) loaded.push(branch + ":boardMenu");
+
+    // Cover wording, notes, closing line and the category tick-list for
+    // this property's printed menus. Merged onto the shipped documents, so
+    // branch, filename and the board reference survive a saved row.
+    if (applyMenuDocConfig(menuDocs)) loaded.push(branch + ":menuDocs");
 
   }
 

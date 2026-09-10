@@ -1,5 +1,6 @@
 import { ensureJsPdf } from "./cdn.js";
-import { MENU_ITEMS, BOARD_MENU } from "./data/menu.js";
+import { MENU_ITEMS } from "./data/menu.js";
+import { MENU_DOCS, categoriesFor } from "./data/menu-docs.js";
 // The font is imported lazily inside buildMenuPdf(), not here.
 //
 // It is 163KB of base64 — 66KB over the wire, and about a fifth of all the
@@ -66,46 +67,11 @@ const PALETTES = {
   },
 };
 
-export const MENU_DOCS = {
-  "ab-main": {
-    branch: "Arugam Bay",
-    title: "Main Menu",
-    file: "Leopard-Inn-Arugam-Bay-Main-Menu.pdf",
-    exclude: ["Cocktails", "Mocktails"],
-    cover: { title: "MENU", sub: "Arugam Bay Beachfront Hotel" },
-    notes: [
-      "All prices are in Sri Lankan Rupees (LKR)",
-      "Our seafood is sourced fresh on the day — kindly place seafood orders at least 4 hours in advance.",
-    ],
-    foot: "Thank you — we hope you enjoy your stay by the sea.",
-  },
-  "ab-cocktail": {
-    branch: "Arugam Bay",
-    title: "Cocktail Menu",
-    file: "Leopard-Inn-Arugam-Bay-Cocktail-Menu.pdf",
-    only: ["Cocktails", "Mocktails"],
-    cover: { title: "COCKTAILS", sub: "Arugam Bay Beachfront Hotel" },
-    notes: ["All prices are in Sri Lankan Rupees (LKR)"],
-    foot: "",
-  },
-  "wp-main": {
-    branch: "Wilpattu",
-    title: "Full Menu",
-    file: "Leopard-Inn-Wilpattu-Menu.pdf",
-    cover: { title: "MENU", sub: "Wilpattu Forest Retreat" },
-    notes: ["All prices are in Sri Lankan Rupees (LKR)"],
-    foot: "Thank you — we hope you enjoy your stay in the forest.",
-  },
-  "wp-board": {
-    branch: "Wilpattu",
-    title: "Full / Half Board Menu",
-    file: "Leopard-Inn-Wilpattu-Board-Menu.pdf",
-    board: BOARD_MENU,
-    cover: { title: "FULL / HALF BOARD", sub: "Wilpattu Forest Retreat" },
-    notes: [],
-    foot: "",
-  },
-};
+// MENU_DOCS moved to js/data/menu-docs.js so hydrateConfig can reach it
+// without dragging jsPDF and the Cinzel font onto the startup path.
+// Re-exported here because menu-publish.js has always imported it from
+// this module.
+export { MENU_DOCS };
 
 // jsPDF is fetched the first time a menu is actually built — see
 // js/cdn.js. It used to be a script tag on every page load, 356 KB for a
@@ -142,11 +108,15 @@ function splitCategory(category) {
 // list is shared, so "Side Dishes" and "Breakfast" exist on both menus at
 // Arugam Bay's position. Ordering by the shared list put Wilpattu's side
 // dishes (51-60) ahead of its fresh juices (1-9).
+// Which categories this menu carries is now one list, resolved in
+// data/menu-docs.js — a saved tick-list if a manager has set one, and
+// otherwise the shipped only/exclude defaults, which behave exactly as
+// they always did.
 function dishesFor(doc) {
+  const carried = new Set(categoriesFor(doc, MENU_ITEMS));
   return MENU_ITEMS
     .filter(d => d.branch === doc.branch)
-    .filter(d => (doc.only ? doc.only.includes(d.category) : true))
-    .filter(d => (doc.exclude ? !doc.exclude.includes(d.category) : true))
+    .filter(d => carried.has(d.category))
     .sort((a, b) => a.number - b.number);
 }
 

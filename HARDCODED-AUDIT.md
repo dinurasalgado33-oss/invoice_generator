@@ -149,6 +149,21 @@ be reviewed and settled before either is turned into a plan.
 - **Who may change what.** Everything here assumes manager-only, matching
   the existing Configure screens. Nobody has asked whether some of it
   should be owner-only.
-- **The printed PDF menus.** They are generated from `MENU_ITEMS`, which
+- **The printed PDF menus.** ~~They are generated from `MENU_ITEMS`, which
   is already configurable and persisted; the layout and artwork are not,
-  and reasonably should not be.
+  and reasonably should not be.~~
+
+  Half right, and the missing half mattered. The dishes were configurable,
+  but the booklet around them was not: cover title and subtitle, the notes
+  under the cover, the closing line, and which categories each menu
+  carried all sat in `MENU_DOCS`. One of those notes is a kitchen policy —
+  *"kindly place seafood orders at least 4 hours in advance"* — so
+  changing the notice period meant a code change and a deploy.
+
+  Now configurable, per property, at Configure → Menu → **Edit printed
+  menus**, stored as `CONFIG_KINDS.MENU_DOCS`. `MENU_DOCS` moved to
+  `js/data/menu-docs.js` so hydration can reach it without pulling jsPDF
+  onto the startup path.
+
+  Still fixed, and still rightly so: the layout, the artwork, the palette,
+  the download filename, and which menus exist at all.

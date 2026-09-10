@@ -28,17 +28,17 @@
 <link rel="modulepreload" href="js/data/occupancy.js" />
 <link rel="modulepreload" href="js/data/suggestions.js" />
 
-<link rel="stylesheet" href="css/base.css?v=230" />
-<link rel="stylesheet" href="css/brand-home.css?v=230" />
-<link rel="stylesheet" href="css/rooms.css?v=230" />
-<link rel="stylesheet" href="css/menu-inventory.css?v=230" />
-<link rel="stylesheet" href="css/invoice.css?v=230" />
-<link rel="stylesheet" href="css/dashboard.css?v=230" />
-<link rel="stylesheet" href="css/reports.css?v=230" />
-<link rel="stylesheet" href="css/reservation.css?v=230" />
-  <link rel="stylesheet" href="css/grc.css?v=230" />
-  <link rel="stylesheet" href="css/proforma.css?v=230" />
-  <link rel="stylesheet" href="css/history.css?v=230" />
+<link rel="stylesheet" href="css/base.css?v=231" />
+<link rel="stylesheet" href="css/brand-home.css?v=231" />
+<link rel="stylesheet" href="css/rooms.css?v=231" />
+<link rel="stylesheet" href="css/menu-inventory.css?v=231" />
+<link rel="stylesheet" href="css/invoice.css?v=231" />
+<link rel="stylesheet" href="css/dashboard.css?v=231" />
+<link rel="stylesheet" href="css/reports.css?v=231" />
+<link rel="stylesheet" href="css/reservation.css?v=231" />
+  <link rel="stylesheet" href="css/grc.css?v=231" />
+  <link rel="stylesheet" href="css/proforma.css?v=231" />
+  <link rel="stylesheet" href="css/history.css?v=231" />
 </head>
 <body>
 
@@ -278,6 +278,24 @@
       <div id="bm-blocks"></div>
       <button type="button" class="secondary-btn" id="bm-add-block">Add a course</button>
       <p class="field-error" id="bm-error"></p>
+    </div>
+  </section>
+
+  <!-- SCREEN: Printed menus — cover wording, notes, closing line, sections -->
+  <section id="screen-menu-docs" class="screen">
+    <button class="back-btn" data-back="screen-menu">&larr; Back</button>
+    <div class="brand small">
+      <h2>Printed Menus</h2>
+    </div>
+
+    <div class="list-wrap">
+      <p class="hint" id="md-scope"></p>
+      <p class="hint" id="md-orphans"></p>
+    </div>
+
+    <div class="list-wrap">
+      <div id="md-docs"></div>
+      <p class="field-error" id="md-error"></p>
     </div>
   </section>
 
@@ -992,6 +1010,7 @@
       <div id="menu-pdf-list" class="menu-pdf-list"></div>
       <p class="step-subtext" id="digital-menu-hint"></p>
       <button type="button" class="secondary-btn" id="open-board-menu-btn">Edit board menu</button>
+      <button type="button" class="secondary-btn" id="open-menu-docs-btn">Edit printed menus</button>
     </div>
 
     <div class="list-wrap">
@@ -2911,6 +2930,6 @@
 <!-- Menu PDFs are built in the browser from the live menu config. Guarded
      like the other CDN scripts: without it the export button says so
      rather than throwing. -->
-<script type="module" src="js/main.js?v=230"></script>
+<script type="module" src="js/main.js?v=231"></script>
 </body>
 </html>
