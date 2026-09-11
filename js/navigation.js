@@ -29,11 +29,24 @@ export const screens = {
   reservationPreview: document.getElementById("screen-reservation-preview"),
 };
 
+// Depth order, only ever compared relatively: deeper than where you are
+// slides in from the right, shallower from the left.
+//
+// A screen missing from this list indexes as -1, which is shallower than
+// everything — so going *into* it played the back animation and pressing
+// Back out of it played the forward one. Both directions wrong, on every
+// visit, and nothing errors: it reads as the app briefly disagreeing with
+// you about which way you just went. Seven of the thirty-six screens were
+// missing, including four Configure rows that have been shipped for
+// months. Add a screen to index.html, add it here.
 const screenOrder = [
   "screen-login", "screen-branch", "screen-home", "screen-rooms", "screen-orders",
-  "screen-configure", "screen-menu", "screen-configure-villas", "screen-configure-activities",
+  "screen-configure", "screen-menu", "screen-board-menu", "screen-menu-docs",
+  "screen-configure-villas", "screen-configure-activities",
   "screen-configure-branch", "screen-configure-conditions",
   "screen-configure-proforma", "screen-configure-cancellation", "screen-configure-notices",
+  "screen-configure-charges", "screen-configure-times", "screen-configure-invoice",
+  "screen-configure-grc", "screen-manage-lists",
   "screen-guest-history", "screen-guest-charges",
   "screen-reservations", "screen-proforma-form", "screen-proforma-preview",
   "screen-grc-form", "screen-grc-preview",
