@@ -37,7 +37,15 @@
   color: var(--text-muted);
   text-transform: lowercase;
 }
-.ingredient-row .remove-ingredient-btn {
+/* Not scoped to .ingredient-row, because two screens use this class and
+   only one of them was an ingredient row. reservation.js puts the same
+   button in a .villa-rate-row to drop a villa off a booking, and the
+   ancestor selector meant it never matched: that × rendered as a raw
+   browser button — 2px outset black border, grey face, 24×21 — in the
+   middle of a maroon and cream form. Styling it from here rather than
+   restating the rule in reservation.css, which would be the same fact in
+   two files, free to drift. */
+.remove-ingredient-btn {
   flex-shrink: 0;
   width: 38px;
   height: 38px;
@@ -49,9 +57,9 @@
   cursor: pointer;
   transition: background .15s ease;
 }
-.ingredient-row .remove-ingredient-btn:active { transform: scale(0.9); }
+.remove-ingredient-btn:active { transform: scale(0.9); }
 @media (hover: hover) and (pointer: fine) {
-  .ingredient-row .remove-ingredient-btn:hover { background: #fdf2f1; }
+  .remove-ingredient-btn:hover { background: #fdf2f1; }
 }
 
 .inventory-legend {
